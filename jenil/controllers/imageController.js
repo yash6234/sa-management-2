@@ -41,9 +41,12 @@ const serveImage = (req, res, next) => {
     const cleanPath = decodeURIComponent(pathname).split('?')[0];
     let relativePath = cleanPath.replace(/^\/+/, '');
 
+    console.log(`[ImageController] Token: ${token}, Decrypted path: ${realUrl}, Cleaned relative path: ${relativePath}`);
+
     // 1. Try ROOT_DIR + relativePath (for 'uploads/...')
     let localPath = path.join(ROOT_DIR, relativePath);
     if (fs.existsSync(localPath)) {
+        console.log(`[ImageController] Found file at ROOT_DIR: ${localPath}`);
         return streamFile(localPath, res);
     }
 
@@ -54,9 +57,11 @@ const serveImage = (req, res, next) => {
     }
     localPath = path.join(PUBLIC_DIR, relativePath);
     if (fs.existsSync(localPath)) {
+        console.log(`[ImageController] Found file at PUBLIC_DIR: ${localPath}`);
         return streamFile(localPath, res);
     }
 
+    console.warn(`[ImageController] Resolved path does not exist: ${localPath} (Source token path: ${realUrl})`);
     if (next) return next();
     res.status(404).json({ success: false, error: 'File not found' });
 };

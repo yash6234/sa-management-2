@@ -4,7 +4,7 @@ const IMAGE_URL_FIELDS = new Set([
     'imageUrl', 'image', 'images', 'thumbnail', 'thumbnailUrl', 'poster', 'banner',
     'logo', 'logoUrl', 'avatar', 'backgroundImage', 'mainImage',
     'coverImage', 'bgImage', 'backgroundUrl', 'patternUrl', 'videoUrl',
-    'url', 'content', 'src', 'background'
+    'url', 'content', 'src', 'background', 'photo', 'icon'
 ]);
 
 const looksLikeImagePath = (value) => {
@@ -17,35 +17,35 @@ const looksLikeImagePath = (value) => {
 };
 
 const encryptImagesInObject = (obj) => {
+    // 1. If it's a string, check if it looks like an image path to internal storage
     if (typeof obj === 'string' && looksLikeImagePath(obj)) {
         const cleanPath = obj.replace(/^public\//, '');
         return '/acade360/' + encryptImageUrl(cleanPath);
     }
 
+    // 2. If it's an array, recurse on each item
     if (Array.isArray(obj)) {
         return obj.map((item) => encryptImagesInObject(item));
     }
 
+    // 3. If it's an object (including Mongoose Maps/Documents), recurse on each property
     if (obj !== null && typeof obj === 'object') {
         const result = {};
-        for (const [key, value] of Object.entries(obj)) {
-            if (IMAGE_URL_FIELDS.has(key)) {
-                if (looksLikeImagePath(value)) {
-                    const cleanPath = value.replace(/^public\//, '');
-                    result[key] = '/acade360/' + encryptImageUrl(cleanPath);
-                    continue;
-                } else if (Array.isArray(value)) {
-                    result[key] = value.map((item) => {
-                        if (typeof item === 'string' && looksLikeImagePath(item)) {
-                            const cleanPath = item.replace(/^public\//, '');
-                            return '/acade360/' + encryptImageUrl(cleanPath);
-                        }
-                        return encryptImagesInObject(item);
-                    });
-                    continue;
-                }
+        
+        // Handle both plain objects and Map-like structures
+        const entries = (typeof obj.entries === 'function') ? Array.from(obj.entries()) : Object.entries(obj);
+        
+        for (const [key, value] of entries) {
+            // If the key is specifically known as an image field, or the value itself 
+            // looks like an image path, we recurse to encrypt it.
+            if (IMAGE_URL_FIELDS.has(key) || (typeof value === 'string' && looksLikeImagePath(value))) {
+                result[key] = encryptImagesInObject(value);
+            } else if (value !== null && typeof value === 'object') {
+                // Keep recursing for nested structures
+                result[key] = encryptImagesInObject(value);
+            } else {
+                result[key] = value;
             }
-            result[key] = Array.isArray(value) ? value.map((item) => encryptImagesInObject(item)) : encryptImagesInObject(value);
         }
         return result;
     }

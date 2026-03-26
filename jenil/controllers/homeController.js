@@ -134,7 +134,10 @@ exports.updateSection = (sectionName) => async (req, res) => {
             }, {});
         };
 
+        console.log(`[HomeController] Updating section ${sectionName} with data:`, updateData);
         const flattenedUpdates = flattenObject(updateData, sectionName);
+        console.log(`[HomeController] Flattened updates for Mongoose:`, flattenedUpdates);
+
         for (const [path, value] of Object.entries(flattenedUpdates)) {
             if (value === null) {
                 // Handle deletion for Maps or setting undefined for regular fields
@@ -154,6 +157,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
         }
 
         await home.save();
+        console.log(`[HomeController] Successfully saved section ${sectionName}. Returning:`, home[sectionName]);
         res.status(200).json({ success: true, data: home[sectionName] });
     } catch (err) {
         console.error("Update Section Error:", err);

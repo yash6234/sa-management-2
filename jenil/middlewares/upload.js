@@ -41,9 +41,15 @@ const standardizeFilePath = (req, res, next) => {
         // 2. If it's a token (contains a dot), try to decrypt it
         if (clean.includes('.')) {
             const decrypted = decryptImageUrl(clean);
-            if (decrypted) return decrypted;
+            if (decrypted) {
+                console.log(`[StandardizePath] Decrypted token and cleaned: ${val} -> ${decrypted}`);
+                return decrypted;
+            }
         }
 
+        if (clean !== val) {
+            console.log(`[StandardizePath] Cleaned path prefix: ${val} -> ${clean}`);
+        }
         return clean;
     };
 
@@ -54,7 +60,7 @@ const standardizeFilePath = (req, res, next) => {
         if (Array.isArray(obj)) {
             for (let i = 0; i < obj.length; i++) {
                 if (typeof obj[i] === 'string') {
-                    if (obj[i].includes('acade360') || obj[i].includes('uploads/')) {
+                    if (obj[i].includes('acade360') || obj[i].startsWith('uploads/')) {
                         obj[i] = cleanupPath(obj[i]);
                     }
                 } else {
@@ -65,7 +71,8 @@ const standardizeFilePath = (req, res, next) => {
             for (const key in obj) {
                 const value = obj[key];
                 if (typeof value === 'string') {
-                    if (value.includes('acade360') || value.includes('uploads/')) {
+                    // If it looks like a CMS path or a token, clean it
+                    if (value.includes('acade360') || value.startsWith('uploads/')) {
                         obj[key] = cleanupPath(value);
                     }
                 } else if (typeof value === 'object' && value !== null) {

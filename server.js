@@ -24,8 +24,6 @@ const Admin = require("./models/Admin")
 const AttendanceSync = require('./adminControllers/harsh/services/attendanceSync');
 // CORS configuration: allow everything
 app.use(cors());
-
-
 // Middleware
 app.use(express.json());
 

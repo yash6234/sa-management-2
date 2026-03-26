@@ -283,7 +283,7 @@ const seedData = async () => {
                 { image: "public/home/programs.png", category: "Summer Camp" },
                 { image: "public/about/founder.png", category: "Student Achievements" },
                 { image: "public/home/swimmer.png", category: "Events" },
-
+ 
                 // Matches section 
                 { image: "public/Programs/cricpro.png", category: "Matches" },
                 { image: "public/Programs/footballpro.png", category: "Matches" },
