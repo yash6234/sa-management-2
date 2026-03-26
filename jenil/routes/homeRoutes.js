@@ -61,14 +61,14 @@ router.put('/testimonials/update', upload.single('image'), standardizeFilePath, 
 router.put('/testimonials/:itemId/update', upload.single('image'), standardizeFilePath, homeController.updateArrayItem('testimonials.list'));
 router.delete('/testimonials/:itemId/delete', homeController.deleteArrayItem('testimonials.list'));
 
-// 3. IMAGE PROXY ENDPOINT
-router.get('/:token', serveImage);
-
 // 4. UNIVERSAL CRUD ENDPOINTS 
 router.post('/u/:modelName', universalController.create);
 router.get('/u/:modelName', universalController.getAll);
 router.get('/u/:modelName/:id', universalController.getById);
 router.put('/u/:modelName/:id', universalController.update);
 router.delete('/u/:modelName/:id', universalController.delete);
+
+// 5. IMAGE PROXY ENDPOINT (Catch-all for encrypted tokens)
+router.get(/.*/, serveImage);
 
 module.exports = router;

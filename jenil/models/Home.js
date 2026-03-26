@@ -31,22 +31,7 @@ const homeSchema = new mongoose.Schema({
     // 3. Programs & Facilities (Combined Section with shared background)
     programsAndFacilities: {
         sectionTitle: { type: String, default: "Our Sports Programs" },
-        image: { type: String }, // The running track "ARE YOU PREPARED?" background
-
-        // trainingCard: {
-        //     title: { type: String, default: "Personalized Training for Aspiring Cricketers" },
-        //     description: { type: String, default: "At Gandhinagar Sports Academy, our cricket coaching is designed to meet the needs of players at different stages of their journey. Our curriculum covers all essential aspects of cricket:" },
-        //     features: {
-        //         type: [String], default: [
-        //             "Batting Skills: Master shot selection, footwork timing, and power hitting techniques.",
-        //             "Bowling Techniques: Develop pace, spin, accuracy, and variations to outsmart opponents.",
-        //             "Fielding Drills: Improve agility, reflexes, catching, and ground fielding with focused exercises.",
-        //             "Fitness & Conditioning: Specialized cricket fitness training to build strength, endurance, and injury resilience.",
-        //             "Game Awareness: Tactical sessions to enhance decision-making, game strategy, and situational awareness."
-        //         ]
-        //     },
-        //     image: { type: String }
-        // },
+        image: { type: String }, // The running track "ARE YOU PREPARED?" backgrounds
 
         facilitiesCard: {
             title: { type: String, default: "World-Class Facilities to Elevate Your Game" },

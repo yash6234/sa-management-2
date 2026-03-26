@@ -18,7 +18,7 @@ const looksLikeImagePath = (value) => {
 
 const encryptImagesInObject = (obj) => {
     if (typeof obj === 'string' && looksLikeImagePath(obj)) {
-        const cleanPath = obj.replace(/^public\//, '').replace(/^uploads\//, '');
+        const cleanPath = obj.replace(/^public\//, '');
         return encryptImageUrl(cleanPath);
     }
 
@@ -31,13 +31,13 @@ const encryptImagesInObject = (obj) => {
         for (const [key, value] of Object.entries(obj)) {
             if (IMAGE_URL_FIELDS.has(key)) {
                 if (looksLikeImagePath(value)) {
-                    const cleanPath = value.replace(/^public\//, '').replace(/^uploads\//, '');
+                    const cleanPath = value.replace(/^public\//, '');
                     result[key] = encryptImageUrl(cleanPath);
                     continue;
                 } else if (Array.isArray(value)) {
                     result[key] = value.map((item) => {
                         if (typeof item === 'string' && looksLikeImagePath(item)) {
-                            const cleanPath = item.replace(/^public\//, '').replace(/^uploads\//, '');
+                            const cleanPath = item.replace(/^public\//, '');
                             return encryptImageUrl(cleanPath);
                         }
                         return encryptImagesInObject(item);
