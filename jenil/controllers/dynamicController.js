@@ -70,7 +70,11 @@ exports.updateDynamic = async (req, res, next) => {
         let updateValue;
 
         if (req.file) {
-            updateValue = 'public/uploads/' + req.file.filename;
+            updateValue = req.file.filename;
+        } else if (req.files && req.files.length > 0) {
+            // If multiple files, take the first one or handle based on fieldname if needed
+            // For simple dynamic updates, usually one file is sent to one path
+            updateValue = req.files[0].filename;
         } else {
             updateValue = req.body.value !== undefined ? req.body.value : req.body;
         }
@@ -79,18 +83,31 @@ exports.updateDynamic = async (req, res, next) => {
         if (isAdd) {
             const currentArray = doc.get(fullPath);
             if (Array.isArray(currentArray)) {
+                // If updateValue is an object and we have files, merge them into the object
+                if (typeof updateValue === 'object' && req.files) {
+                    req.files.forEach(f => {
+                        updateValue[f.fieldname] = f.filename;
+                    });
+                }
                 currentArray.push(updateValue);
                 doc.markModified(fullPath);
             } else {
-                // If it's not an array, just treat it as a set
                 doc.set(fullPath, updateValue);
             }
         } else {
             // For update, if the existing value is an object and updateValue is too, merge
             const currentVal = doc.get(fullPath);
-            if (typeof currentVal === 'object' && currentVal !== null && !Array.isArray(currentVal) &&
-                typeof updateValue === 'object' && updateVal !== null && !Array.isArray(updateValue)) {
-                // Merge
+            if (currentVal && typeof currentVal === 'object' && !Array.isArray(currentVal) &&
+                updateValue && typeof updateValue === 'object' && !Array.isArray(updateValue)) {
+                
+                // If we have files, add them to updateValue
+                if (req.files) {
+                    const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+                    files.forEach(f => {
+                        updateValue[f.fieldname] = f.filename;
+                    });
+                }
+                
                 Object.assign(currentVal, updateValue);
                 doc.markModified(fullPath);
             } else {

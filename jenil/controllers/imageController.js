@@ -1,11 +1,9 @@
 const { decryptImageUrl } = require('../utils/imageToken');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
-
-const KEY = process.env.ENCRYPTION_KEY || '12345678901234567890123456789012';
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const ROOT_DIR = path.join(__dirname, '..', '..');
 
 const MEDIA_MIME = {
     '.png': 'image/png',
@@ -43,23 +41,33 @@ const serveImage = (req, res, next) => {
     const cleanPath = decodeURIComponent(pathname).split('?')[0];
     let relativePath = cleanPath.replace(/^\/+/, '');
 
-    // Strip 'public/' from the start if it exists, since PUBLIC_DIR already points to it
+    // 1. Try ROOT_DIR + relativePath (for 'uploads/...')
+    let localPath = path.join(ROOT_DIR, relativePath);
+    if (fs.existsSync(localPath)) {
+        return streamFile(localPath, res);
+    }
+
+    // 2. Try PUBLIC_DIR + relativePath (for static assets)
+    // Strip 'public/' from the start if it exists
     if (relativePath.startsWith('public/')) {
         relativePath = relativePath.replace('public/', '');
     }
-
-    const localPath = path.join(PUBLIC_DIR, relativePath);
-
+    localPath = path.join(PUBLIC_DIR, relativePath);
     if (fs.existsSync(localPath)) {
-        let ext = path.extname(localPath).toLowerCase();
-
-        res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-        res.setHeader('Content-Type', MEDIA_MIME[ext] || 'application/octet-stream');
-        return fs.createReadStream(localPath).pipe(res);
+        return streamFile(localPath, res);
     }
 
     if (next) return next();
     res.status(404).json({ success: false, error: 'File not found' });
 };
+
+const streamFile = (filePath, res) => {
+    const ext = path.extname(filePath).toLowerCase();
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    res.setHeader('Content-Type', MEDIA_MIME[ext] || 'application/octet-stream');
+    const stats = fs.statSync(filePath);
+    res.setHeader('Content-Length', stats.size);
+    return fs.createReadStream(filePath).pipe(res);
+}
 
 module.exports = { serveImage };

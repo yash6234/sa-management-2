@@ -11,36 +11,36 @@ router.get('/', aboutAcademyController.getAboutData);
 
 // 1. HERO
 router.get('/hero', aboutAcademyController.getSection('hero'));
-router.post('/hero/add', upload.single('backgroundImage'), standardizeFilePath, aboutAcademyController.updateSection('hero'));
-router.put('/hero/update', upload.single('backgroundImage'), standardizeFilePath, aboutAcademyController.updateSection('hero'));
+router.post('/hero/add', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('hero'));
+router.put('/hero/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('hero'));
 router.delete('/hero/delete', aboutAcademyController.deleteSection('hero'));
 
 // 2. INTRO
 router.get('/intro', aboutAcademyController.getSection('introSection'));
-router.post('/intro/add', aboutAcademyController.updateSection('introSection'));
-router.put('/intro/update', aboutAcademyController.updateSection('introSection'));
+router.post('/intro/add', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('introSection'));
+router.put('/intro/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('introSection'));
 router.delete('/intro/delete', aboutAcademyController.deleteSection('introSection'));
 
 // 3. MISSION
 router.get('/mission', aboutAcademyController.getSection('mission'));
-router.post('/mission/add', upload.single('image'), standardizeFilePath, aboutAcademyController.addArrayItem('mission.items'));
-router.put('/mission/update', upload.single('image'), standardizeFilePath, aboutAcademyController.updateSection('mission'));
+router.post('/mission/add', upload.any(), standardizeFilePath, aboutAcademyController.addArrayItem('mission.items'));
+router.put('/mission/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('mission'));
 router.delete('/mission/delete', aboutAcademyController.deleteSection('mission'));
-router.put('/mission/:itemId/update', upload.single('image'), standardizeFilePath, aboutAcademyController.updateArrayItem('mission.items'));
+router.put('/mission/:itemId/update', upload.any(), standardizeFilePath, aboutAcademyController.updateArrayItem('mission.items'));
 router.delete('/mission/:itemId/delete', aboutAcademyController.deleteArrayItem('mission.items'));
 
 // 4. DIRECTOR'S MESSAGE
 router.get('/directors-message', aboutAcademyController.getSection('directorsMessage'));
-router.post('/directors-message/add', aboutAcademyController.updateSection('directorsMessage'));
-router.put('/directors-message/update', aboutAcademyController.updateSection('directorsMessage'));
+router.post('/directors-message/add', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('directorsMessage'));
+router.put('/directors-message/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('directorsMessage'));
 router.delete('/directors-message/delete', aboutAcademyController.deleteSection('directorsMessage'));
 
 // 5. FOUNDERS
 router.get('/founders', aboutAcademyController.getSection('founders'));
-router.post('/founders/add', upload.single('image'), standardizeFilePath, aboutAcademyController.addArrayItem('founders.list'));
-router.put('/founders/update', upload.single('image'), standardizeFilePath, aboutAcademyController.updateSection('founders'));
+router.post('/founders/add', upload.any(), standardizeFilePath, aboutAcademyController.addArrayItem('founders.list'));
+router.put('/founders/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('founders'));
 router.delete('/founders/delete', aboutAcademyController.deleteSection('founders'));
-router.put('/founders/:itemId/update', upload.single('image'), standardizeFilePath, aboutAcademyController.updateArrayItem('founders.list'));
+router.put('/founders/:itemId/update', upload.any(), standardizeFilePath, aboutAcademyController.updateArrayItem('founders.list'));
 router.delete('/founders/:itemId/delete', aboutAcademyController.deleteArrayItem('founders.list'));
 
 // 6. JOURNEY

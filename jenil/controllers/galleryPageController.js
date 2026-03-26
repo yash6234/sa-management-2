@@ -1,5 +1,16 @@
 const GalleryPage = require('../models/GalleryPage');
 
+// Helper to set nested property by string path
+const setNested = (obj, path, value) => {
+    const parts = path.split('.');
+    let current = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+        if (!current[parts[i]]) current[parts[i]] = {};
+        current = current[parts[i]];
+    }
+    current[parts[parts.length - 1]] = value;
+};
+
 const getActiveGallery = async () => {
     let gallery = await GalleryPage.findOne({ isActive: true });
     if (!gallery) gallery = await GalleryPage.create({ isActive: true });
@@ -47,8 +58,16 @@ exports.updateSection = (sectionName) => async (req, res) => {
     try {
         const gallery = await getActiveGallery();
         let updateData = { ...req.body };
+
+        // Handle file uploads
         if (req.file) {
-            if (sectionName === 'hero') updateData.backgroundImage = req.file.filename;
+            setNested(updateData, req.file.fieldname, req.file.filename);
+        }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(updateData, file.fieldname, file.filename);
+            });
         }
 
         if (sectionName === 'galleryGrid') {
@@ -60,7 +79,6 @@ exports.updateSection = (sectionName) => async (req, res) => {
                 }
             }
 
-            // Optional: replace full images list in one request.
             if (Array.isArray(updateData.images)) {
                 gallery.images = updateData.images;
             }
@@ -69,7 +87,6 @@ exports.updateSection = (sectionName) => async (req, res) => {
             return res.status(200).json({ success: true, data: getGalleryGrid(gallery) });
         }
 
-        // Handle categories array specifically
         if (sectionName === 'categories') {
             if (req.body.categories) {
                 if (typeof req.body.categories === 'string') {
@@ -99,7 +116,7 @@ exports.deleteSection = (sectionName) => async (req, res) => {
             return res.status(200).json({ success: true, message: 'Section galleryGrid has been cleared/reset' });
         }
         if (sectionName === 'categories') {
-            gallery.categories = []; // Reset categories
+            gallery.categories = [];
         } else {
             gallery[sectionName] = undefined;
         }
@@ -115,7 +132,16 @@ exports.addImage = async (req, res) => {
     try {
         const gallery = await getActiveGallery();
         let newItem = { ...req.body };
-        if (req.file) newItem.image = req.file.filename || req.file.path;
+        if (req.file) {
+            setNested(newItem, req.file.fieldname, req.file.filename);
+        }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(newItem, file.fieldname, file.filename);
+            });
+        }
+        
         if (!newItem.image) return res.status(400).json({ success: false, message: 'Image is required' });
 
         gallery.images.push(newItem);
@@ -133,7 +159,15 @@ exports.updateImage = async (req, res) => {
         if (!item) return res.status(404).json({ success: false, message: 'Image not found' });
         
         let updateData = { ...req.body };
-        if (req.file) updateData.image = req.file.filename || req.file.path;
+        if (req.file) {
+            setNested(updateData, req.file.fieldname, req.file.filename);
+        }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(updateData, file.fieldname, file.filename);
+            });
+        }
         
         Object.assign(item, updateData);
         await gallery.save();
@@ -162,7 +196,16 @@ exports.addTrainingMomentImage = async (req, res) => {
     try {
         const gallery = await getActiveGallery();
         let newItem = { ...req.body };
-        if (req.file) newItem.image = req.file.filename || req.file.path;
+        if (req.file) {
+            setNested(newItem, req.file.fieldname, req.file.filename);
+        }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(newItem, file.fieldname, file.filename);
+            });
+        }
+        
         if (!newItem.image) return res.status(400).json({ success: false, message: 'Image is required' });
 
         gallery.trainingMoments.list.push(newItem);
@@ -180,7 +223,15 @@ exports.updateTrainingMomentImage = async (req, res) => {
         if (!item) return res.status(404).json({ success: false, message: 'Image not found' });
         
         let updateData = { ...req.body };
-        if (req.file) updateData.image = req.file.filename || req.file.path;
+        if (req.file) {
+            setNested(updateData, req.file.fieldname, req.file.filename);
+        }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(updateData, file.fieldname, file.filename);
+            });
+        }
         
         Object.assign(item, updateData);
         await gallery.save();

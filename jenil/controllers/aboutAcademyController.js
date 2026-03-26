@@ -1,5 +1,16 @@
 const AboutAcademy = require('../models/AboutAcademy');
 
+// Helper to set nested property by string path
+const setNested = (obj, path, value) => {
+    const parts = path.split('.');
+    let current = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+        if (!current[parts[i]]) current[parts[i]] = {};
+        current = current[parts[i]];
+    }
+    current[parts[parts.length - 1]] = value;
+};
+
 const getActiveAbout = async () => {
     let about = await AboutAcademy.findOne({ isActive: true });
     if (!about) about = await AboutAcademy.create({ isActive: true });
@@ -44,11 +55,18 @@ exports.updateSection = (sectionName) => async (req, res) => {
     try {
         const about = await getActiveAbout();
         let updateData = { ...req.body };
+        
+        // Handle file uploads
         if (req.file) {
-            if (sectionName === 'hero') updateData.backgroundImage = req.file.filename;
+            setNested(updateData, req.file.fieldname, req.file.filename);
+        }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(updateData, file.fieldname, file.filename);
+            });
         }
 
-        // Handle mission.sectionTitle if path is 'mission' but body only has sectionTitle
         if (sectionName.includes('.')) {
             const parts = sectionName.split('.');
             let target = about;
@@ -90,7 +108,15 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         }
         
         let newItem = { ...req.body };
-        if (req.file) newItem.image = req.file.filename;
+        if (req.file) {
+            setNested(newItem, req.file.fieldname, req.file.filename);
+        }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(newItem, file.fieldname, file.filename);
+            });
+        }
         
         targetArray.push(newItem);
         await about.save();
@@ -113,7 +139,15 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
         
         let updateData = { ...req.body };
-        if (req.file) updateData.image = req.file.filename;
+        if (req.file) {
+            setNested(updateData, req.file.fieldname, req.file.filename);
+        }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(updateData, file.fieldname, file.filename);
+            });
+        }
         
         Object.assign(item, updateData);
         await about.save();

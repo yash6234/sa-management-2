@@ -8,17 +8,13 @@ const { upload, standardizeFilePath } = require('../middlewares/upload');
 router.get('/', admissionsPageController.getAdmissionsData);
 
 // 2. ADMISSION ENQUIRY SUBMISSION (With field names for file uploads)
-router.post('/submit', upload.fields([
-    { name: 'photo', maxCount: 1 },
-    { name: 'traineeSignature', maxCount: 1 },
-    { name: 'fatherSignature', maxCount: 1 }
-]), standardizeFilePath, admissionsPageController.submitAdmissionEnquiry);
+router.post('/submit', upload.any(), standardizeFilePath, admissionsPageController.submitAdmissionEnquiry);
 
 // 3. ADMIN CONFIG SECTIONS (Standardized pattern)
 // --- HERO ---
 router.get('/hero', admissionsPageController.getSection('hero'));
-router.post('/hero/add', upload.single('backgroundImage'), standardizeFilePath, admissionsPageController.updateSection('hero'));
-router.put('/hero/update', upload.single('backgroundImage'), standardizeFilePath, admissionsPageController.updateSection('hero'));
+router.post('/hero/add', upload.any(), standardizeFilePath, admissionsPageController.updateSection('hero'));
+router.put('/hero/update', upload.any(), standardizeFilePath, admissionsPageController.updateSection('hero'));
 router.delete('/hero/delete', admissionsPageController.deleteSection('hero'));
 
 // --- FORM CONTENT ---

@@ -12,14 +12,14 @@ router.get('/', homeController.getHomePageData);
 
 // 1. HERO
 router.get('/hero', homeController.getSection('hero'));
-router.post('/hero/add', upload.single('backgroundImage'), standardizeFilePath, homeController.updateSection('hero'));
-router.put('/hero/update', upload.single('backgroundImage'), standardizeFilePath, homeController.updateSection('hero'));
+router.post('/hero/add', upload.any(), standardizeFilePath, homeController.updateSection('hero'));
+router.put('/hero/update', upload.any(), standardizeFilePath, homeController.updateSection('hero'));
 router.delete('/hero/delete', homeController.deleteSection('hero'));
 
 // 2. ABOUT
 router.get('/about', homeController.getSection('about'));
-router.post('/about/add', upload.single('image'), standardizeFilePath, homeController.updateSection('about'));
-router.put('/about/update', upload.single('image'), standardizeFilePath, homeController.updateSection('about'));
+router.post('/about/add', upload.any(), standardizeFilePath, homeController.updateSection('about'));
+router.put('/about/update', upload.any(), standardizeFilePath, homeController.updateSection('about'));
 router.delete('/about/delete', homeController.deleteSection('about'));
 
 // 3. FOOTER
@@ -36,29 +36,29 @@ router.delete('/footer/delete', async (req, res) => {
 
 // 4. PROGRAMS & FACILITIES
 router.get('/programs-facilities', homeController.getSection('programsAndFacilities'));
-router.post('/programs-facilities/add', upload.single('image'), standardizeFilePath, homeController.updateSection('programsAndFacilities'));
-router.put('/programs-facilities/update', upload.single('image'), standardizeFilePath, homeController.updateSection('programsAndFacilities'));
+router.post('/programs-facilities/add', upload.any(), standardizeFilePath, homeController.updateSection('programsAndFacilities'));
+router.put('/programs-facilities/update', upload.any(), standardizeFilePath, homeController.updateSection('programsAndFacilities'));
 router.delete('/programs-facilities/delete', homeController.deleteSection('programsAndFacilities'));
 
 // 5. TOURNAMENTS
 router.get('/tournaments', homeController.getSection('tournamentsSection'));
-router.post('/tournaments/add', upload.single('image'), standardizeFilePath, homeController.addArrayItem('tournamentsSection.list'));
-router.put('/tournaments/update', upload.single('image'), standardizeFilePath, homeController.updateSection('tournamentsSection'));
+router.post('/tournaments/add', upload.any(), standardizeFilePath, homeController.addArrayItem('tournamentsSection.list'));
+router.put('/tournaments/update', upload.any(), standardizeFilePath, homeController.updateSection('tournamentsSection'));
 router.delete('/tournaments/delete', homeController.deleteSection('tournamentsSection'));
-router.put('/tournaments/item/update', upload.single('image'), standardizeFilePath, homeController.updateArrayItem('tournamentsSection.list'));
+router.put('/tournaments/item/update', upload.any(), standardizeFilePath, homeController.updateArrayItem('tournamentsSection.list'));
 router.delete('/tournaments/item/delete', homeController.deleteArrayItem('tournamentsSection.list'));
 
 
 // 6. GALLERY
 router.get('/gallery', homeController.getSection('gallery'));
-router.post('/gallery/add', upload.single('image'), standardizeFilePath, homeController.addArrayItem('gallery'));
+router.post('/gallery/add', upload.any(), standardizeFilePath, homeController.addArrayItem('gallery'));
 router.delete('/gallery/:itemId/delete', homeController.deleteArrayItem('gallery'));
 
 // 8. TESTIMONIALS
 router.get('/testimonials', homeController.getSection('testimonials'));
-router.post('/testimonials/add', upload.single('image'), standardizeFilePath, homeController.addArrayItem('testimonials.list'));
-router.put('/testimonials/update', upload.single('image'), standardizeFilePath, homeController.updateSection('testimonials'));
-router.put('/testimonials/:itemId/update', upload.single('image'), standardizeFilePath, homeController.updateArrayItem('testimonials.list'));
+router.post('/testimonials/add', upload.any(), standardizeFilePath, homeController.addArrayItem('testimonials.list'));
+router.put('/testimonials/update', upload.any(), standardizeFilePath, homeController.updateSection('testimonials'));
+router.put('/testimonials/:itemId/update', upload.any(), standardizeFilePath, homeController.updateArrayItem('testimonials.list'));
 router.delete('/testimonials/:itemId/delete', homeController.deleteArrayItem('testimonials.list'));
 
 // 4. UNIVERSAL CRUD ENDPOINTS 

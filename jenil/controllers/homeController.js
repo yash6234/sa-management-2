@@ -1,6 +1,17 @@
 const Home = require('../models/Home');
 const { saveBase64Image } = require('../utils/fileUtils');
 
+// Helper to set nested property by string path
+const setNested = (obj, path, value) => {
+    const parts = path.split('.');
+    let current = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+        if (!current[parts[i]]) current[parts[i]] = {};
+        current = current[parts[i]];
+    }
+    current[parts[parts.length - 1]] = value;
+};
+
 const processImageFields = (data) => {
     const imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo'];
     for (const field of imageFields) {
@@ -73,15 +84,25 @@ exports.updateSection = (sectionName) => async (req, res) => {
     try {
         const home = await getActiveHome();
         let updateData = { ...req.body };
+        
+        // Handle file uploads (both single and multiple)
         if (req.file) {
-            if (sectionName === 'about') updateData.image = req.file.filename;
-            if (sectionName === 'hero') updateData.backgroundImage = req.file.filename;
-            if (sectionName === 'programsAndFacilities') updateData.image = req.file.filename;
-        } else {
-            updateData = processImageFields(updateData);
+            setNested(updateData, req.file.fieldname, req.file.filename);
+        }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(updateData, file.fieldname, file.filename);
+            });
         }
 
-        home[sectionName] = { ...home[sectionName].toObject(), ...updateData };
+        // Process any base64 images that might still be in the body
+        updateData = processImageFields(updateData);
+
+        // Merge updates
+        const section = home[sectionName].toObject ? home[sectionName].toObject() : home[sectionName];
+        home[sectionName] = { ...section, ...updateData };
+        
         await home.save();
         res.status(200).json({ success: true, data: home[sectionName] });
     } catch (err) {
@@ -92,8 +113,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         const home = await getActiveHome();
-        // Since it's a fixed schema object, deletion means "clearing" or "resetting"
-        home[sectionName] = undefined; // Mark for re-initialization from defaults in next save
+        home[sectionName] = undefined; 
         await home.save();
         res.status(200).json({ success: true, message: `Section ${sectionName} has been cleared/reset` });
     } catch (err) {
@@ -101,26 +121,27 @@ exports.deleteSection = (sectionName) => async (req, res) => {
     }
 };
 
-// 3. ARRAY SECTIONS (Hero, Gallery, SocialPosts)
+// 3. ARRAY SECTIONS
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
         const home = await getActiveHome();
-        // Resolve nested paths like 'socialSection.posts'
         const parts = arrayPath.split('.');
         let targetArray = home;
         for (const part of parts) {
             targetArray = targetArray[part];
         }
+        
         let newItem = { ...req.body };
         if (req.file) {
-            if (arrayPath === 'hero') {
-                newItem.backgroundImage = req.file.filename;
-            } else {
-                newItem.image = req.file.filename;
-            }
-        } else {
-            newItem = processImageFields(newItem);
+            setNested(newItem, req.file.fieldname, req.file.filename);
         }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(newItem, file.fieldname, file.filename);
+            });
+        }
+        newItem = processImageFields(newItem);
         
         targetArray.push(newItem);
         await home.save();
@@ -150,14 +171,15 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         
         let updateData = { ...req.body };
         if (req.file) {
-            if (arrayPath === 'hero') {
-                updateData.backgroundImage = req.file.filename;
-            } else {
-                updateData.image = req.file.filename;
-            }
-        } else {
-            updateData = processImageFields(updateData);
+            setNested(updateData, req.file.fieldname, req.file.filename);
         }
+        if (req.files) {
+            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+            files.forEach(file => {
+                setNested(updateData, file.fieldname, file.filename);
+            });
+        }
+        updateData = processImageFields(updateData);
         
         Object.assign(item, updateData);
         await home.save();
@@ -188,7 +210,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
         if (req.params.itemId) {
             targetArray.pull(req.params.itemId);
         } else {
-            targetArray.shift(); // Remove the first one
+            targetArray.shift();
         }
 
         await home.save();

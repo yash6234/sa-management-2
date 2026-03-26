@@ -29,6 +29,17 @@ const seedData = async () => {
             await mongoose.connection.db.collection(colName).deleteMany({});
         }
 
+        // 🔹 Clear CMS Uploads Folder
+        const fs = require('fs');
+        const cmsUploadDir = path.join(__dirname, '../uploads', 'cms');
+        if (fs.existsSync(cmsUploadDir)) {
+            console.log('Clearing CMS uploads folder...');
+            const files = fs.readdirSync(cmsUploadDir);
+            for (const file of files) {
+                fs.unlinkSync(path.join(cmsUploadDir, file));
+            }
+        }
+
         console.log('Jenil collections cleared. Seeding new data...');
 
         // 1. Home Data
