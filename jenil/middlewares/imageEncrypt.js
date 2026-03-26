@@ -59,9 +59,14 @@ const imageEncryptMiddleware = (req, res, next) => {
     res.json = (body) => {
         try {
             if (body && typeof body === 'object') {
-                body = JSON.parse(JSON.stringify(body));
-
+                const originalStr = JSON.stringify(body);
+                body = JSON.parse(originalStr);
                 body = encryptImagesInObject(body);
+                const finalStr = JSON.stringify(body);
+                
+                if (originalStr !== finalStr) {
+                    console.log(`[ImageEncrypt] Encrypted fields in response. (Size: ${finalStr.length})`);
+                }
             }
         } catch (err) {
             console.error('[ImageEncrypt] Error encrypting image URLs:', err.message);
