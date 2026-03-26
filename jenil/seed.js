@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 // Import models
 const Home = require('./models/Home');
@@ -19,15 +20,15 @@ const seedData = async () => {
         // 🔹 CRITICAL: DO NOT use dropDatabase() when connected to the main backend.
         // Instead, clear only the collections that this seeding script owns.
         const collectionsToClear = [
-            'homes', 'aboutacademies', 'admissionspages', 'gallerypages', 
+            'homes', 'aboutacademies', 'admissionspages', 'gallerypages',
             'playgroundpages', 'programspages', 'contactpages', 'footers'
         ];
-        
+
         console.log('Clearing Jenil-specific collections...');
         for (const colName of collectionsToClear) {
             await mongoose.connection.db.collection(colName).deleteMany({});
         }
-        
+
         console.log('Jenil collections cleared. Seeding new data...');
 
         // 1. Home Data
