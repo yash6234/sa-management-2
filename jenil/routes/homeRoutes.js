@@ -45,18 +45,11 @@ router.get('/tournaments', homeController.getSection('tournamentsSection'));
 router.post('/tournaments/add', upload.single('image'), standardizeFilePath, homeController.addArrayItem('tournamentsSection.list'));
 router.put('/tournaments/update', upload.single('image'), standardizeFilePath, homeController.updateSection('tournamentsSection'));
 router.delete('/tournaments/delete', homeController.deleteSection('tournamentsSection'));
-router.put('/tournaments/:itemId/update', upload.single('image'), standardizeFilePath, homeController.updateArrayItem('tournamentsSection.list'));
-router.delete('/tournaments/:itemId/delete', homeController.deleteArrayItem('tournamentsSection.list'));
+router.put('/tournaments/item/update', upload.single('image'), standardizeFilePath, homeController.updateArrayItem('tournamentsSection.list'));
+router.delete('/tournaments/item/delete', homeController.deleteArrayItem('tournamentsSection.list'));
 
-// 6. SOCIAL FEED
-router.get('/social', homeController.getSection('socialSection'));
-router.post('/social/add', upload.single('image'), standardizeFilePath, homeController.addArrayItem('socialSection.posts'));
-router.put('/social/update', upload.single('image'), standardizeFilePath, homeController.updateSection('socialSection'));
-router.delete('/social/delete', homeController.deleteSection('socialSection'));
-router.put('/social/:itemId/update', upload.single('image'), standardizeFilePath, homeController.updateArrayItem('socialSection.posts'));
-router.delete('/social/:itemId/delete', homeController.deleteArrayItem('socialSection.posts'));
 
-// 7. GALLERY
+// 6. GALLERY
 router.get('/gallery', homeController.getSection('gallery'));
 router.post('/gallery/add', upload.single('image'), standardizeFilePath, homeController.addArrayItem('gallery'));
 router.delete('/gallery/:itemId/delete', homeController.deleteArrayItem('gallery'));

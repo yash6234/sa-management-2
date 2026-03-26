@@ -123,7 +123,13 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
             targetArray = targetArray[part];
         }
         
-        const item = targetArray.id(req.params.itemId);
+        let item;
+        if (req.params.itemId) {
+            item = targetArray.id(req.params.itemId);
+        } else if (targetArray.length > 0) {
+            item = targetArray[0];
+        }
+
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
         
         let updateData = { ...req.body };
@@ -152,10 +158,21 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
             targetArray = targetArray[part];
         }
         
-        const item = targetArray.id(req.params.itemId);
+        let item;
+        if (req.params.itemId) {
+            item = targetArray.id(req.params.itemId);
+        } else if (targetArray.length > 0) {
+            item = targetArray[0];
+        }
+
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
         
-        targetArray.pull(req.params.itemId);
+        if (req.params.itemId) {
+            targetArray.pull(req.params.itemId);
+        } else {
+            targetArray.shift(); // Remove the first one
+        }
+
         await home.save();
         res.status(200).json({ success: true, message: 'Item deleted safely', data: targetArray });
     } catch (err) {

@@ -97,19 +97,18 @@ const seedData = async () => {
             tournamentsSection: {
                 smallTitle: "JOIN OUR SPORTS TOURNAMENTS",
                 largeTitle: "Tournaments",
-                list: []
-            },
-            socialSection: {
-                title: "Latest on our Social",
-                subtitle: "Follow for more",
-                followUrl: "https://www.instagram.com/gandhinagarsportsacademy/",
-                posts: [{
-                    "postUrl1": "https://www.instagram.com/p/DKYmJRkqasG/",
-                    "postUrl2": "https://www.instagram.com/p/CdJ1Re8vlJl/",
-                    "postUrl3": "https://www.instagram.com/reels/CtftqHcNM7Q/",
-                    "postUrl4": "https://www.instagram.com/p/DCo8vyQh42G/",
-                    "postUrl5": "https://www.instagram.com/p/DT9hCwuimTN/",
-                    "postUrl6": "https://www.instagram.com/p/C7OuwK5R2VP/",
+                list: [{
+                    title: "Latest on our Social",
+                    subtitle: "Follow for more",
+                    followUrl: "https://www.instagram.com/gandhinagarsportsacademy/",
+                    posts: {
+                        "postUrl1": "https://www.instagram.com/p/DKYmJRkqasG/",
+                        "postUrl2": "https://www.instagram.com/p/CdJ1Re8vlJl/",
+                        "postUrl3": "https://www.instagram.com/reels/CtftqHcNM7Q/",
+                        "postUrl4": "https://www.instagram.com/p/DCo8vyQh42G/",
+                        "postUrl5": "https://www.instagram.com/p/DT9hCwuimTN/",
+                        "postUrl6": "https://www.instagram.com/p/C7OuwK5R2VP/",
+                    }
                 }]
             },
             testimonials: {

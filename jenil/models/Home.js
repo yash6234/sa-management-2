@@ -82,20 +82,17 @@ const homeSchema = new mongoose.Schema({
         smallTitle: { type: String, default: "JOIN OUR SPORTS TOURNAMENTS" },
         largeTitle: { type: String, default: "Tournaments" },
         list: [{
-            title: { type: String },
-            date: { type: String },
-            location: { type: String, default: "Main Ground" },
-            image: { type: String }
-        }]
-    },
-
-    socialSection: {
-        title: { type: String, default: "Latest on our Social" },
-        subtitle: { type: String, default: "Follow for more" },
-        followUrl: { type: String, default: "https://www.instagram.com/gandhinagarsportsacademy/" },
-        posts: [{
-            embedCode: { type: String },
-            postUrl: { type: String }
+            title: { type: String, default: "Latest on our Social" },
+            subtitle: { type: String, default: "Follow for more" },
+            followUrl: { type: String, default: "https://www.instagram.com/gandhinagarsportsacademy/" },
+            posts: {
+                postUrl1: { type: String },
+                postUrl2: { type: String },
+                postUrl3: { type: String },
+                postUrl4: { type: String },
+                postUrl5: { type: String },
+                postUrl6: { type: String }
+            }
         }]
     },
 
