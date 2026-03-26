@@ -267,14 +267,12 @@ cmsRouter.use('/contact', require('./jenil/routes/contactPageRoutes'));
 cmsRouter.get('/footer', cmsHomeController.getFooterData);
 cmsRouter.use('/public', express.static(path.join(__dirname, 'jenil', 'public')));
 
-// 4. Standalone Image Serving (Handles both /acade360/:token and legacy /acade360/img/:token)
+// 4. Standalone Image Serving (Handles /acade360/:token and anything under /acade360/ that looks like a token)
 cmsRouter.get('/img/:token', serveImage);
-cmsRouter.get('/:token', (req, res, next) => {
-    // Only intercept if it looks like a token (contains a dot)
-    if (req.params.token && req.params.token.includes('.')) {
-        return serveImage(req, res, next);
-    }
-    next();
+cmsRouter.get(/(.*\/)?([^/]+\.[^/]+)$/, (req, res, next) => {
+    // This matches any path that ends with a filename-like segment (has a dot)
+    // and captures the token as the last part.
+    return serveImage(req, res, next);
 });
 
 // 5. Dynamic Content Pages (Catch-all for sections)
