@@ -26,37 +26,76 @@ const upload = multer({
 // Middleware to standardize req.file.filename or req.files paths by prepending 'uploads/cms/'
 // This ensures that when the controller saves it to the DB, the encryption middleware 
 // will detect it as an image path and return an encrypted token to the frontend.
+const { decryptImageUrl } = require('../utils/imageToken');
+
 const standardizeFilePath = (req, res, next) => {
-    const prefix = 'uploads/cms/';
+    const dbPrefix = 'uploads/cms/';
 
-    // Handle single file (upload.single)
-    if (req.file) {
-        if (!req.file.filename.startsWith(prefix)) {
-            // Store the path relative to the root for the database
-            req.file.filename = prefix + req.file.filename;
+    // Helper to strip prefixes and decrypt tokens if necessary
+    const cleanupPath = (val) => {
+        if (typeof val !== 'string') return val;
+        
+        // 1. Strip common prefixes (/acade360/img/ or /acade360/)
+        let clean = val.replace(/^\/?acade360\/img\//, '').replace(/^\/?acade360\//, '').replace(/^\//, '');
+
+        // 2. If it's a token (contains a dot), try to decrypt it
+        if (clean.includes('.')) {
+            const decrypted = decryptImageUrl(clean);
+            if (decrypted) return decrypted;
         }
-    }
 
-    // Handle multiple files (upload.array or upload.fields)
-    if (req.files) {
-        if (Array.isArray(req.files)) {
-            // upload.array
-            req.files.forEach(file => {
-                if (!file.filename.startsWith(prefix)) {
-                    file.filename = prefix + file.filename;
-                }
-            });
-        } else {
-            // upload.fields
-            Object.keys(req.files).forEach(fieldName => {
-                req.files[fieldName].forEach(file => {
-                    if (!file.filename.startsWith(prefix)) {
-                        file.filename = prefix + file.filename;
+        return clean;
+    };
+
+    // Helper to recursively process an object/array (for req.body)
+    const processObject = (obj) => {
+        if (!obj || typeof obj !== 'object') return;
+        
+        if (Array.isArray(obj)) {
+            for (let i = 0; i < obj.length; i++) {
+                if (typeof obj[i] === 'string') {
+                    if (obj[i].includes('acade360') || obj[i].includes('uploads/')) {
+                        obj[i] = cleanupPath(obj[i]);
                     }
-                });
-            });
+                } else {
+                    processObject(obj[i]);
+                }
+            }
+        } else {
+            for (const key in obj) {
+                const value = obj[key];
+                if (typeof value === 'string') {
+                    if (value.includes('acade360') || value.includes('uploads/')) {
+                        obj[key] = cleanupPath(value);
+                    }
+                } else if (typeof value === 'object' && value !== null) {
+                    processObject(value);
+                }
+            }
+        }
+    };
+
+    // 1. Process req.body (find any existing image URLs being sent back)
+    processObject(req.body);
+
+    // 2. Handle single file (upload.single)
+    if (req.file) {
+        let filename = req.file.filename;
+        if (!filename.startsWith(dbPrefix)) {
+            req.file.filename = dbPrefix + filename;
         }
     }
+
+    // 3. Handle multiple files (upload.array or upload.fields)
+    if (req.files) {
+        const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+        files.forEach(file => {
+            if (!file.filename.startsWith(dbPrefix)) {
+                file.filename = dbPrefix + file.filename;
+            }
+        });
+    }
+
     next();
 };
 

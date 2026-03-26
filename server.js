@@ -251,6 +251,23 @@ cmsRouter.use('/contact', require('./jenil/routes/contactPageRoutes'));
 cmsRouter.get('/footer', cmsHomeController.getFooterData);
 cmsRouter.use('/public', express.static(path.join(__dirname, 'jenil', 'public')));
 
+// Generic Media Upload (for quill editor or standalone use)
+cmsRouter.post('/upload', require('./jenil/middlewares/upload').upload.any(), require('./jenil/middlewares/upload').standardizeFilePath, (req, res) => {
+    const { encryptImageUrl } = require('./jenil/utils/imageToken');
+    const files = Array.isArray(req.files) ? req.files : (req.file ? [req.file] : []);
+    if (files.length === 0) return res.status(400).json({ success: false, error: 'No files uploaded' });
+    
+    const responses = files.map(file => ({
+        url: '/acade360/' + encryptImageUrl(file.filename)
+    }));
+    
+    // For single file, return it directly in 'url' field for quill compatibility
+    if (responses.length === 1) {
+        return res.status(200).json({ success: true, url: responses[0].url, data: responses[0] });
+    }
+    res.status(200).json({ success: true, count: responses.length, files: responses });
+});
+
 // Dynamic CMS Route (Catch-all for content pages)
 // This handles patterns like /acade360/:page/:section/:action
 cmsRouter.use('/:page', require('./jenil/routes/dynamicRoutes'));
