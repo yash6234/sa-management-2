@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const galleryPageController = require('../controllers/galleryPageController');
-const { serveImage } = require('../controllers/imageController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
 
 // 1. PUBLIC AGGREGATED ENDPOINT 
@@ -41,7 +40,5 @@ router.post('/images/add', upload.any(), standardizeFilePath, galleryPageControl
 router.put('/images/:itemId/update', upload.any(), standardizeFilePath, galleryPageController.updateImage);
 router.delete('/images/:itemId/delete', galleryPageController.deleteImage);
 
-// 3. IMAGE PROXY ENDPOINT
-router.get('/:token', serveImage);
 
 module.exports = router;

@@ -2,6 +2,6 @@ const express = require('express');
 const { serveImage } = require('../controllers/imageController');
 const router = express.Router();
 
-router.get(/.*/, serveImage);
+router.get('/:token', serveImage);
 
 module.exports = router;

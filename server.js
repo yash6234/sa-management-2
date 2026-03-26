@@ -238,7 +238,7 @@ const cmsHomeController = require('./jenil/controllers/homeController');
 cmsRouter.use(imageEncryptMiddleware);
 
 // CMS Specific Routes
-cmsRouter.use('/img', require('./jenil/routes/imageRoutes'));
+cmsRouter.use('/', require('./jenil/routes/imageRoutes'));
 cmsRouter.use('/home', require('./jenil/routes/homeRoutes'));
 cmsRouter.use('/about', require('./jenil/routes/aboutAcademyRoutes'));
 cmsRouter.use('/programs', require('./jenil/routes/programsPageRoutes'));

@@ -93,22 +93,13 @@ const seedData = async () => {
                         "Discipline Focus Training",
                         "Tournament Opportunities"
                     ],
-                    image: "public/home/Bowling.jpg",
-                    buttonText: "Join Now",
-                    buttonLink: "/admissions"
-                },
-                quoteBlock: {
-                    quote: "\"I have failed at times, but I never stop trying.\"",
-                    author: "Rahul Dravid",
-                    authorTitle: "Former captain of Indian national cricket team.",
-                    buttonText: "View Gallery",
-                    buttonLink: "/gallery"
+                    image: "public/home/Bowling.jpg"
                 }
             },
             tournamentsSection: {
                 smallTitle: "JOIN OUR SPORTS TOURNAMENTS",
                 largeTitle: "Tournaments",
-                list: [{
+                list: {
                     title: "Latest on our Social",
                     subtitle: "Follow for more",
                     followUrl: "https://www.instagram.com/gandhinagarsportsacademy/",
@@ -120,7 +111,7 @@ const seedData = async () => {
                         "postUrl5": "https://www.instagram.com/p/DT9hCwuimTN/",
                         "postUrl6": "https://www.instagram.com/p/C7OuwK5R2VP/",
                     }
-                }]
+                }
             },
             testimonials: {
                 sectionTitle: "What Parents Say",

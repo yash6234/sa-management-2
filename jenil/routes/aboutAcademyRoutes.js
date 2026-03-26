@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const aboutAcademyController = require('../controllers/aboutAcademyController');
-const { serveImage } = require('../controllers/imageController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
 
 // 1. PUBLIC AGGREGATED ENDPOINT 
@@ -74,7 +73,5 @@ router.delete('/why-choose-us/:index/delete', async (req, res) => {
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// 3. IMAGE PROXY ENDPOINT
-router.get('/:token', serveImage);
 
 module.exports = router;

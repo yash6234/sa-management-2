@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const contactPageController = require('../controllers/contactPageController');
-const { serveImage } = require('../controllers/imageController');
 
 // 1. PUBLIC AGGREGATED ENDPOINT 
 router.get('/', contactPageController.getContactData);
@@ -39,7 +38,5 @@ router.get('/submissions', contactPageController.getAllSubmissions);
 router.put('/submissions/:id/update', contactPageController.updateSubmissionStatus);
 router.delete('/submissions/:id/delete', contactPageController.deleteSubmission);
 
-// 5. IMAGE PROXY ENDPOINT
-router.get('/:token', serveImage);
 
 module.exports = router;

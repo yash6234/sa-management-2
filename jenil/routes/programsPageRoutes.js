@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const programsPageController = require('../controllers/programsPageController');
-const { serveImage } = require('../controllers/imageController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
 
 // 1. PUBLIC AGGREGATED ENDPOINT 
@@ -41,7 +40,5 @@ router.put('/summer-camp/update', upload.single('image'), standardizeFilePath, p
 router.put('/summer-camp/:itemId/update', upload.single('image'), standardizeFilePath, programsPageController.updateArrayItem('specialPrograms.list'));
 router.delete('/summer-camp/:itemId/delete', programsPageController.deleteArrayItem('specialPrograms.list'));
 
-// 3. IMAGE PROXY ENDPOINT
-router.get('/:token', serveImage);
 
 module.exports = router;

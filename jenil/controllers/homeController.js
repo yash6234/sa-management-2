@@ -1,15 +1,30 @@
 const Home = require('../models/Home');
 const { saveBase64Image } = require('../utils/fileUtils');
 
-// Helper to set nested property by string path
+// Helper to set nested property by string path (handles both dots and brackets)
 const setNested = (obj, path, value) => {
-    const parts = path.split('.');
+    const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
     let current = obj;
     for (let i = 0; i < parts.length - 1; i++) {
-        if (!current[parts[i]]) current[parts[i]] = {};
-        current = current[parts[i]];
+        const part = parts[i];
+        if (!current[part]) current[part] = {};
+        current = current[part];
     }
     current[parts[parts.length - 1]] = value;
+};
+
+// Helper to normalize all keys in an object from brackets to dots
+const normalizePaths = (obj) => {
+    const newObj = {};
+    for (const key in obj) {
+        const normalizedKey = key.replace(/\[(\w+)\]/g, '.$1');
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+            newObj[normalizedKey] = normalizePaths(obj[key]);
+        } else {
+            newObj[normalizedKey] = obj[key];
+        }
+    }
+    return newObj;
 };
 
 const processImageFields = (data) => {
@@ -32,6 +47,7 @@ const getActiveHome = async () => {
 // 1. PUBLIC AGGREGATED ENDPOINT 
 exports.getHomePageData = async (req, res) => {
     try {
+        console.log(1)
         const homeData = await getActiveHome();
         res.status(200).json({ success: true, data: homeData });
     } catch (err) {
@@ -57,7 +73,7 @@ exports.updateFooter = async (req, res) => {
     try {
         let footer = await Footer.findOne({ isActive: true });
         if (!footer) footer = await Footer.create({});
-        
+
         let updateData = { ...req.body };
         Object.assign(footer, updateData);
         await footer.save();
@@ -72,7 +88,7 @@ exports.getSection = (sectionName) => async (req, res) => {
     try {
         const home = await getActiveHome();
         if (home[sectionName] === undefined) {
-             return res.status(404).json({ success: false, message: 'Section not found' });
+            return res.status(404).json({ success: false, message: 'Section not found' });
         }
         res.status(200).json({ success: true, data: home[sectionName] });
     } catch (err) {
@@ -83,9 +99,10 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         const home = await getActiveHome();
-        let updateData = { ...req.body };
-        
-        // Handle file uploads (both single and multiple)
+        // Normalize all keys from brackets to dots
+        let updateData = normalizePaths(req.body);
+
+        // 1. Handle file uploads (both single and multiple)
         if (req.file) {
             setNested(updateData, req.file.fieldname, req.file.filename);
         }
@@ -96,16 +113,50 @@ exports.updateSection = (sectionName) => async (req, res) => {
             });
         }
 
-        // Process any base64 images that might still be in the body
+        // 2. Process any base64 images that might still be in the body
         updateData = processImageFields(updateData);
 
-        // Merge updates
-        const section = home[sectionName].toObject ? home[sectionName].toObject() : home[sectionName];
-        home[sectionName] = { ...section, ...updateData };
-        
+        // 3. APPLY UPDATES GENERICALLY
+        // Helper to flatten nested objects into dot-notation paths
+        const flattenObject = (obj, prefix = '') => {
+            return Object.keys(obj).reduce((acc, k) => {
+                const pre = prefix.length ? prefix + '.' : '';
+                const fullPath = pre + k;
+
+                if (obj[k] === null) {
+                    acc[fullPath] = null; // Mark for deletion
+                } else if (typeof obj[k] === 'object' && !Array.isArray(obj[k])) {
+                    Object.assign(acc, flattenObject(obj[k], fullPath));
+                } else {
+                    acc[fullPath] = obj[k];
+                }
+                return acc;
+            }, {});
+        };
+
+        const flattenedUpdates = flattenObject(updateData, sectionName);
+        for (const [path, value] of Object.entries(flattenedUpdates)) {
+            if (value === null) {
+                // Handle deletion for Maps or setting undefined for regular fields
+                const parentPath = path.substring(0, path.lastIndexOf('.'));
+                const key = path.substring(path.lastIndexOf('.') + 1);
+                try {
+                    const parent = home.get(parentPath);
+                    if (parent instanceof Map) {
+                        parent.delete(key);
+                    } else {
+                        home.set(path, undefined);
+                    }
+                } catch (e) { home.set(path, undefined); }
+            } else {
+                home.set(path, value);
+            }
+        }
+
         await home.save();
         res.status(200).json({ success: true, data: home[sectionName] });
     } catch (err) {
+        console.error("Update Section Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 };
@@ -113,7 +164,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         const home = await getActiveHome();
-        home[sectionName] = undefined; 
+        home[sectionName] = undefined;
         await home.save();
         res.status(200).json({ success: true, message: `Section ${sectionName} has been cleared/reset` });
     } catch (err) {
@@ -130,8 +181,8 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         for (const part of parts) {
             targetArray = targetArray[part];
         }
-        
-        let newItem = { ...req.body };
+
+        let newItem = normalizePaths(req.body);
         if (req.file) {
             setNested(newItem, req.file.fieldname, req.file.filename);
         }
@@ -142,7 +193,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             });
         }
         newItem = processImageFields(newItem);
-        
+
         targetArray.push(newItem);
         await home.save();
         res.status(201).json({ success: true, data: targetArray });
@@ -159,17 +210,21 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         for (const part of parts) {
             targetArray = targetArray[part];
         }
-        
-        let item;
+
+        let itemPath;
         if (req.params.itemId) {
-            item = targetArray.id(req.params.itemId);
+            const item = targetArray.id(req.params.itemId);
+            if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
+            // Get index of the item
+            const index = targetArray.indexOf(item);
+            itemPath = `${arrayPath}.${index}`;
         } else if (targetArray.length > 0) {
-            item = targetArray[0];
+            itemPath = `${arrayPath}.0`;
+        } else {
+            return res.status(404).json({ success: false, message: 'Item not found' });
         }
 
-        if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
-        
-        let updateData = { ...req.body };
+        let updateData = normalizePaths(req.body);
         if (req.file) {
             setNested(updateData, req.file.fieldname, req.file.filename);
         }
@@ -180,11 +235,25 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
             });
         }
         updateData = processImageFields(updateData);
-        
-        Object.assign(item, updateData);
+
+        // Deep update the item
+        const applyItemUpdate = (prefix, data) => {
+            for (const key in data) {
+                const value = data[key];
+                const fullPath = `${prefix}.${key}`;
+                if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                    applyItemUpdate(fullPath, value);
+                } else {
+                    home.set(fullPath, value);
+                }
+            }
+        };
+
+        applyItemUpdate(itemPath, updateData);
         await home.save();
         res.status(200).json({ success: true, data: targetArray });
     } catch (err) {
+        console.error("Update Array Item Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 };
@@ -197,7 +266,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
         for (const part of parts) {
             targetArray = targetArray[part];
         }
-        
+
         let item;
         if (req.params.itemId) {
             item = targetArray.id(req.params.itemId);
@@ -206,7 +275,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
         }
 
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
-        
+
         if (req.params.itemId) {
             targetArray.pull(req.params.itemId);
         } else {
@@ -215,6 +284,22 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 
         await home.save();
         res.status(200).json({ success: true, message: 'Item deleted safely', data: targetArray });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+exports.deleteSocialPost = async (req, res) => {
+    try {
+        const home = await getActiveHome();
+        const { postKey } = req.params;
+
+        if (home.tournamentsSection && home.tournamentsSection.list && home.tournamentsSection.list.posts) {
+            home.tournamentsSection.list.posts.delete(postKey);
+            await home.save();
+            res.status(200).json({ success: true, message: `Social post ${postKey} deleted`, data: home.tournamentsSection.list });
+        } else {
+            res.status(404).json({ success: false, message: 'Posts map not found' });
+        }
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

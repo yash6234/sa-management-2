@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const playgroundPageController = require('../controllers/playgroundPageController');
-const { serveImage } = require('../controllers/imageController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
 
 // 1. PUBLIC AGGREGATED ENDPOINT 
@@ -30,7 +29,5 @@ router.put('/config/update', playgroundPageController.updateSection('formSection
 // --- ADMIN BOOKING MANAGEMENT ---
 router.get('/bookings', playgroundPageController.getAllBookings);
 
-// 4. IMAGE PROXY ENDPOINT
-router.get('/:token', serveImage);
 
 module.exports = router;

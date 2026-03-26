@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const homeController = require('../controllers/homeController');
 const universalController = require('../controllers/universalController');
-const { serveImage } = require('../controllers/imageController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
 
 // 1. PUBLIC AGGREGATED ENDPOINT 
@@ -42,24 +41,17 @@ router.delete('/programs-facilities/delete', homeController.deleteSection('progr
 
 // 5. TOURNAMENTS
 router.get('/tournaments', homeController.getSection('tournamentsSection'));
-router.post('/tournaments/add', upload.any(), standardizeFilePath, homeController.addArrayItem('tournamentsSection.list'));
+router.post('/tournaments/add', upload.any(), standardizeFilePath, homeController.updateSection('tournamentsSection'));
 router.put('/tournaments/update', upload.any(), standardizeFilePath, homeController.updateSection('tournamentsSection'));
 router.delete('/tournaments/delete', homeController.deleteSection('tournamentsSection'));
-router.put('/tournaments/item/update', upload.any(), standardizeFilePath, homeController.updateArrayItem('tournamentsSection.list'));
-router.delete('/tournaments/item/delete', homeController.deleteArrayItem('tournamentsSection.list'));
+router.delete('/tournaments/social/:postKey', homeController.deleteSocialPost);
 
-
-// 6. GALLERY
-router.get('/gallery', homeController.getSection('gallery'));
-router.post('/gallery/add', upload.any(), standardizeFilePath, homeController.addArrayItem('gallery'));
-router.delete('/gallery/:itemId/delete', homeController.deleteArrayItem('gallery'));
 
 // 8. TESTIMONIALS
 router.get('/testimonials', homeController.getSection('testimonials'));
 router.post('/testimonials/add', upload.any(), standardizeFilePath, homeController.addArrayItem('testimonials.list'));
 router.put('/testimonials/update', upload.any(), standardizeFilePath, homeController.updateSection('testimonials'));
-router.put('/testimonials/:itemId/update', upload.any(), standardizeFilePath, homeController.updateArrayItem('testimonials.list'));
-router.delete('/testimonials/:itemId/delete', homeController.deleteArrayItem('testimonials.list'));
+router.delete('/testimonials/delete', homeController.deleteSection('testimonials'));
 
 // 4. UNIVERSAL CRUD ENDPOINTS 
 router.post('/u/:modelName', universalController.create);
@@ -68,7 +60,5 @@ router.get('/u/:modelName/:id', universalController.getById);
 router.put('/u/:modelName/:id', universalController.update);
 router.delete('/u/:modelName/:id', universalController.delete);
 
-// 5. IMAGE PROXY ENDPOINT (Catch-all for encrypted tokens)
-router.get(/.*/, serveImage);
 
 module.exports = router;

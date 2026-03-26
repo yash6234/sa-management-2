@@ -30,8 +30,6 @@ const homeSchema = new mongoose.Schema({
 
     // 3. Programs & Facilities (Combined Section with shared background)
     programsAndFacilities: {
-        sectionTitle: { type: String, default: "Our Sports Programs" },
-        image: { type: String }, // The running track "ARE YOU PREPARED?" backgrounds
 
         facilitiesCard: {
             title: { type: String, default: "World-Class Facilities to Elevate Your Game" },
@@ -49,16 +47,6 @@ const homeSchema = new mongoose.Schema({
                 ]
             },
             image: { type: String },
-            buttonText: { type: String, default: "Join Now" },
-            buttonLink: { type: String, default: "/admissions" }
-        },
-
-        quoteBlock: {
-            quote: { type: String, default: "\"I have failed at times, but I never stop trying.\"" },
-            author: { type: String, default: "Rahul Dravid" },
-            authorTitle: { type: String, default: "Former captain of Indian national cricket team." },
-            buttonText: { type: String, default: "View Gallery" },
-            buttonLink: { type: String, default: "/gallery" }
         }
     },
 
@@ -66,19 +54,16 @@ const homeSchema = new mongoose.Schema({
     tournamentsSection: {
         smallTitle: { type: String, default: "JOIN OUR SPORTS TOURNAMENTS" },
         largeTitle: { type: String, default: "Tournaments" },
-        list: [{
+        list: {
             title: { type: String, default: "Latest on our Social" },
             subtitle: { type: String, default: "Follow for more" },
             followUrl: { type: String, default: "https://www.instagram.com/gandhinagarsportsacademy/" },
             posts: {
-                postUrl1: { type: String },
-                postUrl2: { type: String },
-                postUrl3: { type: String },
-                postUrl4: { type: String },
-                postUrl5: { type: String },
-                postUrl6: { type: String }
+                type: Map,
+                of: String,
+                default: {}
             }
-        }]
+        }
     },
 
     // 5. What Parents Say (Testimonials)
@@ -87,17 +72,10 @@ const homeSchema = new mongoose.Schema({
         list: [{
             quote: { type: String },
             name: { type: String },
-            role: { type: String } // e.g., "Father of U-14 player"
+            role: { type: String }, // e.g., "Father of U-14 player"
+            _id: false
         }]
     },
-
-    // 6. Gallery Section
-    gallery: [{
-        title: { type: String },
-        image: { type: String },
-        category: { type: String, default: "General" }
-    }],
-
     isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
