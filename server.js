@@ -229,16 +229,32 @@ app.use('/acade360/details', require('./routes/logoNameRoutes'));
 app.use('/acade360/academy/secure/route', require('./routes/otherRoutes'));
 
 // ------------------------------ CMS (Website Management) ------------------------------
-// Integration of Jenil's CMS backend into the main project under /acade360
 const cmsRouter = express.Router();
 const imageEncryptMiddleware = require('./jenil/middlewares/imageEncrypt');
 const cmsHomeController = require('./jenil/controllers/homeController');
+const { serveImage } = require('./jenil/controllers/imageController');
+const { upload, standardizeFilePath } = require('./jenil/middlewares/upload');
+const { encryptImageUrl } = require('./jenil/utils/imageToken');
 
-// Apply image encryption only to CMS-related responses
+// Apply image encryption to all CMS JSON responses
 cmsRouter.use(imageEncryptMiddleware);
 
-// CMS Specific Routes
-cmsRouter.use('/', require('./jenil/routes/imageRoutes'));
+// 1. Generic Media Upload (for quill editor or standalone admin use)
+cmsRouter.post('/upload', upload.any(), standardizeFilePath, (req, res) => {
+    const files = Array.isArray(req.files) ? req.files : (req.file ? [req.file] : []);
+    if (files.length === 0) return res.status(400).json({ success: false, error: 'No files uploaded' });
+    
+    const responses = files.map(file => ({
+        url: '/acade360/' + encryptImageUrl(file.filename)
+    }));
+    
+    if (responses.length === 1) {
+        return res.status(200).json({ success: true, url: responses[0].url, data: responses[0] });
+    }
+    res.status(200).json({ success: true, count: responses.length, files: responses });
+});
+
+// 2. Section-specific Admin Routes
 cmsRouter.use('/home', require('./jenil/routes/homeRoutes'));
 cmsRouter.use('/about', require('./jenil/routes/aboutAcademyRoutes'));
 cmsRouter.use('/programs', require('./jenil/routes/programsPageRoutes'));
@@ -247,37 +263,30 @@ cmsRouter.use('/playground', require('./jenil/routes/playgroundPageRoutes'));
 cmsRouter.use('/admissions', require('./jenil/routes/admissionsPageRoutes'));
 cmsRouter.use('/contact', require('./jenil/routes/contactPageRoutes'));
 
-// CMS Shared Endpoints
+// 3. Shared Endpoints
 cmsRouter.get('/footer', cmsHomeController.getFooterData);
 cmsRouter.use('/public', express.static(path.join(__dirname, 'jenil', 'public')));
 
-// Generic Media Upload (for quill editor or standalone use)
-cmsRouter.post('/upload', require('./jenil/middlewares/upload').upload.any(), require('./jenil/middlewares/upload').standardizeFilePath, (req, res) => {
-    const { encryptImageUrl } = require('./jenil/utils/imageToken');
-    const files = Array.isArray(req.files) ? req.files : (req.file ? [req.file] : []);
-    if (files.length === 0) return res.status(400).json({ success: false, error: 'No files uploaded' });
-    
-    const responses = files.map(file => ({
-        url: '/acade360/' + encryptImageUrl(file.filename)
-    }));
-    
-    // For single file, return it directly in 'url' field for quill compatibility
-    if (responses.length === 1) {
-        return res.status(200).json({ success: true, url: responses[0].url, data: responses[0] });
+// 4. Standalone Image Serving (Handles both /acade360/:token and legacy /acade360/img/:token)
+cmsRouter.get('/img/:token', serveImage);
+cmsRouter.get('/:token', (req, res, next) => {
+    // Only intercept if it looks like a token (contains a dot)
+    if (req.params.token && req.params.token.includes('.')) {
+        return serveImage(req, res, next);
     }
-    res.status(200).json({ success: true, count: responses.length, files: responses });
+    next();
 });
 
-// Dynamic CMS Route (Catch-all for content pages)
-// This handles patterns like /acade360/:page/:section/:action
+// 5. Dynamic Content Pages (Catch-all for sections)
 cmsRouter.use('/:page', require('./jenil/routes/dynamicRoutes'));
 
-// CMS Specific Error Handler
+// CMS Error Handler
 cmsRouter.use(require('./jenil/middlewares/errorHandler'));
 
-// Mount the CMS router under /acade360
-// Note: This is placed AFTER specific routes like /admin to avoid conflicts
+// Mount CMS under /acade360
 app.use('/acade360', cmsRouter);
+// --------------------------------------------------------------------------------------
+
 // --------------------------------------------------------------------------------------
 
 //LOGO ROUTE
