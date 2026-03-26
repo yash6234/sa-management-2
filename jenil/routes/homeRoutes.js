@@ -58,8 +58,7 @@ router.delete('/gallery/:itemId/delete', homeController.deleteArrayItem('gallery
 router.get('/testimonials', homeController.getSection('testimonials'));
 router.post('/testimonials/add', upload.any(), standardizeFilePath, homeController.addArrayItem('testimonials.list'));
 router.put('/testimonials/update', upload.any(), standardizeFilePath, homeController.updateSection('testimonials'));
-router.put('/testimonials/:itemId/update', upload.any(), standardizeFilePath, homeController.updateArrayItem('testimonials.list'));
-router.delete('/testimonials/:itemId/delete', homeController.deleteArrayItem('testimonials.list'));
+router.delete('/testimonials/delete', homeController.deleteSection('testimonials'));
 
 // 4. UNIVERSAL CRUD ENDPOINTS 
 router.post('/u/:modelName', universalController.create);

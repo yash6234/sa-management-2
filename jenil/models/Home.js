@@ -87,7 +87,8 @@ const homeSchema = new mongoose.Schema({
         list: [{
             quote: { type: String },
             name: { type: String },
-            role: { type: String } // e.g., "Father of U-14 player"
+            role: { type: String }, // e.g., "Father of U-14 player"
+            _id: false
         }]
     },
 

@@ -1,15 +1,30 @@
 const Home = require('../models/Home');
 const { saveBase64Image } = require('../utils/fileUtils');
 
-// Helper to set nested property by string path
+// Helper to set nested property by string path (handles both dots and brackets)
 const setNested = (obj, path, value) => {
-    const parts = path.split('.');
+    const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
     let current = obj;
     for (let i = 0; i < parts.length - 1; i++) {
-        if (!current[parts[i]]) current[parts[i]] = {};
-        current = current[parts[i]];
+        const part = parts[i];
+        if (!current[part]) current[part] = {};
+        current = current[part];
     }
     current[parts[parts.length - 1]] = value;
+};
+
+// Helper to normalize all keys in an object from brackets to dots
+const normalizePaths = (obj) => {
+    const newObj = {};
+    for (const key in obj) {
+        const normalizedKey = key.replace(/\[(\w+)\]/g, '.$1');
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+            newObj[normalizedKey] = normalizePaths(obj[key]);
+        } else {
+            newObj[normalizedKey] = obj[key];
+        }
+    }
+    return newObj;
 };
 
 const processImageFields = (data) => {
@@ -83,9 +98,10 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         const home = await getActiveHome();
-        let updateData = { ...req.body };
+        // Normalize all keys from brackets to dots
+        let updateData = normalizePaths(req.body);
         
-        // Handle file uploads (both single and multiple)
+        // 1. Handle file uploads (both single and multiple)
         if (req.file) {
             setNested(updateData, req.file.fieldname, req.file.filename);
         }
@@ -96,16 +112,34 @@ exports.updateSection = (sectionName) => async (req, res) => {
             });
         }
 
-        // Process any base64 images that might still be in the body
+        // 2. Process any base64 images that might still be in the body
         updateData = processImageFields(updateData);
 
-        // Merge updates
-        const section = home[sectionName].toObject ? home[sectionName].toObject() : home[sectionName];
-        home[sectionName] = { ...section, ...updateData };
+        // 3. APPLY UPDATES GENERICALLY
+        // Instead of object spreading (which fails with dots in keys), 
+        // we use a flatter approach with home.set(path, value)
+        const applyUpdate = (prefix, data) => {
+            for (const key in data) {
+                const value = data[key];
+                const fullPath = `${prefix}.${key}`;
+                
+                if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                    // Recurse into objects
+                    applyUpdate(fullPath, value);
+                } else {
+                    // Set leaf value
+                    home.set(fullPath, value);
+                }
+            }
+        };
+
+        // For section update, we apply everything under the sectionName prefix
+        applyUpdate(sectionName, updateData);
         
         await home.save();
         res.status(200).json({ success: true, data: home[sectionName] });
     } catch (err) {
+        console.error("Update Section Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 };
@@ -131,7 +165,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             targetArray = targetArray[part];
         }
         
-        let newItem = { ...req.body };
+        let newItem = normalizePaths(req.body);
         if (req.file) {
             setNested(newItem, req.file.fieldname, req.file.filename);
         }
@@ -169,7 +203,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
         
-        let updateData = { ...req.body };
+        let updateData = normalizePaths(req.body);
         if (req.file) {
             setNested(updateData, req.file.fieldname, req.file.filename);
         }

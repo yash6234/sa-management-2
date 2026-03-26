@@ -56,7 +56,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
         const about = await getActiveAbout();
         let updateData = { ...req.body };
         
-        // Handle file uploads
+        // 1. Handle file uploads
         if (req.file) {
             setNested(updateData, req.file.fieldname, req.file.filename);
         }
@@ -67,21 +67,26 @@ exports.updateSection = (sectionName) => async (req, res) => {
             });
         }
 
-        if (sectionName.includes('.')) {
-            const parts = sectionName.split('.');
-            let target = about;
-            for (let i = 0; i < parts.length - 1; i++) {
-                target = target[parts[i]];
+        // 2. APPLY UPDATES GENERICALLY
+        const applyUpdate = (prefix, data) => {
+            for (const key in data) {
+                const value = data[key];
+                const fullPath = prefix ? `${prefix}.${key}` : key;
+                
+                if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                    applyUpdate(fullPath, value);
+                } else {
+                    about.set(fullPath, value);
+                }
             }
-            const lastPart = parts[parts.length - 1];
-            target[lastPart] = { ...target[lastPart].toObject(), ...updateData };
-        } else {
-            about[sectionName] = { ...about[sectionName].toObject(), ...updateData };
-        }
+        };
+
+        applyUpdate(sectionName, updateData);
 
         await about.save();
         res.status(200).json({ success: true, data: about[sectionName.split('.')[0]] });
     } catch (err) {
+        console.error("Update About Section Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 };
