@@ -1,4 +1,16 @@
 const Home = require('../models/Home');
+const { saveBase64Image } = require('../utils/fileUtils');
+
+const processImageFields = (data) => {
+    const imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo'];
+    for (const field of imageFields) {
+        if (data[field] && typeof data[field] === 'string' && data[field].startsWith('data:image')) {
+            const savedPath = saveBase64Image(data[field]);
+            if (savedPath) data[field] = savedPath;
+        }
+    }
+    return data;
+};
 
 const getActiveHome = async () => {
     let home = await Home.findOne({ isActive: true });
@@ -62,9 +74,11 @@ exports.updateSection = (sectionName) => async (req, res) => {
         const home = await getActiveHome();
         let updateData = { ...req.body };
         if (req.file) {
-            // Specifically handling image/backgroundImage for specific sections
             if (sectionName === 'about') updateData.image = req.file.filename;
             if (sectionName === 'hero') updateData.backgroundImage = req.file.filename;
+            if (sectionName === 'programsAndFacilities') updateData.image = req.file.filename;
+        } else {
+            updateData = processImageFields(updateData);
         }
 
         home[sectionName] = { ...home[sectionName].toObject(), ...updateData };
@@ -104,6 +118,8 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             } else {
                 newItem.image = req.file.filename;
             }
+        } else {
+            newItem = processImageFields(newItem);
         }
         
         targetArray.push(newItem);
@@ -139,6 +155,8 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
             } else {
                 updateData.image = req.file.filename;
             }
+        } else {
+            updateData = processImageFields(updateData);
         }
         
         Object.assign(item, updateData);

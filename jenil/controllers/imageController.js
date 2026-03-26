@@ -38,21 +38,21 @@ const serveImage = (req, res, next) => {
         if (realUrl.startsWith('http')) {
             pathname = new URL(realUrl).pathname;
         }
-    } catch (e) {}
+    } catch (e) { }
 
     const cleanPath = decodeURIComponent(pathname).split('?')[0];
     let relativePath = cleanPath.replace(/^\/+/, '');
-    
+
     // Strip 'public/' from the start if it exists, since PUBLIC_DIR already points to it
     if (relativePath.startsWith('public/')) {
         relativePath = relativePath.replace('public/', '');
     }
-    
+
     const localPath = path.join(PUBLIC_DIR, relativePath);
 
     if (fs.existsSync(localPath)) {
         let ext = path.extname(localPath).toLowerCase();
-        
+
         res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
         res.setHeader('Content-Type', MEDIA_MIME[ext] || 'application/octet-stream');
         return fs.createReadStream(localPath).pipe(res);
