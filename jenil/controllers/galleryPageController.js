@@ -1,14 +1,49 @@
 const GalleryPage = require('../models/GalleryPage');
 
-// Helper to set nested property by string path
+const toDotPath = (value) => {
+    if (typeof value !== 'string') return '';
+    return value.replace(/\[(\w+)\]/g, '.$1').replace(/^\./, '');
+};
+
+const toSectionRelativeFieldPath = (sectionName, fieldname) => {
+    const sectionDot = toDotPath(sectionName);
+    const fieldDot = toDotPath(fieldname);
+
+    if (sectionDot && fieldDot.startsWith(sectionDot + '.')) {
+        return fieldDot.slice(sectionDot.length + 1);
+    }
+
+    return fieldname;
+};
+
+// Helper to set nested property by string path (handles both dots and brackets)
 const setNested = (obj, path, value) => {
-    const parts = path.split('.');
+    const parts = toDotPath(path).split('.').filter(Boolean);
+    if (parts.length === 0) return;
     let current = obj;
     for (let i = 0; i < parts.length - 1; i++) {
-        if (!current[parts[i]]) current[parts[i]] = {};
-        current = current[parts[i]];
+        const part = parts[i];
+        if (!current[part] || typeof current[part] !== 'object') current[part] = {};
+        current = current[part];
     }
     current[parts[parts.length - 1]] = value;
+};
+
+const getUploadedFiles = (req) => {
+    const files = [];
+    if (req.file) files.push(req.file);
+    if (req.files) {
+        if (Array.isArray(req.files)) files.push(...req.files);
+        else files.push(...Object.values(req.files).flat());
+    }
+    return files;
+};
+
+const getItemFieldname = (fieldname) => {
+    const dot = toDotPath(fieldname);
+    if (!dot) return fieldname;
+    const parts = dot.split('.').filter(Boolean);
+    return parts[parts.length - 1] || fieldname;
 };
 
 const getActiveGallery = async () => {
@@ -57,17 +92,17 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         const gallery = await getActiveGallery();
-        let updateData = { ...req.body };
+        const updateData = {};
+
+        for (const [key, value] of Object.entries(req.body || {})) {
+            const relativePath = toSectionRelativeFieldPath(sectionName, key);
+            setNested(updateData, relativePath, value);
+        }
 
         // Handle file uploads
-        if (req.file) {
-            setNested(updateData, req.file.fieldname, req.file.filename);
-        }
-        if (req.files) {
-            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-            files.forEach(file => {
-                setNested(updateData, file.fieldname, file.filename);
-            });
+        for (const file of getUploadedFiles(req)) {
+            const relativePath = toSectionRelativeFieldPath(sectionName, file.fieldname);
+            setNested(updateData, relativePath, file.filename);
         }
 
         if (sectionName === 'galleryGrid') {
@@ -88,15 +123,17 @@ exports.updateSection = (sectionName) => async (req, res) => {
         }
 
         if (sectionName === 'categories') {
-            if (req.body.categories) {
-                if (typeof req.body.categories === 'string') {
-                    gallery.categories = req.body.categories.split(',').map(c => c.trim());
-                } else if (Array.isArray(req.body.categories)) {
-                    gallery.categories = req.body.categories;
+            if (updateData.categories !== undefined) {
+                if (typeof updateData.categories === 'string') {
+                    gallery.categories = updateData.categories.split(',').map(c => c.trim()).filter(Boolean);
+                } else if (Array.isArray(updateData.categories)) {
+                    gallery.categories = updateData.categories;
                 }
             }
         } else {
-            gallery[sectionName] = { ...gallery[sectionName].toObject(), ...updateData };
+            const currentSection = gallery[sectionName];
+            const currentObj = currentSection?.toObject ? currentSection.toObject() : (currentSection || {});
+            gallery[sectionName] = { ...currentObj, ...updateData };
         }
         
         await gallery.save();
@@ -132,14 +169,8 @@ exports.addImage = async (req, res) => {
     try {
         const gallery = await getActiveGallery();
         let newItem = { ...req.body };
-        if (req.file) {
-            setNested(newItem, req.file.fieldname, req.file.filename);
-        }
-        if (req.files) {
-            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-            files.forEach(file => {
-                setNested(newItem, file.fieldname, file.filename);
-            });
+        for (const file of getUploadedFiles(req)) {
+            setNested(newItem, getItemFieldname(file.fieldname), file.filename);
         }
         
         if (!newItem.image) return res.status(400).json({ success: false, message: 'Image is required' });
@@ -159,14 +190,8 @@ exports.updateImage = async (req, res) => {
         if (!item) return res.status(404).json({ success: false, message: 'Image not found' });
         
         let updateData = { ...req.body };
-        if (req.file) {
-            setNested(updateData, req.file.fieldname, req.file.filename);
-        }
-        if (req.files) {
-            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-            files.forEach(file => {
-                setNested(updateData, file.fieldname, file.filename);
-            });
+        for (const file of getUploadedFiles(req)) {
+            setNested(updateData, getItemFieldname(file.fieldname), file.filename);
         }
         
         Object.assign(item, updateData);
@@ -196,14 +221,8 @@ exports.addTrainingMomentImage = async (req, res) => {
     try {
         const gallery = await getActiveGallery();
         let newItem = { ...req.body };
-        if (req.file) {
-            setNested(newItem, req.file.fieldname, req.file.filename);
-        }
-        if (req.files) {
-            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-            files.forEach(file => {
-                setNested(newItem, file.fieldname, file.filename);
-            });
+        for (const file of getUploadedFiles(req)) {
+            setNested(newItem, getItemFieldname(file.fieldname), file.filename);
         }
         
         if (!newItem.image) return res.status(400).json({ success: false, message: 'Image is required' });
@@ -223,14 +242,8 @@ exports.updateTrainingMomentImage = async (req, res) => {
         if (!item) return res.status(404).json({ success: false, message: 'Image not found' });
         
         let updateData = { ...req.body };
-        if (req.file) {
-            setNested(updateData, req.file.fieldname, req.file.filename);
-        }
-        if (req.files) {
-            const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-            files.forEach(file => {
-                setNested(updateData, file.fieldname, file.filename);
-            });
+        for (const file of getUploadedFiles(req)) {
+            setNested(updateData, getItemFieldname(file.fieldname), file.filename);
         }
         
         Object.assign(item, updateData);

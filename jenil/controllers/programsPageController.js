@@ -17,6 +17,31 @@ const isPlainObject = (value) => {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
 };
 
+const toDotPath = (value) => {
+    if (typeof value !== 'string') return '';
+    return value.replace(/\[(\w+)\]/g, '.$1').replace(/^\./, '');
+};
+
+const toSectionRelativeFieldPath = (sectionName, fieldname) => {
+    const sectionDot = toDotPath(sectionName);
+    const fieldDot = toDotPath(fieldname);
+
+    if (sectionDot && fieldDot.startsWith(sectionDot + '.')) {
+        return fieldDot.slice(sectionDot.length + 1);
+    }
+
+    return fieldname;
+};
+
+const normalizeDuplicatedSectionPrefix = (sectionName, fullPath) => {
+    const dupPrefix = `${sectionName}.${sectionName}.`;
+    let normalized = fullPath;
+    while (normalized.startsWith(dupPrefix)) {
+        normalized = `${sectionName}.${normalized.slice(dupPrefix.length)}`;
+    }
+    return normalized;
+};
+
 // Helper to set nested property by string path (handles both dots and brackets)
 const setNested = (obj, path, value) => {
     const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
@@ -75,6 +100,9 @@ exports.getSection = (sectionName) => async (req, res) => {
         }
 
         if (target === undefined) {
+            if (sectionName === 'specialPrograms') {
+                return res.status(200).json({ success: true, data: { sectionTitle: 'Special Programs', list: [] } });
+            }
              return res.status(404).json({ success: false, message: 'Section not found' });
         }
         res.status(200).json({ success: true, data: target });
@@ -91,12 +119,14 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
         // 1. Handle file uploads (both single and multiple)
         if (req.file) {
-            setNested(updateData, req.file.fieldname, req.file.filename);
+            const relativePath = toSectionRelativeFieldPath(sectionName, req.file.fieldname);
+            setNested(updateData, relativePath, req.file.filename);
         }
         if (req.files) {
             const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
             files.forEach(file => {
-                setNested(updateData, file.fieldname, file.filename);
+                const relativePath = toSectionRelativeFieldPath(sectionName, file.fieldname);
+                setNested(updateData, relativePath, file.filename);
             });
         }
 
@@ -123,13 +153,14 @@ exports.updateSection = (sectionName) => async (req, res) => {
         console.log(`[ProgramsController] Flattened updates for Mongoose:`, flattenedUpdates);
 
         for (const [path, value] of Object.entries(flattenedUpdates)) {
+            const normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
             if (value === null) {
-                programs.set(path, undefined);
+                programs.set(normalizedPath, undefined);
             } else {
-                programs.set(path, value);
+                programs.set(normalizedPath, value);
             }
             // Explicitly mark as modified for deep paths/arrays/objects
-            programs.markModified(path);
+            programs.markModified(normalizedPath);
         }
 
         await programs.save();
@@ -148,7 +179,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         const programs = await getActivePrograms();
-        programs[sectionName] = undefined;
+        programs.set(sectionName, undefined);
+        programs.markModified(sectionName);
         await programs.save();
         res.status(200).json({ success: true, message: `Section ${sectionName} has been cleared/reset` });
     } catch (err) {

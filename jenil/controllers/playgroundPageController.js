@@ -1,6 +1,53 @@
 const PlaygroundPage = require('../models/PlaygroundPage');
 const PlaygroundBooking = require('../models/PlaygroundBooking');
 
+const toDotPath = (value) => {
+    if (typeof value !== 'string') return '';
+    return value.replace(/\[(\w+)\]/g, '.$1').replace(/^\./, '');
+};
+
+const toSectionRelativeFieldPath = (sectionName, fieldname) => {
+    const sectionDot = toDotPath(sectionName);
+    const fieldDot = toDotPath(fieldname);
+
+    if (sectionDot && fieldDot.startsWith(sectionDot + '.')) {
+        return fieldDot.slice(sectionDot.length + 1);
+    }
+
+    return fieldname;
+};
+
+const normalizeDuplicatedSectionPrefix = (sectionName, fullPath) => {
+    const dupPrefix = `${sectionName}.${sectionName}.`;
+    let normalized = fullPath;
+    while (normalized.startsWith(dupPrefix)) {
+        normalized = `${sectionName}.${normalized.slice(dupPrefix.length)}`;
+    }
+    return normalized;
+};
+
+const setNested = (obj, path, value) => {
+    const parts = toDotPath(path).split('.').filter(Boolean);
+    if (parts.length === 0) return;
+    let current = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        if (!current[part] || typeof current[part] !== 'object') current[part] = {};
+        current = current[part];
+    }
+    current[parts[parts.length - 1]] = value;
+};
+
+const getUploadedFiles = (req) => {
+    const files = [];
+    if (req.file) files.push(req.file);
+    if (req.files) {
+        if (Array.isArray(req.files)) files.push(...req.files);
+        else files.push(...Object.values(req.files).flat());
+    }
+    return files;
+};
+
 const getActivePlayground = async () => {
     let playground = await PlaygroundPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!playground) playground = await PlaygroundPage.create({ isActive: true });
@@ -44,27 +91,55 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         const playground = await getActivePlayground();
-        let updateData = { ...req.body };
-        if (req.file) {
-            if (sectionName === 'hero') updateData.backgroundImage = req.file.filename;
-            if (sectionName === 'formSection.presentation' || sectionName === 'formSection') updateData.mainImage = req.file.filename;
+        const updateData = {};
+
+        // 1) Normalize body keys (supports `title`, `hero[title]`, `formSection[presentation][title]`, etc)
+        for (const [key, value] of Object.entries(req.body || {})) {
+            const relativePath = toSectionRelativeFieldPath(sectionName, key);
+            setNested(updateData, relativePath, value);
         }
 
-        // Deep merge logic
-        if (sectionName.includes('.')) {
-            const parts = sectionName.split('.');
-            let target = playground;
-            for (let i = 0; i < parts.length - 1; i++) {
-                target = target[parts[i]];
+        // 2) Handle file uploads (routes use upload.single())
+        for (const file of getUploadedFiles(req)) {
+            let relativePath = toSectionRelativeFieldPath(sectionName, file.fieldname);
+
+            // Alias: admin route uses `image` but schema expects `presentation.mainImage`
+            if (sectionName === 'formSection' && (relativePath === 'image' || toDotPath(relativePath) === 'image')) {
+                relativePath = 'presentation.mainImage';
             }
-            const lastPart = parts[parts.length - 1];
-            target[lastPart] = { ...target[lastPart].toObject ? target[lastPart].toObject() : target[lastPart], ...updateData };
-        } else {
-            playground[sectionName] = { ...playground[sectionName].toObject(), ...updateData };
+
+            setNested(updateData, relativePath, file.filename);
+        }
+
+        // 3) Flatten and apply with Mongoose set() to avoid clobbering nested objects
+        const flattenObject = (obj, prefix = '') => {
+            return Object.keys(obj).reduce((acc, k) => {
+                const pre = prefix.length ? prefix + '.' : '';
+                const fullPath = pre + k;
+
+                if (obj[k] === null) {
+                    acc[fullPath] = null;
+                } else if (typeof obj[k] === 'object' && !Array.isArray(obj[k])) {
+                    Object.assign(acc, flattenObject(obj[k], fullPath));
+                } else {
+                    acc[fullPath] = obj[k];
+                }
+
+                return acc;
+            }, {});
+        };
+
+        const flattenedUpdates = flattenObject(updateData, sectionName);
+        for (const [path, value] of Object.entries(flattenedUpdates)) {
+            const normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
+            playground.set(normalizedPath, value === null ? undefined : value);
+            playground.markModified(normalizedPath);
         }
 
         await playground.save();
-        res.status(200).json({ success: true, data: playground[sectionName.split('.')[0]] });
+        const parts = sectionName.split('.');
+        const result = parts.reduce((obj, part) => obj && obj[part], playground);
+        res.status(200).json({ success: true, data: result });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

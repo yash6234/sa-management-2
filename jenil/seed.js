@@ -94,7 +94,16 @@ const seedData = async () => {
                         "Discipline Focus Training",
                         "Tournament Opportunities"
                     ],
-                    image: "public/home/Bowling.jpg"
+                    image: "public/home/Bowling.jpg",
+                    buttonText: "View Programs",
+                    buttonLink: "/programs"
+                },
+                quoteBlock: {
+                    quote: "Excellence in Sports, Excellence in Life.",
+                    author: "Gandhinagar Sports Academy",
+                    authorTitle: "",
+                    buttonText: "Explore Programs",
+                    buttonLink: "/programs"
                 }
             },
             tournamentsSection: {
@@ -248,7 +257,7 @@ const seedData = async () => {
                     title: "Seasonal Training",
                     description: "Special seasonal training programs including intensive cricket training, fitness drills, skill competitions, match practice, awards & certificates.",
                     duration: "Seasonal",
-                    image: "public/home/programs.png"
+                    image: "public/about/programs.png"
                 }
             }
         });
@@ -269,7 +278,7 @@ const seedData = async () => {
                     { title: "Match preparation", image: "public/Programs/footballpro.png" },
                     { title: "Ground session", image: "public/playground/playground.png" },
                     { title: "Fitness training", image: "public/Programs/swim.jpg" },
-                    { title: "Summer camp session", image: "public/home/programs.png" },
+                    { title: "Summer camp session", image: "public/about/programs.png" },
                     { title: "Cricket nets practice", image: "public/home/Bowling.jpg" },
                     { title: "Batting drills", image: "public/Programs/cricpro.png" }
                 ]
@@ -281,26 +290,26 @@ const seedData = async () => {
                 { image: "public/home/Bowling.jpg", category: "Practice Sessions" },
                 { image: "public/Programs/footballpro.png", category: "Matches" },
                 { image: "public/playground/playground.png", category: "Events" },
-                { image: "public/home/programs.png", category: "Summer Camp" },
+                { image: "public/about/programs.png", category: "Summer Camp" },
                 { image: "public/about/founder.png", category: "Student Achievements" },
-                { image: "public/home/swimmer.png", category: "Events" },
+                { image: "public/Programs/swimmingpro.png", category: "Events" },
  
                 // Matches section 
                 { image: "public/Programs/cricpro.png", category: "Matches" },
                 { image: "public/Programs/footballpro.png", category: "Matches" },
 
                 // Events Section
-                { image: "public/Programs/basketball.png", category: "Events" },
+                { image: "public/Programs/basketpro.png", category: "Events" },
                 { image: "public/home/Bowling.jpg", category: "Events" },
                 { image: "public/about/founder.png", category: "Events" },
 
                 // Summer Camp
                 { image: "public/playground/playground.png", category: "Summer Camp" },
-                { image: "public/home/tennis.jpg", category: "Summer Camp" },
+                { image: "public/Programs/tennis.jpg", category: "Summer Camp" },
 
                 // Awards
                 { image: "public/about/founder.png", category: "Awards" },
-                { image: "publicPrograms/swimmingpro.jpg", category: "Awards" },
+                { image: "public/Programs/swimmingpro.png", category: "Awards" },
 
                 // Student Achievements
                 { image: "public/Programs/tennis.jpg", category: "Student Achievements" },
@@ -315,7 +324,7 @@ const seedData = async () => {
                 subtitle: "RESERVE YOUR GROUND",
                 title: "Playground Booking",
                 description: "Reserve our professional grounds for cricket or football at your convenience.",
-                backgroundImage: "public/home/h_bg.png"
+                backgroundImage: "public/home/h_bg.jpg"
             },
             formSection: {
                 presentation: {

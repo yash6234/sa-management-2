@@ -31,9 +31,22 @@ const programsPageSchema = new mongoose.Schema({
         camp: {
             title: { type: String, default: "Special Coaching & Summer Camps" },
             description: { type: String },
+            features: { type: [String], default: [] },
             duration: { type: String },
             image: { type: String }
         }
+    },
+
+    // Optional legacy/admin section used by /programs/summer-camp endpoints
+    specialPrograms: {
+        sectionTitle: { type: String, default: "Special Programs" },
+        list: [{
+            title: { type: String },
+            description: { type: String },
+            duration: { type: String },
+            features: { type: [String], default: [] },
+            image: { type: String }
+        }]
     },
 
     isActive: { type: Boolean, default: true }

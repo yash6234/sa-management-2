@@ -17,6 +17,31 @@ const isPlainObject = (value) => {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
 };
 
+const toDotPath = (value) => {
+    if (typeof value !== 'string') return '';
+    return value.replace(/\[(\w+)\]/g, '.$1').replace(/^\./, '');
+};
+
+const toSectionRelativeFieldPath = (sectionName, fieldname) => {
+    const sectionDot = toDotPath(sectionName);
+    const fieldDot = toDotPath(fieldname);
+
+    if (sectionDot && fieldDot.startsWith(sectionDot + '.')) {
+        return fieldDot.slice(sectionDot.length + 1);
+    }
+
+    return fieldname;
+};
+
+const normalizeDuplicatedSectionPrefix = (sectionName, fullPath) => {
+    const dupPrefix = `${sectionName}.${sectionName}.`;
+    let normalized = fullPath;
+    while (normalized.startsWith(dupPrefix)) {
+        normalized = `${sectionName}.${normalized.slice(dupPrefix.length)}`;
+    }
+    return normalized;
+};
+
 // Helper to set nested property by string path (handles both dots and brackets)
 const setNested = (obj, path, value) => {
     const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
@@ -91,12 +116,14 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
         // 1. Handle file uploads (both single and multiple)
         if (req.file) {
-            setNested(updateData, req.file.fieldname, req.file.filename);
+            const relativePath = toSectionRelativeFieldPath(sectionName, req.file.fieldname);
+            setNested(updateData, relativePath, req.file.filename);
         }
         if (req.files) {
             const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
             files.forEach(file => {
-                setNested(updateData, file.fieldname, file.filename);
+                const relativePath = toSectionRelativeFieldPath(sectionName, file.fieldname);
+                setNested(updateData, relativePath, file.filename);
             });
         }
 
@@ -123,12 +150,13 @@ exports.updateSection = (sectionName) => async (req, res) => {
         console.log(`[AboutController] Flattened updates for Mongoose:`, flattenedUpdates);
 
         for (const [path, value] of Object.entries(flattenedUpdates)) {
+            const normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
             if (value === null) {
-                about.set(path, undefined);
+                about.set(normalizedPath, undefined);
             } else {
-                about.set(path, value);
+                about.set(normalizedPath, value);
             }
-            about.markModified(path);
+            about.markModified(normalizedPath);
         }
 
         await about.save();
@@ -147,7 +175,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         const about = await getActiveAbout();
-        about[sectionName] = undefined;
+        about.set(sectionName, undefined);
+        about.markModified(sectionName);
         await about.save();
         res.status(200).json({ success: true, message: `Section ${sectionName} has been cleared/reset` });
     } catch (err) {
@@ -203,9 +232,40 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
         if (typeof itemsToAdd === 'string') itemsToAdd = parseJsonIfLikely(itemsToAdd);
         if (!Array.isArray(itemsToAdd)) itemsToAdd = [itemsToAdd];
-        itemsToAdd = itemsToAdd
-            .map((item) => (typeof item === 'string' ? parseJsonIfLikely(item) : item))
-            .filter((item) => isPlainObject(item));
+
+        const schemaPath = AboutAcademy.schema.path(arrayPath);
+        const expectsStringItems = schemaPath?.caster?.instance === 'String';
+        const expectsEmbeddedDocs = schemaPath?.instance === 'Array' && schemaPath?.casterConstructor?.name === 'EmbeddedDocument';
+
+        const coerceStringItem = (item) => {
+            if (typeof item === 'string') return item;
+            if (!isPlainObject(item)) return null;
+
+            // Common keys for string arrays (features, urls, images, etc)
+            const candidates = ['value', 'text', 'feature', 'label', 'name', 'title', 'image', 'url', 'src', 'path'];
+            for (const key of candidates) {
+                if (typeof item[key] === 'string') return item[key];
+            }
+
+            // If there's exactly 1 string field, use it
+            const stringValues = Object.values(item).filter((v) => typeof v === 'string');
+            if (stringValues.length === 1) return stringValues[0];
+            return null;
+        };
+
+        itemsToAdd = itemsToAdd.map((item) => (typeof item === 'string' ? parseJsonIfLikely(item) : item));
+
+        if (expectsStringItems) {
+            itemsToAdd = itemsToAdd
+                .map((item) => coerceStringItem(item))
+                .map((value) => (typeof value === 'string' ? value.trim() : value))
+                .filter((value) => typeof value === 'string' && value.length > 0);
+        } else if (expectsEmbeddedDocs) {
+            itemsToAdd = itemsToAdd.filter((item) => isPlainObject(item));
+        } else {
+            // Unknown schema path: keep it conservative to avoid bad casts
+            itemsToAdd = itemsToAdd.filter((item) => isPlainObject(item));
+        }
 
         if (itemsToAdd.length === 0) {
             return res.status(400).json({ success: false, message: 'No valid item found to add' });

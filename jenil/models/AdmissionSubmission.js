@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 
 const admissionSubmissionSchema = new mongoose.Schema({
+    traineeName: { type: String },
+    fatherName: { type: String },
+    phone: { type: String },
     dob: { type: Date },
     address: { type: String },
     schoolName: { type: String },

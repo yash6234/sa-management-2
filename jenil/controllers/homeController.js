@@ -18,6 +18,33 @@ const isPlainObject = (value) => {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
 };
 
+const toDotPath = (value) => {
+    if (typeof value !== 'string') return '';
+    return value.replace(/\[(\w+)\]/g, '.$1').replace(/^\./, '');
+};
+
+// If frontend sends names like `hero[backgroundImage]` while the controller already prefixes with `hero`,
+// we must strip the section prefix to avoid writing `hero.hero.backgroundImage` into Mongo.
+const toSectionRelativeFieldPath = (sectionName, fieldname) => {
+    const sectionDot = toDotPath(sectionName);
+    const fieldDot = toDotPath(fieldname);
+
+    if (sectionDot && fieldDot.startsWith(sectionDot + '.')) {
+        return fieldDot.slice(sectionDot.length + 1); // remainder, dot-notation
+    }
+
+    return fieldname;
+};
+
+const normalizeDuplicatedSectionPrefix = (sectionName, fullPath) => {
+    const dupPrefix = `${sectionName}.${sectionName}.`;
+    let normalized = fullPath;
+    while (normalized.startsWith(dupPrefix)) {
+        normalized = `${sectionName}.${normalized.slice(dupPrefix.length)}`;
+    }
+    return normalized;
+};
+
 // Helper to set nested property by string path (handles both dots and brackets)
 const setNested = (obj, path, value) => {
     const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
@@ -106,6 +133,36 @@ exports.getSection = (sectionName) => async (req, res) => {
         if (home[sectionName] === undefined) {
             return res.status(404).json({ success: false, message: 'Section not found' });
         }
+
+        // Normalize legacy shapes to what the website frontend expects.
+        if (sectionName === 'tournamentsSection') {
+            const tournaments = JSON.parse(JSON.stringify(home[sectionName]));
+            if (tournaments && tournaments.list && !Array.isArray(tournaments.list)) {
+                tournaments.list = [tournaments.list];
+            }
+            if (tournaments && tournaments.list === undefined) tournaments.list = [];
+            return res.status(200).json({ success: true, data: tournaments });
+        }
+
+        if (sectionName === 'programsAndFacilities') {
+            const programs = JSON.parse(JSON.stringify(home[sectionName]));
+            if (programs) {
+                programs.sectionTitle = programs.sectionTitle || 'Our Sports Programs';
+
+                programs.facilitiesCard = programs.facilitiesCard || {};
+                programs.facilitiesCard.buttonText = programs.facilitiesCard.buttonText || 'View Programs';
+                programs.facilitiesCard.buttonLink = programs.facilitiesCard.buttonLink || '/programs';
+
+                programs.quoteBlock = programs.quoteBlock || {};
+                programs.quoteBlock.quote = programs.quoteBlock.quote || 'Excellence in Sports, Excellence in Life.';
+                programs.quoteBlock.author = programs.quoteBlock.author || 'Gandhinagar Sports Academy';
+                programs.quoteBlock.authorTitle = programs.quoteBlock.authorTitle || '';
+                programs.quoteBlock.buttonText = programs.quoteBlock.buttonText || 'Explore Programs';
+                programs.quoteBlock.buttonLink = programs.quoteBlock.buttonLink || '/programs';
+            }
+            return res.status(200).json({ success: true, data: programs });
+        }
+
         res.status(200).json({ success: true, data: home[sectionName] });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -120,12 +177,14 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
         // 1. Handle file uploads (both single and multiple)
         if (req.file) {
-            setNested(updateData, req.file.fieldname, req.file.filename);
+            const relativePath = toSectionRelativeFieldPath(sectionName, req.file.fieldname);
+            setNested(updateData, relativePath, req.file.filename);
         }
         if (req.files) {
             const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
             files.forEach(file => {
-                setNested(updateData, file.fieldname, file.filename);
+                const relativePath = toSectionRelativeFieldPath(sectionName, file.fieldname);
+                setNested(updateData, relativePath, file.filename);
             });
         }
 
@@ -155,23 +214,24 @@ exports.updateSection = (sectionName) => async (req, res) => {
         console.log(`[HomeController] Flattened updates for Mongoose:`, flattenedUpdates);
 
         for (const [path, value] of Object.entries(flattenedUpdates)) {
+            const normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
             if (value === null) {
                 // Handle deletion for Maps or setting undefined for regular fields
-                const parentPath = path.substring(0, path.lastIndexOf('.'));
-                const key = path.substring(path.lastIndexOf('.') + 1);
+                const parentPath = normalizedPath.substring(0, normalizedPath.lastIndexOf('.'));
+                const key = normalizedPath.substring(normalizedPath.lastIndexOf('.') + 1);
                 try {
                     const parent = home.get(parentPath);
                     if (parent instanceof Map) {
                         parent.delete(key);
                     } else {
-                        home.set(path, undefined);
+                        home.set(normalizedPath, undefined);
                     }
-                } catch (e) { home.set(path, undefined); }
+                } catch (e) { home.set(normalizedPath, undefined); }
             } else {
-                home.set(path, value);
+                home.set(normalizedPath, value);
             }
             // CRITICAL: Explicitly mark path as modified for deep updates/arrays
-            home.markModified(path);
+            home.markModified(normalizedPath);
         }
 
         await home.save();
@@ -186,7 +246,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         const home = await getActiveHome();
-        home[sectionName] = undefined;
+        home.set(sectionName, undefined);
+        home.markModified(sectionName);
         await home.save();
         res.status(200).json({ success: true, message: `Section ${sectionName} has been cleared/reset` });
     } catch (err) {

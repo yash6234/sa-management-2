@@ -30,6 +30,8 @@ const homeSchema = new mongoose.Schema({
 
     // 3. Programs & Facilities (Combined Section with shared background)
     programsAndFacilities: {
+        sectionTitle: { type: String, default: "Our Sports Programs" },
+        image: { type: String }, // optional background image (if used by frontend)
 
         facilitiesCard: {
             title: { type: String, default: "World-Class Facilities to Elevate Your Game" },
@@ -47,6 +49,15 @@ const homeSchema = new mongoose.Schema({
                 ]
             },
             image: { type: String },
+            buttonText: { type: String, default: "View Programs" },
+            buttonLink: { type: String, default: "/programs" },
+        },
+        quoteBlock: {
+            quote: { type: String, default: "Excellence in Sports, Excellence in Life." },
+            author: { type: String, default: "Gandhinagar Sports Academy" },
+            authorTitle: { type: String, default: "" },
+            buttonText: { type: String, default: "Explore Programs" },
+            buttonLink: { type: String, default: "/programs" }
         }
     },
 

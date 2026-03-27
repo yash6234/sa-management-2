@@ -34,9 +34,18 @@ const standardizeFilePath = (req, res, next) => {
     // Helper to strip prefixes and decrypt tokens if necessary
     const cleanupPath = (val) => {
         if (typeof val !== 'string') return val;
+
+        // If it's a full URL, extract the pathname first (e.g. http://host/acade360/<token>)
+        let raw = val;
+        try {
+            if (/^https?:\/\//i.test(raw)) {
+                const url = new URL(raw);
+                raw = url.pathname || raw;
+            }
+        } catch { }
         
         // 1. Strip common prefixes (/acade360/img/ or /acade360/)
-        let clean = val.replace(/^\/?acade360\/img\//, '').replace(/^\/?acade360\//, '').replace(/^\//, '');
+        let clean = raw.replace(/^\/?acade360\/img\//, '').replace(/^\/?acade360\//, '').replace(/^\//, '');
 
         // 2. If it's a token (contains a dot), try to decrypt it
         if (clean.includes('.')) {

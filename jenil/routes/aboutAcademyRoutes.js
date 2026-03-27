@@ -44,29 +44,30 @@ router.delete('/founders/:itemId/delete', aboutAcademyController.deleteArrayItem
 
 // 6. JOURNEY
 router.get('/journey', aboutAcademyController.getSection('journey'));
-router.post('/journey/add', aboutAcademyController.addArrayItem('journey.list'));
-router.put('/journey/update', aboutAcademyController.updateSection('journey'));
+router.post('/journey/add', upload.any(), standardizeFilePath, aboutAcademyController.addArrayItem('journey.list'));
+router.put('/journey/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('journey'));
 router.delete('/journey/delete', aboutAcademyController.deleteSection('journey'));
-router.put('/journey/:itemId/update', aboutAcademyController.updateArrayItem('journey.list'));
+router.put('/journey/:itemId/update', upload.any(), standardizeFilePath, aboutAcademyController.updateArrayItem('journey.list'));
 router.delete('/journey/:itemId/delete', aboutAcademyController.deleteArrayItem('journey.list'));
 
 // 7. VALUES
 router.get('/values', aboutAcademyController.getSection('values'));
-router.post('/values/add', aboutAcademyController.addArrayItem('values.list'));
-router.put('/values/update', aboutAcademyController.updateSection('values'));
+router.post('/values/add', upload.any(), standardizeFilePath, aboutAcademyController.addArrayItem('values.list'));
+router.put('/values/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('values'));
 router.delete('/values/delete', aboutAcademyController.deleteSection('values'));
-router.put('/values/:itemId/update', aboutAcademyController.updateArrayItem('values.list'));
+router.put('/values/:itemId/update', upload.any(), standardizeFilePath, aboutAcademyController.updateArrayItem('values.list'));
 router.delete('/values/:itemId/delete', aboutAcademyController.deleteArrayItem('values.list'));
 
 // 8. WHY CHOOSE US
 router.get('/why-choose-us', aboutAcademyController.getSection('whyChooseUs'));
-router.post('/why-choose-us/add', aboutAcademyController.addArrayItem('whyChooseUs.features'));
-router.put('/why-choose-us/update', aboutAcademyController.updateSection('whyChooseUs'));
+router.post('/why-choose-us/add', upload.any(), standardizeFilePath, aboutAcademyController.addArrayItem('whyChooseUs.features'));
+router.put('/why-choose-us/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('whyChooseUs'));
 router.delete('/why-choose-us/delete', aboutAcademyController.deleteSection('whyChooseUs'));
 router.delete('/why-choose-us/:index/delete', async (req, res) => {
     try {
         const AboutAcademy = require('../models/AboutAcademy');
-        const about = await AboutAcademy.findOne({ isActive: true });
+        let about = await AboutAcademy.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
+        if (!about) about = await AboutAcademy.create({ isActive: true });
         about.whyChooseUs.features.splice(req.params.index, 1);
         await about.save();
         res.status(200).json({ success: true, data: about.whyChooseUs.features });
