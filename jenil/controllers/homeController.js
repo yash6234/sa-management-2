@@ -317,11 +317,6 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             });
         }
         payload = processImageFields(payload);
-
-        // Support common client payloads:
-        // - { quote, name, role }
-        // - { list: [{ quote, name, role }, ...] }
-        // - multipart/form-data with list as a JSON string
         payload.list = parseJsonIfLikely(payload.list);
         payload.items = parseJsonIfLikely(payload.items);
         payload.item = parseJsonIfLikely(payload.item);
@@ -348,7 +343,6 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         }
 
         if (arrayPath === 'testimonials.list') {
-            // Clean up previously inserted empty objects (usually caused by wrong payload shape).
             for (let i = targetArray.length - 1; i >= 0; i--) {
                 const t = targetArray[i] || {};
                 const isEmpty = !t.quote && !t.parentName && !t.relation;
