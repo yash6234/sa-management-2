@@ -120,7 +120,7 @@ exports.getSection = (sectionName) => async (req, res) => {
         }
 
         if (target === undefined) {
-             return res.status(404).json({ success: false, message: 'Section not found' });
+            return res.status(404).json({ success: false, message: 'Section not found' });
         }
         res.status(200).json({ success: true, data: target });
     } catch (err) {
