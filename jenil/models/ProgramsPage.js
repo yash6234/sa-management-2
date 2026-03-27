@@ -9,44 +9,33 @@ const programsPageSchema = new mongoose.Schema({
     },
 
     // Level-based sections
+    // Public frontend expects: `levels.beginner|intermediate|advanced|camp`
     levels: {
         beginner: {
             title: { type: String, default: "Beginner Level" },
-            description: { type: String },
-            features: [String],
-            image: { type: String }
+            description: { type: String, default: "" },
+            features: { type: [String], default: [] },
+            image: { type: String, default: "" }
         },
         intermediate: {
             title: { type: String, default: "Intermediate Level" },
-            description: { type: String },
-            features: [String],
-            image: { type: String }
+            description: { type: String, default: "" },
+            features: { type: [String], default: [] },
+            image: { type: String, default: "" }
         },
         advanced: {
             title: { type: String, default: "Advanced Level" },
-            description: { type: String },
-            features: [String],
-            image: { type: String }
+            description: { type: String, default: "" },
+            features: { type: [String], default: [] },
+            image: { type: String, default: "" }
         },
         camp: {
             title: { type: String, default: "Special Coaching & Summer Camps" },
-            description: { type: String },
+            description: { type: String, default: "" },
             features: { type: [String], default: [] },
-            duration: { type: String },
-            image: { type: String }
+            duration: { type: String, default: "" },
+            image: { type: String, default: "" }
         }
-    },
-
-    // Optional legacy/admin section used by /programs/summer-camp endpoints
-    specialPrograms: {
-        sectionTitle: { type: String, default: "Special Programs" },
-        list: [{
-            title: { type: String },
-            description: { type: String },
-            duration: { type: String },
-            features: { type: [String], default: [] },
-            image: { type: String }
-        }]
     },
 
     isActive: { type: Boolean, default: true }

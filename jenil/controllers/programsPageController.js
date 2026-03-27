@@ -1,4 +1,5 @@
 const ProgramsPage = require('../models/ProgramsPage');
+const { saveBase64Image } = require('../utils/fileUtils');
 
 const parseJsonIfLikely = (value) => {
     if (typeof value !== 'string') return value;
@@ -98,9 +99,59 @@ const normalizePaths = (obj) => {
     return newObj;
 };
 
+const processImageFields = (data) => {
+    const imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo', 'icon'];
+    for (const field of imageFields) {
+        if (data[field] && typeof data[field] === 'string' && data[field].startsWith('data:image')) {
+            const savedPath = saveBase64Image(data[field]);
+            if (savedPath) data[field] = savedPath;
+        }
+    }
+    return data;
+};
+
 const getActivePrograms = async () => {
     let programs = await ProgramsPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!programs) programs = await ProgramsPage.create({ isActive: true });
+
+    // Ensure `levels.*` exists for older DB docs created before this schema structure.
+    // This keeps the public frontend (`programsData.levels.beginner|intermediate|advanced|camp`) working.
+    let levelsDirty = false;
+    if (!programs.levels || typeof programs.levels !== 'object') {
+        programs.levels = {};
+        levelsDirty = true;
+    }
+
+    const ensureLevel = (key, defaults) => {
+        if (!programs.levels[key] || typeof programs.levels[key] !== 'object') {
+            programs.levels[key] = { ...defaults };
+            levelsDirty = true;
+            return;
+        }
+
+        for (const [field, value] of Object.entries(defaults)) {
+            if (programs.levels[key][field] === undefined) {
+                programs.levels[key][field] = value;
+                levelsDirty = true;
+            }
+        }
+
+        if (!Array.isArray(programs.levels[key].features)) {
+            programs.levels[key].features = [];
+            levelsDirty = true;
+        }
+    };
+
+    ensureLevel('beginner', { title: 'Beginner Level', description: '', features: [], image: '' });
+    ensureLevel('intermediate', { title: 'Intermediate Level', description: '', features: [], image: '' });
+    ensureLevel('advanced', { title: 'Advanced Level', description: '', features: [], image: '' });
+    ensureLevel('camp', { title: 'Special Coaching & Summer Camps', description: '', features: [], duration: '', image: '' });
+
+    if (levelsDirty) {
+        programs.markModified('levels');
+        await programs.save();
+    }
+
     return programs;
 };
 
@@ -108,14 +159,38 @@ const getActivePrograms = async () => {
 exports.getProgramsData = async (req, res) => {
     try {
         const programsData = await getActivePrograms();
-        res.status(200).json({ success: true, data: programsData });
+        // Public frontend only needs hero + levels
+        res.status(200).json({
+            success: true,
+            data: {
+                hero: programsData.hero,
+                levels: programsData.levels,
+            }
+        });
     } catch (err) {
         console.error("Error fetching programs page data:", err);
         res.status(500).json({ success: false, error: 'Failed to fetch programs data' });
     }
 };
 
-// 2. CONFIG SECTIONS (Hero, Levels)
+// Convenience endpoint: returns all level cards in one response (ordered)
+exports.getLevels = async (req, res) => {
+    try {
+        const programs = await getActivePrograms();
+        const levels = programs.levels?.toObject ? programs.levels.toObject() : JSON.parse(JSON.stringify(programs.levels || {}));
+
+        const orderedKeys = ['beginner', 'intermediate', 'advanced', 'camp'];
+        const list = orderedKeys
+            .filter((key) => levels && levels[key])
+            .map((key) => ({ key, ...levels[key] }));
+
+        res.status(200).json({ success: true, data: { ...levels, list } });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+// 2. CONFIG SECTIONS
 exports.getSection = (sectionName) => async (req, res) => {
     try {
         const programs = await getActivePrograms();
@@ -130,9 +205,6 @@ exports.getSection = (sectionName) => async (req, res) => {
         }
 
         if (target === undefined) {
-            if (sectionName === 'specialPrograms') {
-                return res.status(200).json({ success: true, data: { sectionTitle: 'Special Programs', list: [] } });
-            }
              return res.status(404).json({ success: false, message: 'Section not found' });
         }
         res.status(200).json({ success: true, data: target });
@@ -144,10 +216,9 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         const programs = await getActivePrograms();
-        // Normalize all keys from brackets to dots
         let updateData = normalizePaths(req.body);
+        updateData = processImageFields(updateData);
 
-        // 1. Handle file uploads (both single and multiple)
         if (req.file) {
             const relativePath = toSectionRelativeFieldPath(sectionName, req.file.fieldname);
             setNested(updateData, relativePath, req.file.filename);
@@ -160,15 +231,13 @@ exports.updateSection = (sectionName) => async (req, res) => {
             });
         }
 
-        // 2. APPLY UPDATES GENERICALLY
-        // Helper to flatten nested objects into dot-notation paths
         const flattenObject = (obj, prefix = '') => {
             return Object.keys(obj).reduce((acc, k) => {
                 const pre = prefix.length ? prefix + '.' : '';
                 const fullPath = pre + k;
 
                 if (obj[k] === null) {
-                    acc[fullPath] = null; // Mark for deletion
+                    acc[fullPath] = null;
                 } else if (typeof obj[k] === 'object' && !Array.isArray(obj[k])) {
                     Object.assign(acc, flattenObject(obj[k], fullPath));
                 } else {
@@ -178,10 +247,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
             }, {});
         };
 
-        console.log(`[ProgramsController] Updating section ${sectionName} with data:`, updateData);
         const flattenedUpdates = flattenObject(updateData, sectionName);
-        console.log(`[ProgramsController] Flattened updates for Mongoose:`, flattenedUpdates);
-
         for (const [path, value] of Object.entries(flattenedUpdates)) {
             let normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
             normalizedPath = normalizeHeroBackgroundPath(sectionName, normalizedPath);
@@ -190,19 +256,14 @@ exports.updateSection = (sectionName) => async (req, res) => {
             } else {
                 programs.set(normalizedPath, value);
             }
-            // Explicitly mark as modified for deep paths/arrays/objects
             programs.markModified(normalizedPath);
         }
 
         await programs.save();
-        console.log(`[ProgramsController] Successfully saved section ${sectionName}.`);
-        
-        // Return the updated section
         const parts = sectionName.split('.');
         const result = parts.reduce((obj, part) => obj && obj[part], programs);
         res.status(200).json({ success: true, data: result });
     } catch (err) {
-        console.error("Update Programs Section Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 };
@@ -238,8 +299,15 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         if (!Array.isArray(targetArray)) {
             return res.status(400).json({ success: false, message: `${arrayPath} is not an array` });
         }
+
+        const getNestedValue = (obj, dotPath) => {
+            if (!obj || typeof obj !== 'object' || typeof dotPath !== 'string') return undefined;
+            return dotPath.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+        };
         
         let payload = normalizePaths(req.body);
+        payload = processImageFields(payload);
+
         if (req.file) {
             setNested(payload, req.file.fieldname, req.file.filename);
         }
@@ -254,8 +322,19 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         payload.items = parseJsonIfLikely(payload.items);
         payload.item = parseJsonIfLikely(payload.item);
 
+        const schemaPath = ProgramsPage.schema.path(arrayPath);
+        const expectsStringItems = schemaPath?.caster?.instance === 'String';
+
         let itemsToAdd;
-        if (payload.list !== undefined) {
+        const directItems = getNestedValue(payload, arrayPath);
+        const lastPart = parts[parts.length - 1];
+        const lastPartItems = payload[lastPart];
+
+        if (directItems !== undefined) {
+            itemsToAdd = directItems;
+        } else if (lastPartItems !== undefined) {
+             itemsToAdd = lastPartItems;
+        } else if (payload.list !== undefined) {
             itemsToAdd = payload.list;
         } else if (payload.items !== undefined) {
             itemsToAdd = payload.items;
@@ -267,9 +346,32 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
         if (typeof itemsToAdd === 'string') itemsToAdd = parseJsonIfLikely(itemsToAdd);
         if (!Array.isArray(itemsToAdd)) itemsToAdd = [itemsToAdd];
-        itemsToAdd = itemsToAdd
-            .map((item) => (typeof item === 'string' ? parseJsonIfLikely(item) : item))
-            .filter((item) => isPlainObject(item));
+
+        const coerceStringItem = (item) => {
+            if (typeof item === 'string') return item;
+            if (!isPlainObject(item)) return null;
+            const candidates = ['value', 'text', 'feature', 'features', 'label', 'name', 'title', 'image', 'url', 'src', 'path', 'item'];
+            for (const key of candidates) {
+                if (typeof item[key] === 'string') return item[key];
+                 if (Array.isArray(item[key]) && item[key].length === 1 && typeof item[key][0] === 'string') return item[key][0];
+            }
+            const stringValues = Object.values(item).filter((v) => typeof v === 'string');
+            if (stringValues.length === 1) return stringValues[0];
+            return null;
+        };
+
+        itemsToAdd = itemsToAdd.map((item) => (typeof item === 'string' ? parseJsonIfLikely(item) : item));
+
+        if (expectsStringItems) {
+            itemsToAdd = itemsToAdd
+                .map((item) => coerceStringItem(item))
+                .map((value) => (typeof value === 'string' ? value.trim() : value))
+                .filter((value) => typeof value === 'string' && value.length > 0);
+        } else {
+            itemsToAdd = itemsToAdd
+                .filter((item) => isPlainObject(item))
+                .filter((item) => Object.keys(item).length > 0);
+        }
 
         if (itemsToAdd.length === 0) {
             return res.status(400).json({ success: false, message: 'No valid item found to add' });
@@ -296,11 +398,12 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         const item = targetArray.id(req.params.itemId);
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
         
-        // Find index for deep setting
         const index = targetArray.indexOf(item);
         const itemPath = `${arrayPath}.${index}`;
 
         let updateData = normalizePaths(req.body);
+        updateData = processImageFields(updateData);
+
         if (req.file) {
             setNested(updateData, req.file.fieldname, req.file.filename);
         }
@@ -311,7 +414,6 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
             });
         }
         
-        // Deep update the item using the same logic as updateSection
         const applyItemUpdate = (prefix, data) => {
             for (const key in data) {
                 const value = data[key];
@@ -329,7 +431,6 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         await programs.save();
         res.status(200).json({ success: true, data: targetArray });
     } catch (err) {
-        console.error("Update Array Item Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 };
@@ -343,10 +444,29 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
             targetArray = targetArray[part];
         }
         
-        const item = targetArray.id(req.params.itemId);
-        if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
+        if (req.params.itemId) {
+            if (typeof targetArray.id === 'function') {
+                const item = targetArray.id(req.params.itemId);
+                if (item) {
+                    targetArray.pull(req.params.itemId);
+                } else {
+                    const index = parseInt(req.params.itemId);
+                    if (!isNaN(index) && index >= 0 && index < targetArray.length) {
+                        targetArray.splice(index, 1);
+                    } else {
+                         return res.status(404).json({ success: false, message: 'Item not found' });
+                    }
+                }
+            } else {
+                const index = parseInt(req.params.itemId);
+                if (!isNaN(index) && index >= 0 && index < targetArray.length) {
+                    targetArray.splice(index, 1);
+                } else {
+                    return res.status(404).json({ success: false, message: 'Item not found' });
+                }
+            }
+        }
         
-        targetArray.pull(req.params.itemId);
         programs.markModified(arrayPath);
         await programs.save();
         res.status(200).json({ success: true, message: 'Item deleted safely', data: targetArray });

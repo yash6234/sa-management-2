@@ -1,4 +1,5 @@
 const AboutAcademy = require('../models/AboutAcademy');
+const { saveBase64Image } = require('../utils/fileUtils');
 
 const parseJsonIfLikely = (value) => {
     if (typeof value !== 'string') return value;
@@ -46,11 +47,38 @@ const normalizeHeroBackgroundPath = (sectionName, fullPath) => {
     const sectionDot = toDotPath(sectionName);
     if (sectionDot !== 'hero' || typeof fullPath !== 'string') return fullPath;
 
-    if (fullPath.endsWith('.background')) return fullPath.replace(/\.background$/, '.backgroundImage');
-    if (fullPath.endsWith('.bgImage')) return fullPath.replace(/\.bgImage$/, '.backgroundImage');
-    if (fullPath.endsWith('.bg')) return fullPath.replace(/\.bg$/, '.backgroundImage');
-    if (fullPath.endsWith('.image')) return fullPath.replace(/\.image$/, '.backgroundImage');
+    const match = fullPath.match(/^(.*)\.([^.]+)$/);
+    if (!match) return fullPath;
+
+    const prefix = match[1];
+    const last = match[2];
+    const alias = last.toLowerCase();
+
+    const heroImageAliases = new Set([
+        'background',
+        'bgimage',
+        'bg_image',
+        'bg',
+        'image',
+        'file',
+        'imagefile',
+        'heroimage',
+        'herobg',
+        'herobackground',
+        'backgroundimage',
+        'background_image',
+    ]);
+
+    if (heroImageAliases.has(alias)) return `${prefix}.backgroundImage`;
     return fullPath;
+};
+
+const normalizeIntroParagraphsPath = (sectionName, fullPath) => {
+    const sectionDot = toDotPath(sectionName);
+    if (sectionDot !== 'introSection' || typeof fullPath !== 'string') return fullPath;
+
+    // Frontend uses `introSection.paragraphs`, DB uses `introSection.description`
+    return fullPath.replace(/^introSection\.paragraphs(\.|$)/, 'introSection.description$1');
 };
 
 // Helper to set nested property by string path (handles both dots and brackets)
@@ -77,6 +105,17 @@ const normalizePaths = (obj) => {
         }
     }
     return newObj;
+};
+
+const processImageFields = (data) => {
+    const imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo', 'icon'];
+    for (const field of imageFields) {
+        if (data[field] && typeof data[field] === 'string' && data[field].startsWith('data:image')) {
+            const savedPath = saveBase64Image(data[field]);
+            if (savedPath) data[field] = savedPath;
+        }
+    }
+    return data;
 };
 
 const getActiveAbout = async () => {
@@ -107,6 +146,14 @@ exports.getIntroMission = async (req, res) => {
         const about = await getActiveAbout();
         const intro = about.introSection?.toObject ? about.introSection.toObject() : (about.introSection || {});
         const mission = about.mission?.toObject ? about.mission.toObject() : (about.mission || {});
+
+        // Backward compatibility: older DBs used `introSection.paragraphs`
+        if (intro && intro.description === undefined && Array.isArray(intro.paragraphs)) {
+            intro.description = intro.paragraphs;
+        }
+        if (intro && Object.prototype.hasOwnProperty.call(intro, 'paragraphs')) {
+            delete intro.paragraphs;
+        }
         res.status(200).json({
             success: true,
             data: {
@@ -128,7 +175,10 @@ exports.updateIntroMission = async (req, res) => {
             const dot = toDotPath(rawPath);
             if (!dot) return null;
 
-            if (dot === 'paragraphs' || dot.startsWith('paragraphs.')) return `introSection.${dot}`;
+            // `introSection` intro text: renamed `paragraphs` -> `description`
+            if (dot === 'description' || dot.startsWith('description.')) return `introSection.${dot}`;
+            if (dot === 'paragraphs') return 'introSection.description';
+            if (dot.startsWith('paragraphs.')) return `introSection.description.${dot.slice('paragraphs.'.length)}`;
             if (dot === 'introSection' || dot.startsWith('introSection.')) return dot;
             if (dot === 'mission' || dot.startsWith('mission.')) return dot;
 
@@ -142,7 +192,9 @@ exports.updateIntroMission = async (req, res) => {
         };
 
         // 1) Body updates (support JSON strings in multipart/form-data)
-        const normalizedBody = normalizePaths(req.body || {});
+        let normalizedBody = normalizePaths(req.body || {});
+        normalizedBody = processImageFields(normalizedBody);
+
         for (const [key, rawValue] of Object.entries(normalizedBody)) {
             const path = mapMergedPath(key);
             if (!path) continue;
@@ -235,6 +287,22 @@ exports.getSection = (sectionName) => async (req, res) => {
         if (target === undefined) {
             return res.status(404).json({ success: false, message: 'Section not found' });
         }
+
+        // Frontend compatibility: `/about/intro` expects `{ paragraphs: string[] }`
+        if (sectionName === 'introSection') {
+            const intro = target?.toObject ? target.toObject() : (target || {});
+            const paragraphs = Array.isArray(intro.paragraphs)
+                ? intro.paragraphs
+                : (Array.isArray(intro.description) ? intro.description : []);
+
+            return res.status(200).json({
+                success: true,
+                data: {
+                    paragraphs,
+                    description: Array.isArray(intro.description) ? intro.description : paragraphs,
+                }
+            });
+        }
         res.status(200).json({ success: true, data: target });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -246,6 +314,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
         const about = await getActiveAbout();
         // Normalize all keys from brackets to dots
         let updateData = normalizePaths(req.body);
+        updateData = processImageFields(updateData);
 
         // 1. Handle file uploads (both single and multiple)
         if (req.file) {
@@ -285,6 +354,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
         for (const [path, value] of Object.entries(flattenedUpdates)) {
             let normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
             normalizedPath = normalizeHeroBackgroundPath(sectionName, normalizedPath);
+            normalizedPath = normalizeIntroParagraphsPath(sectionName, normalizedPath);
             if (value === null) {
                 about.set(normalizedPath, undefined);
             } else {
@@ -338,23 +408,70 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             return res.status(400).json({ success: false, message: `${arrayPath} is not an array` });
         }
 
-        let payload = normalizePaths(req.body);
-        if (req.file) {
-            setNested(payload, req.file.fieldname, req.file.filename);
+        const getNestedValue = (obj, dotPath) => {
+            if (!obj || typeof obj !== 'object' || typeof dotPath !== 'string') return undefined;
+            return dotPath.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
+        };
+
+        const normalizeIndexObjectsToArrays = (value) => {
+            if (Array.isArray(value)) return value.map((v) => normalizeIndexObjectsToArrays(v));
+            if (!value || typeof value !== 'object') return value;
+
+            const keys = Object.keys(value);
+            const allNumeric = keys.length > 0 && keys.every((k) => /^\d+$/.test(k));
+            if (allNumeric) {
+                const arr = [];
+                keys
+                    .map((k) => Number(k))
+                    .sort((a, b) => a - b)
+                    .forEach((idx) => {
+                        arr[idx] = normalizeIndexObjectsToArrays(value[String(idx)]);
+                    });
+                return arr;
+            }
+
+            for (const k of keys) value[k] = normalizeIndexObjectsToArrays(value[k]);
+            return value;
+        };
+
+        // Build a nested payload from multipart keys like `list[0][name]`
+        let payload = {};
+        const rawBody = req.body && typeof req.body === 'object' ? req.body : {};
+        for (const [rawKey, rawValue] of Object.entries(rawBody)) {
+            const dotKey = toDotPath(rawKey);
+            setNested(payload, dotKey, parseJsonIfLikely(rawValue));
         }
+        payload = processImageFields(payload);
+
+        if (req.file) {
+            setNested(payload, toDotPath(req.file.fieldname), req.file.filename);
+        }
+
         if (req.files) {
             const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-            files.forEach(file => {
-                setNested(payload, file.fieldname, file.filename);
+            files.forEach((file) => {
+                setNested(payload, toDotPath(file.fieldname), file.filename);
             });
         }
 
-        payload.list = parseJsonIfLikely(payload.list);
-        payload.items = parseJsonIfLikely(payload.items);
-        payload.item = parseJsonIfLikely(payload.item);
+        payload = normalizeIndexObjectsToArrays(payload);
+
+        const schemaPath = AboutAcademy.schema.path(arrayPath);
+        const expectsStringItems = schemaPath?.caster?.instance === 'String';
+        const expectsEmbeddedDocs = schemaPath?.instance === 'Array' && schemaPath?.casterConstructor?.name === 'EmbeddedDocument';
 
         let itemsToAdd;
-        if (payload.list !== undefined) {
+        // 1. Try exact path match in payload
+        const directItems = getNestedValue(payload, arrayPath);
+        // 2. Try last part of path (e.g. 'features' from 'whyChooseUs.features')
+        const lastPart = parts[parts.length - 1];
+        const lastPartItems = payload[lastPart];
+
+        if (directItems !== undefined) {
+            itemsToAdd = directItems;
+        } else if (lastPartItems !== undefined) {
+             itemsToAdd = lastPartItems;
+        } else if (payload.list !== undefined) {
             itemsToAdd = payload.list;
         } else if (payload.items !== undefined) {
             itemsToAdd = payload.items;
@@ -367,18 +484,78 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         if (typeof itemsToAdd === 'string') itemsToAdd = parseJsonIfLikely(itemsToAdd);
         if (!Array.isArray(itemsToAdd)) itemsToAdd = [itemsToAdd];
 
-        const schemaPath = AboutAcademy.schema.path(arrayPath);
-        const expectsStringItems = schemaPath?.caster?.instance === 'String';
-        const expectsEmbeddedDocs = schemaPath?.instance === 'Array' && schemaPath?.casterConstructor?.name === 'EmbeddedDocument';
+        const allowedEmbeddedKeys = expectsEmbeddedDocs && schemaPath?.schema?.paths
+            ? Object.keys(schemaPath.schema.paths).filter((k) => k !== '_id' && k !== '__v')
+            : null;
+
+        const pickFirstString = (obj, keys) => {
+            if (!obj || typeof obj !== 'object') return undefined;
+
+            const normalized = {};
+            for (const [k, v] of Object.entries(obj)) {
+                const lower = k.toLowerCase();
+                if (normalized[lower] === undefined) normalized[lower] = v;
+            }
+
+            for (const key of keys) {
+                const direct = obj[key];
+                const viaLower = normalized[key.toLowerCase()];
+                const candidate = typeof direct === 'string' ? direct : (typeof viaLower === 'string' ? viaLower : undefined);
+                if (typeof candidate === 'string' && candidate.trim().length > 0) return candidate;
+            }
+            return undefined;
+        };
+
+        const cleanEmbeddedItem = (item) => {
+            if (!isPlainObject(item)) return null;
+
+            // Map common aliases (helps generic admin forms)
+            const mapped = { ...item };
+            if (allowedEmbeddedKeys?.includes('name') && mapped.name === undefined) {
+                mapped.name = pickFirstString(item, ['name', 'founderName', 'fullName', 'title']);
+            }
+            if (allowedEmbeddedKeys?.includes('role') && mapped.role === undefined) {
+                mapped.role = pickFirstString(item, ['role', 'position', 'designation', 'subtitle']);
+            }
+            if (allowedEmbeddedKeys?.includes('bio') && mapped.bio === undefined) {
+                mapped.bio = pickFirstString(item, ['bio', 'description', 'about', 'text']);
+            }
+            if (allowedEmbeddedKeys?.includes('image') && mapped.image === undefined) {
+                mapped.image = pickFirstString(item, ['image', 'imageUrl', 'photo', 'img', 'src', 'url', 'path']);
+            }
+
+            if (!allowedEmbeddedKeys) {
+                // Avoid adding an empty object (it would create a card with only _id)
+                const hasAnyValue = Object.values(mapped).some((v) => v !== undefined && v !== null && (typeof v !== 'string' || v.trim().length > 0));
+                return hasAnyValue ? mapped : null;
+            }
+
+            const cleaned = {};
+            for (const key of allowedEmbeddedKeys) {
+                const val = mapped[key];
+                if (val === undefined || val === null) continue;
+                if (typeof val === 'string') {
+                    const trimmed = val.trim();
+                    if (trimmed.length === 0) continue;
+                    cleaned[key] = trimmed;
+                } else {
+                    cleaned[key] = val;
+                }
+            }
+
+            return Object.keys(cleaned).length > 0 ? cleaned : null;
+        };
 
         const coerceStringItem = (item) => {
             if (typeof item === 'string') return item;
             if (!isPlainObject(item)) return null;
 
             // Common keys for string arrays (features, urls, images, etc)
-            const candidates = ['value', 'text', 'feature', 'label', 'name', 'title', 'image', 'url', 'src', 'path'];
+            const candidates = ['value', 'text', 'feature', 'features', 'label', 'name', 'title', 'image', 'url', 'src', 'path', 'item'];
             for (const key of candidates) {
                 if (typeof item[key] === 'string') return item[key];
+                // Handle case where an array of 1 string is sent under the key
+                if (Array.isArray(item[key]) && item[key].length === 1 && typeof item[key][0] === 'string') return item[key][0];
             }
 
             // If there's exactly 1 string field, use it
@@ -395,14 +572,41 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
                 .map((value) => (typeof value === 'string' ? value.trim() : value))
                 .filter((value) => typeof value === 'string' && value.length > 0);
         } else if (expectsEmbeddedDocs) {
-            itemsToAdd = itemsToAdd.filter((item) => isPlainObject(item));
+            itemsToAdd = itemsToAdd.map((item) => cleanEmbeddedItem(item)).filter(Boolean);
         } else {
             // Unknown schema path: keep it conservative to avoid bad casts
-            itemsToAdd = itemsToAdd.filter((item) => isPlainObject(item));
+            itemsToAdd = itemsToAdd
+                .filter((item) => isPlainObject(item))
+                .filter((item) => Object.keys(item).length > 0);
         }
 
         if (itemsToAdd.length === 0) {
-            return res.status(400).json({ success: false, message: 'No valid item found to add' });
+            // Allow creating a blank embedded-doc item (useful for admin "Add card" buttons)
+            const fileList = Array.isArray(req.files) ? req.files : (req.files ? Object.values(req.files).flat() : []);
+            const hasAnyFile = Boolean(req.file) || fileList.length > 0;
+
+            const hasMeaningfulBody = Object.values(rawBody).some((v) => {
+                if (v === null || v === undefined) return false;
+                if (typeof v === 'string') return v.trim().length > 0;
+                if (Array.isArray(v)) return v.length > 0;
+                if (typeof v === 'object') return Object.keys(v).length > 0;
+                return true;
+            });
+
+            if (expectsEmbeddedDocs && allowedEmbeddedKeys?.length && !hasMeaningfulBody && !hasAnyFile) {
+                const blankItem = {};
+                for (const key of allowedEmbeddedKeys) {
+                    const instance = schemaPath?.schema?.paths?.[key]?.instance;
+                    if (instance === 'String') blankItem[key] = '';
+                    else if (instance === 'Number') blankItem[key] = 0;
+                    else if (instance === 'Boolean') blankItem[key] = false;
+                    else if (instance === 'Array') blankItem[key] = [];
+                    else blankItem[key] = null;
+                }
+                itemsToAdd = [blankItem];
+            } else {
+                return res.status(400).json({ success: false, message: 'No valid item found to add' });
+            }
         }
 
         for (const item of itemsToAdd) targetArray.push(item);
@@ -430,6 +634,8 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         const itemPath = `${arrayPath}.${index}`;
 
         let updateData = normalizePaths(req.body);
+        updateData = processImageFields(updateData);
+
         if (req.file) {
             setNested(updateData, req.file.fieldname, req.file.filename);
         }
@@ -471,14 +677,37 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
             targetArray = targetArray[part];
         }
 
-        const item = targetArray.id(req.params.itemId);
-        if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
+        if (req.params.itemId) {
+            const item = targetArray.id(req.params.itemId);
+            if (item) {
+                targetArray.pull(req.params.itemId);
+            } else {
+                // Try as index
+                const index = parseInt(req.params.itemId);
+                if (!isNaN(index) && index >= 0 && index < targetArray.length) {
+                    targetArray.splice(index, 1);
+                } else {
+                    return res.status(404).json({ success: false, message: 'Item not found' });
+                }
+            }
+        } else if (req.params.index !== undefined) {
+             const index = parseInt(req.params.index);
+             if (!isNaN(index) && index >= 0 && index < targetArray.length) {
+                targetArray.splice(index, 1);
+            } else {
+                return res.status(404).json({ success: false, message: 'Invalid index' });
+            }
+        }
 
-        targetArray.pull(req.params.itemId);
         about.markModified(arrayPath);
         await about.save();
         res.status(200).json({ success: true, message: 'Item deleted safely', data: targetArray });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
+};
+
+exports.deleteArrayItemByIndex = (arrayPath) => async (req, res) => {
+    req.params.itemId = req.params.index;
+    return exports.deleteArrayItem(arrayPath)(req, res);
 };

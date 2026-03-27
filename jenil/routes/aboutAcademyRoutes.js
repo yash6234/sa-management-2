@@ -58,16 +58,7 @@ router.get('/why-choose-us', aboutAcademyController.getSection('whyChooseUs'));
 router.post('/why-choose-us/add', upload.any(), standardizeFilePath, aboutAcademyController.addArrayItem('whyChooseUs.features'));
 router.put('/why-choose-us/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('whyChooseUs'));
 router.delete('/why-choose-us/delete', aboutAcademyController.deleteSection('whyChooseUs'));
-router.delete('/why-choose-us/:index/delete', async (req, res) => {
-    try {
-        const AboutAcademy = require('../models/AboutAcademy');
-        let about = await AboutAcademy.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
-        if (!about) about = await AboutAcademy.create({ isActive: true });
-        about.whyChooseUs.features.splice(req.params.index, 1);
-        await about.save();
-        res.status(200).json({ success: true, data: about.whyChooseUs.features });
-    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
-});
+router.delete('/why-choose-us/:index/delete', aboutAcademyController.deleteArrayItem('whyChooseUs.features'));
 
 
 module.exports = router;

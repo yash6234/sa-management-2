@@ -16,7 +16,7 @@ router.delete('/hero/delete', galleryPageController.deleteSection('hero'));
 
 // 2. CATEGORIES
 router.get('/categories', galleryPageController.getSection('categories'));
-router.post('/categories/update', upload.any(), standardizeFilePath, galleryPageController.updateSection('categories'));
+router.post('/categories/add', upload.any(), standardizeFilePath, galleryPageController.addArrayItem('categories'));
 router.put('/categories/update', upload.any(), standardizeFilePath, galleryPageController.updateSection('categories'));
 router.delete('/categories/delete', galleryPageController.deleteSection('categories'));
 

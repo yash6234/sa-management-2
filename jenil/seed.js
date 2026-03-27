@@ -236,26 +236,27 @@ const seedData = async () => {
             },
             levels: {
                 beginner: {
-                    title: "Beginner Program",
+                    title: "Beginner Level",
                     description: "For students starting cricket basics.",
                     features: ["Basic batting techniques", "Bowling action correction", "Fielding basics", "Fitness training", "Game rules understanding"],
                     image: "public/Programs/cricpro.png"
                 },
                 intermediate: {
-                    title: "Intermediate Program",
+                    title: "Intermediate Level",
                     description: "For players with basic cricket knowledge.",
                     features: ["Advanced batting skills", "Bowling variations", "Match strategy", "Fitness improvement", "Match simulations"],
                     image: "public/Programs/footballpro.png"
                 },
                 advanced: {
-                    title: "Advanced Program",
-                    description: "For serious players.",
-                    features: ["Competitive match preparation", "Performance improvement", "Technique correction", "Professional level practice", "Tournament preparation"],
+                    title: "Advanced Level",
+                    description: "For experienced players looking for national level training.",
+                    features: ["Professional match practice", "Video analysis", "Specific skill sets", "Mental conditioning", "Tournament participation"],
                     image: "public/home/Bowling.jpg"
                 },
                 camp: {
-                    title: "Seasonal Training",
+                    title: "Seasonal Training & Summer Camps",
                     description: "Special seasonal training programs including intensive cricket training, fitness drills, skill competitions, match practice, awards & certificates.",
+                    features: ["Intensive training", "Fitness drills", "Skill competitions", "Match practice", "Awards & Certificates"],
                     duration: "Seasonal",
                     image: "public/about/programs.png"
                 }
