@@ -82,8 +82,8 @@ const homeSchema = new mongoose.Schema({
         sectionTitle: { type: String, default: "What Parents Say" },
         list: [{
             quote: { type: String },
-            name: { type: String },
-            role: { type: String },
+            parentName: { type: String },
+            relation: { type: String },
             _id: false
         }]
     },

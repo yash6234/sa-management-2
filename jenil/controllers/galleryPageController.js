@@ -105,6 +105,20 @@ exports.updateSection = (sectionName) => async (req, res) => {
             setNested(updateData, relativePath, file.filename);
         }
 
+        // Common alias support for hero background uploads (some clients send `background` or `image`)
+        if (toDotPath(sectionName) === 'hero') {
+            if (updateData.backgroundImage === undefined) {
+                if (updateData.background !== undefined) updateData.backgroundImage = updateData.background;
+                else if (updateData.bgImage !== undefined) updateData.backgroundImage = updateData.bgImage;
+                else if (updateData.bg !== undefined) updateData.backgroundImage = updateData.bg;
+                else if (updateData.image !== undefined) updateData.backgroundImage = updateData.image;
+            }
+            delete updateData.background;
+            delete updateData.bgImage;
+            delete updateData.bg;
+            delete updateData.image;
+        }
+
         if (sectionName === 'galleryGrid') {
             if (updateData.categories !== undefined) {
                 if (typeof updateData.categories === 'string') {

@@ -67,15 +67,6 @@ const aboutAcademySchema = new mongoose.Schema({
             icon: { type: String }
         }]
     },
-
-    values: {
-        sectionTitle: { type: String, default: "Our Values" },
-        list: [{
-            title: { type: String },
-            description: { type: String },
-            icon: { type: String }
-        }]
-    },
     isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 

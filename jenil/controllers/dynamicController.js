@@ -63,6 +63,11 @@ exports.updateDynamic = async (req, res, next) => {
 
         const fullPath = pathParts.join('.');
 
+        // Disable removed legacy sections (About -> values)
+        if (page.toLowerCase() === 'about' && (fullPath === 'values' || fullPath.startsWith('values.'))) {
+            return res.status(404).json({ success: false, error: 'Path not found' });
+        }
+
         let doc = await Model.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
         if (!doc) doc = await Model.create({ isActive: true });
 
@@ -143,6 +148,11 @@ exports.getDynamic = async (req, res, next) => {
         // We need to split it and map segments
         let pathParts = rawPath.split('/').filter(s => s); // Filter out empty strings from split
         pathParts = pathParts.map(part => fieldMap[part] || part); // Map user-friendly names to schema names
+
+        // Disable removed legacy sections (About -> values)
+        if (page.toLowerCase() === 'about' && pathParts.length > 0 && pathParts[0] === 'values') {
+            return res.status(404).json({ success: false, error: 'Path segment values not found' });
+        }
 
         let target = doc;
         for (const segment of pathParts) {

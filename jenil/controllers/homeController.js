@@ -45,6 +45,17 @@ const normalizeDuplicatedSectionPrefix = (sectionName, fullPath) => {
     return normalized;
 };
 
+const normalizeHeroBackgroundPath = (sectionName, fullPath) => {
+    const sectionDot = toDotPath(sectionName);
+    if (sectionDot !== 'hero' || typeof fullPath !== 'string') return fullPath;
+
+    if (fullPath.endsWith('.background')) return fullPath.replace(/\.background$/, '.backgroundImage');
+    if (fullPath.endsWith('.bgImage')) return fullPath.replace(/\.bgImage$/, '.backgroundImage');
+    if (fullPath.endsWith('.bg')) return fullPath.replace(/\.bg$/, '.backgroundImage');
+    if (fullPath.endsWith('.image')) return fullPath.replace(/\.image$/, '.backgroundImage');
+    return fullPath;
+};
+
 // Helper to set nested property by string path (handles both dots and brackets)
 const setNested = (obj, path, value) => {
     const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
@@ -214,7 +225,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
         console.log(`[HomeController] Flattened updates for Mongoose:`, flattenedUpdates);
 
         for (const [path, value] of Object.entries(flattenedUpdates)) {
-            const normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
+            let normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
+            normalizedPath = normalizeHeroBackgroundPath(sectionName, normalizedPath);
             if (value === null) {
                 // Handle deletion for Maps or setting undefined for regular fields
                 const parentPath = normalizedPath.substring(0, normalizedPath.lastIndexOf('.'));
@@ -320,18 +332,18 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             // Clean up previously inserted empty objects (usually caused by wrong payload shape).
             for (let i = targetArray.length - 1; i >= 0; i--) {
                 const t = targetArray[i] || {};
-                const isEmpty = !t.quote && !t.name && !t.role;
+                const isEmpty = !t.quote && !t.parentName && !t.relation;
                 if (isEmpty) targetArray.splice(i, 1);
             }
 
             for (const item of itemsToAdd) {
                 const quote = typeof item.quote === 'string' ? item.quote.trim() : '';
-                const name = typeof item.name === 'string' ? item.name.trim() : '';
-                const role = typeof item.role === 'string' ? item.role.trim() : '';
-                if (!quote || !name || !role) {
+                const parentName = typeof item.parentName === 'string' ? item.parentName.trim() : '';
+                const relation = typeof item.relation === 'string' ? item.relation.trim() : '';
+                if (!quote || !parentName || !relation) {
                     return res.status(400).json({
                         success: false,
-                        message: 'Each testimonial must include quote, name, and role'
+                        message: 'Each testimonial must include quote, parentName, and relation'
                     });
                 }
             }

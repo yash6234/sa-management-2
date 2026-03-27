@@ -26,6 +26,17 @@ const normalizeDuplicatedSectionPrefix = (sectionName, fullPath) => {
     return normalized;
 };
 
+const normalizeHeroBackgroundPath = (sectionName, fullPath) => {
+    const sectionDot = toDotPath(sectionName);
+    if (sectionDot !== 'hero' || typeof fullPath !== 'string') return fullPath;
+
+    if (fullPath.endsWith('.background')) return fullPath.replace(/\.background$/, '.backgroundImage');
+    if (fullPath.endsWith('.bgImage')) return fullPath.replace(/\.bgImage$/, '.backgroundImage');
+    if (fullPath.endsWith('.bg')) return fullPath.replace(/\.bg$/, '.backgroundImage');
+    if (fullPath.endsWith('.image')) return fullPath.replace(/\.image$/, '.backgroundImage');
+    return fullPath;
+};
+
 const setNested = (obj, path, value) => {
     const parts = toDotPath(path).split('.').filter(Boolean);
     if (parts.length === 0) return;
@@ -126,7 +137,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
         const flattenedUpdates = flattenObject(updateData, sectionName);
         for (const [path, value] of Object.entries(flattenedUpdates)) {
-            const normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
+            let normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
+            normalizedPath = normalizeHeroBackgroundPath(sectionName, normalizedPath);
             admissions.set(normalizedPath, value === null ? undefined : value);
             admissions.markModified(normalizedPath);
         }

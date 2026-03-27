@@ -20,13 +20,16 @@ router.post('/intro/add', upload.any(), standardizeFilePath, aboutAcademyControl
 router.put('/intro/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('introSection'));
 router.delete('/intro/delete', aboutAcademyController.deleteSection('introSection'));
 
+// 2b. INTRO + MISSION (Merged)
+router.get('/intro-mission', aboutAcademyController.getIntroMission);
+router.post('/intro-mission/add', upload.any(), standardizeFilePath, aboutAcademyController.updateIntroMission);
+router.put('/intro-mission/update', upload.any(), standardizeFilePath, aboutAcademyController.updateIntroMission);
+router.delete('/intro-mission/delete', aboutAcademyController.deleteIntroMission);
+
 // 3. MISSION
 router.get('/mission', aboutAcademyController.getSection('mission'));
-router.post('/mission/add', upload.any(), standardizeFilePath, aboutAcademyController.addArrayItem('mission.items'));
 router.put('/mission/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('mission'));
 router.delete('/mission/delete', aboutAcademyController.deleteSection('mission'));
-router.put('/mission/:itemId/update', upload.any(), standardizeFilePath, aboutAcademyController.updateArrayItem('mission.items'));
-router.delete('/mission/:itemId/delete', aboutAcademyController.deleteArrayItem('mission.items'));
 
 // 4. DIRECTOR'S MESSAGE
 router.get('/directors-message', aboutAcademyController.getSection('directorsMessage'));
@@ -50,15 +53,7 @@ router.delete('/journey/delete', aboutAcademyController.deleteSection('journey')
 router.put('/journey/:itemId/update', upload.any(), standardizeFilePath, aboutAcademyController.updateArrayItem('journey.list'));
 router.delete('/journey/:itemId/delete', aboutAcademyController.deleteArrayItem('journey.list'));
 
-// 7. VALUES
-router.get('/values', aboutAcademyController.getSection('values'));
-router.post('/values/add', upload.any(), standardizeFilePath, aboutAcademyController.addArrayItem('values.list'));
-router.put('/values/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('values'));
-router.delete('/values/delete', aboutAcademyController.deleteSection('values'));
-router.put('/values/:itemId/update', upload.any(), standardizeFilePath, aboutAcademyController.updateArrayItem('values.list'));
-router.delete('/values/:itemId/delete', aboutAcademyController.deleteArrayItem('values.list'));
-
-// 8. WHY CHOOSE US
+// 7. WHY CHOOSE US
 router.get('/why-choose-us', aboutAcademyController.getSection('whyChooseUs'));
 router.post('/why-choose-us/add', upload.any(), standardizeFilePath, aboutAcademyController.addArrayItem('whyChooseUs.features'));
 router.put('/why-choose-us/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('whyChooseUs'));

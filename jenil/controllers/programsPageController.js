@@ -42,6 +42,17 @@ const normalizeDuplicatedSectionPrefix = (sectionName, fullPath) => {
     return normalized;
 };
 
+const normalizeHeroBackgroundPath = (sectionName, fullPath) => {
+    const sectionDot = toDotPath(sectionName);
+    if (sectionDot !== 'hero' || typeof fullPath !== 'string') return fullPath;
+
+    if (fullPath.endsWith('.background')) return fullPath.replace(/\.background$/, '.backgroundImage');
+    if (fullPath.endsWith('.bgImage')) return fullPath.replace(/\.bgImage$/, '.backgroundImage');
+    if (fullPath.endsWith('.bg')) return fullPath.replace(/\.bg$/, '.backgroundImage');
+    if (fullPath.endsWith('.image')) return fullPath.replace(/\.image$/, '.backgroundImage');
+    return fullPath;
+};
+
 // Helper to set nested property by string path (handles both dots and brackets)
 const setNested = (obj, path, value) => {
     const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
@@ -153,7 +164,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
         console.log(`[ProgramsController] Flattened updates for Mongoose:`, flattenedUpdates);
 
         for (const [path, value] of Object.entries(flattenedUpdates)) {
-            const normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
+            let normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
+            normalizedPath = normalizeHeroBackgroundPath(sectionName, normalizedPath);
             if (value === null) {
                 programs.set(normalizedPath, undefined);
             } else {

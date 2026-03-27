@@ -128,18 +128,18 @@ const seedData = async () => {
                 list: [
                     {
                         quote: "My son has become more disciplined and confident after joining this academy. The coaches focus on both skills and character.",
-                        name: "Rakesh Patel",
-                        role: "Father of U-14 player"
+                        parentName: "Rakesh Patel",
+                        relation: "Father of U-14 player"
                     },
                     {
                         quote: "The training structure is excellent. We can clearly see improvement in technique, fitness, and match temperament.",
-                        name: "Neha Shah",
-                        role: "Mother of U-16 player"
+                        parentName: "Neha Shah",
+                        relation: "Mother of U-16 player"
                     },
                     {
                         quote: "Safe environment, individual attention, and regular match exposure. This is exactly what we were looking for.",
-                        name: "Mitesh Desai",
-                        role: "Parent of academy trainee"
+                        parentName: "Mitesh Desai",
+                        relation: "Parent of academy trainee"
                     }
                 ]
             }

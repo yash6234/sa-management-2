@@ -51,7 +51,7 @@ const encryptImagesInObject = (obj, baseUrl) => {
     if (typeof obj === 'string' && looksLikeInternalMediaPath(obj)) {
         const cleanPath = obj.replace(/^\/+/, '');
         const token = encryptImageUrl(cleanPath);
-        if (baseUrl) return `${baseUrl}/acade360/${token}`;
+        // Return ONLY the encrypted path (portable across environments)
         return `/acade360/${token}`;
     }
 

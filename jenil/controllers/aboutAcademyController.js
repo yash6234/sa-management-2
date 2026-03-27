@@ -42,6 +42,17 @@ const normalizeDuplicatedSectionPrefix = (sectionName, fullPath) => {
     return normalized;
 };
 
+const normalizeHeroBackgroundPath = (sectionName, fullPath) => {
+    const sectionDot = toDotPath(sectionName);
+    if (sectionDot !== 'hero' || typeof fullPath !== 'string') return fullPath;
+
+    if (fullPath.endsWith('.background')) return fullPath.replace(/\.background$/, '.backgroundImage');
+    if (fullPath.endsWith('.bgImage')) return fullPath.replace(/\.bgImage$/, '.backgroundImage');
+    if (fullPath.endsWith('.bg')) return fullPath.replace(/\.bg$/, '.backgroundImage');
+    if (fullPath.endsWith('.image')) return fullPath.replace(/\.image$/, '.backgroundImage');
+    return fullPath;
+};
+
 // Helper to set nested property by string path (handles both dots and brackets)
 const setNested = (obj, path, value) => {
     const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
@@ -78,10 +89,132 @@ const getActiveAbout = async () => {
 exports.getAboutData = async (req, res) => {
     try {
         const aboutData = await getActiveAbout();
-        res.status(200).json({ success: true, data: aboutData });
+        const data = aboutData?.toObject ? aboutData.toObject() : aboutData;
+        if (data && typeof data === 'object') {
+            // Section removed from API; hide any legacy data still stored in MongoDB
+            delete data.values;
+        }
+        res.status(200).json({ success: true, data });
     } catch (err) {
         console.error("Error fetching about page data:", err);
         res.status(500).json({ success: false, error: 'Failed to fetch about data' });
+    }
+};
+
+// Intro + Mission merged payload (for fewer frontend calls / unified admin editing)
+exports.getIntroMission = async (req, res) => {
+    try {
+        const about = await getActiveAbout();
+        const intro = about.introSection?.toObject ? about.introSection.toObject() : (about.introSection || {});
+        const mission = about.mission?.toObject ? about.mission.toObject() : (about.mission || {});
+        res.status(200).json({
+            success: true,
+            data: {
+                ...intro,
+                mission
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.updateIntroMission = async (req, res) => {
+    try {
+        const about = await getActiveAbout();
+        const updateData = {};
+
+        const mapMergedPath = (rawPath) => {
+            const dot = toDotPath(rawPath);
+            if (!dot) return null;
+
+            if (dot === 'paragraphs' || dot.startsWith('paragraphs.')) return `introSection.${dot}`;
+            if (dot === 'introSection' || dot.startsWith('introSection.')) return dot;
+            if (dot === 'mission' || dot.startsWith('mission.')) return dot;
+
+            // Allow mission fields at root for convenience
+            const missionKeys = ['sectionTitle', 'items', 'imageCollage'];
+            for (const key of missionKeys) {
+                if (dot === key || dot.startsWith(key + '.')) return `mission.${dot}`;
+            }
+
+            return null;
+        };
+
+        // 1) Body updates (support JSON strings in multipart/form-data)
+        const normalizedBody = normalizePaths(req.body || {});
+        for (const [key, rawValue] of Object.entries(normalizedBody)) {
+            const path = mapMergedPath(key);
+            if (!path) continue;
+            const value = typeof rawValue === 'string' ? parseJsonIfLikely(rawValue) : rawValue;
+            setNested(updateData, path, value);
+        }
+
+        // 2) File uploads (icons, image collage, etc)
+        const files = Array.isArray(req.files) ? req.files : (req.files ? Object.values(req.files).flat() : []);
+        for (const file of files) {
+            const path = mapMergedPath(file.fieldname);
+            if (!path) continue;
+            setNested(updateData, path, file.filename);
+        }
+
+        // 3) Flatten + apply updates
+        const flattenObject = (obj, prefix = '') => {
+            return Object.keys(obj).reduce((acc, k) => {
+                const pre = prefix.length ? prefix + '.' : '';
+                const fullPath = pre + k;
+
+                if (obj[k] === null) {
+                    acc[fullPath] = null;
+                } else if (typeof obj[k] === 'object' && !Array.isArray(obj[k])) {
+                    Object.assign(acc, flattenObject(obj[k], fullPath));
+                } else {
+                    acc[fullPath] = obj[k];
+                }
+                return acc;
+            }, {});
+        };
+
+        const normalizeDuplicatedRootPrefix = (fullPath) => {
+            if (typeof fullPath !== 'string') return fullPath;
+            let normalized = fullPath;
+            for (const section of ['introSection', 'mission']) {
+                const dupPrefix = `${section}.${section}.`;
+                while (normalized.startsWith(dupPrefix)) {
+                    normalized = `${section}.${normalized.slice(dupPrefix.length)}`;
+                }
+            }
+            return normalized;
+        };
+
+        const flattenedUpdates = flattenObject(updateData);
+        for (const [path, value] of Object.entries(flattenedUpdates)) {
+            const normalizedPath = normalizeDuplicatedRootPrefix(path);
+            about.set(normalizedPath, value === null ? undefined : value);
+            about.markModified(normalizedPath);
+        }
+
+        await about.save();
+        const intro = about.introSection?.toObject ? about.introSection.toObject() : (about.introSection || {});
+        const mission = about.mission?.toObject ? about.mission.toObject() : (about.mission || {});
+        res.status(200).json({ success: true, data: { ...intro, mission } });
+    } catch (err) {
+        console.error("Update Intro+Mission Error:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.deleteIntroMission = async (req, res) => {
+    try {
+        const about = await getActiveAbout();
+        about.set('introSection', undefined);
+        about.set('mission', undefined);
+        about.markModified('introSection');
+        about.markModified('mission');
+        await about.save();
+        res.status(200).json({ success: true, message: 'Intro + Mission cleared/reset' });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
     }
 };
 
@@ -150,7 +283,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
         console.log(`[AboutController] Flattened updates for Mongoose:`, flattenedUpdates);
 
         for (const [path, value] of Object.entries(flattenedUpdates)) {
-            const normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
+            let normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
+            normalizedPath = normalizeHeroBackgroundPath(sectionName, normalizedPath);
             if (value === null) {
                 about.set(normalizedPath, undefined);
             } else {
