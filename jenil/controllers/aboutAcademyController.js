@@ -68,14 +68,14 @@ exports.getSection = (sectionName) => async (req, res) => {
         if (sectionName.includes('.')) {
             const parts = sectionName.split('.');
             for (const part of parts) {
-                 if (target) target = target[part];
+                if (target) target = target[part];
             }
         } else {
-             target = about[sectionName];
+            target = about[sectionName];
         }
-        
+
         if (target === undefined) {
-             return res.status(404).json({ success: false, message: 'Section not found' });
+            return res.status(404).json({ success: false, message: 'Section not found' });
         }
         res.status(200).json({ success: true, data: target });
     } catch (err) {
@@ -133,7 +133,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
         await about.save();
         console.log(`[AboutController] Successfully saved section ${sectionName}.`);
-        
+
         // Return the updated section
         const parts = sectionName.split('.');
         const result = parts.reduce((obj, part) => obj && obj[part], about);
@@ -174,7 +174,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         if (!Array.isArray(targetArray)) {
             return res.status(400).json({ success: false, message: `${arrayPath} is not an array` });
         }
-        
+
         let payload = normalizePaths(req.body);
         if (req.file) {
             setNested(payload, req.file.fieldname, req.file.filename);
@@ -185,7 +185,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
                 setNested(payload, file.fieldname, file.filename);
             });
         }
-        
+
         payload.list = parseJsonIfLikely(payload.list);
         payload.items = parseJsonIfLikely(payload.items);
         payload.item = parseJsonIfLikely(payload.item);
@@ -228,10 +228,10 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         for (const part of parts) {
             targetArray = targetArray[part];
         }
-        
+
         const item = targetArray.id(req.params.itemId);
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
-        
+
         const index = targetArray.indexOf(item);
         const itemPath = `${arrayPath}.${index}`;
 
@@ -245,7 +245,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
                 setNested(updateData, file.fieldname, file.filename);
             });
         }
-        
+
         const applyItemUpdate = (prefix, data) => {
             for (const key in data) {
                 const value = data[key];
@@ -276,10 +276,10 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
         for (const part of parts) {
             targetArray = targetArray[part];
         }
-        
+
         const item = targetArray.id(req.params.itemId);
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
-        
+
         targetArray.pull(req.params.itemId);
         about.markModified(arrayPath);
         await about.save();

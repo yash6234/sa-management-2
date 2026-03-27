@@ -10,7 +10,7 @@ const parseJsonIfLikely = (value) => {
     try {
         return JSON.parse(trimmed);
     } catch {
-        return value;   
+        return value;
     }
 };
 
