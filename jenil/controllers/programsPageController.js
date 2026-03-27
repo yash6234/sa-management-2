@@ -46,10 +46,29 @@ const normalizeHeroBackgroundPath = (sectionName, fullPath) => {
     const sectionDot = toDotPath(sectionName);
     if (sectionDot !== 'hero' || typeof fullPath !== 'string') return fullPath;
 
-    if (fullPath.endsWith('.background')) return fullPath.replace(/\.background$/, '.backgroundImage');
-    if (fullPath.endsWith('.bgImage')) return fullPath.replace(/\.bgImage$/, '.backgroundImage');
-    if (fullPath.endsWith('.bg')) return fullPath.replace(/\.bg$/, '.backgroundImage');
-    if (fullPath.endsWith('.image')) return fullPath.replace(/\.image$/, '.backgroundImage');
+    const match = fullPath.match(/^(.*)\.([^.]+)$/);
+    if (!match) return fullPath;
+
+    const prefix = match[1];
+    const last = match[2];
+    const alias = last.toLowerCase();
+
+    const heroImageAliases = new Set([
+        'background',
+        'bgimage',
+        'bg_image',
+        'bg',
+        'image',
+        'file',
+        'imagefile',
+        'heroimage',
+        'herobg',
+        'herobackground',
+        'backgroundimage',
+        'background_image',
+    ]);
+
+    if (heroImageAliases.has(alias)) return `${prefix}.backgroundImage`;
     return fullPath;
 };
 

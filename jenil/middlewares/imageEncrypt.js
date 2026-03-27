@@ -16,6 +16,14 @@ const getRequestBaseUrl = (req) => {
     return `${proto}://${host}`;
 };
 
+const shouldReturnAbsoluteUrls = () => {
+    const mode = (process.env.CMS_IMAGE_URL_MODE || '').toString().trim().toLowerCase();
+    if (mode === 'relative') return false;
+    if (mode === 'absolute') return true;
+    // Default: absolute URLs (works when frontend & backend are on different origins/ports)
+    return true;
+};
+
 const isAlreadyEncryptedUrl = (value) => {
     if (typeof value !== 'string') return false;
 
@@ -51,7 +59,9 @@ const encryptImagesInObject = (obj, baseUrl) => {
     if (typeof obj === 'string' && looksLikeInternalMediaPath(obj)) {
         const cleanPath = obj.replace(/^\/+/, '');
         const token = encryptImageUrl(cleanPath);
-        // Return ONLY the encrypted path (portable across environments)
+        // If the frontend is running on a different origin/port, absolute URLs are required to load images.
+        // Set `CMS_IMAGE_URL_MODE=relative` to always return `/acade360/<token>`.
+        if (shouldReturnAbsoluteUrls() && baseUrl) return `${baseUrl}/acade360/${token}`;
         return `/acade360/${token}`;
     }
 

@@ -9,7 +9,7 @@ const aboutAcademySchema = new mongoose.Schema({
     },
 
     introSection: {
-        paragraphs: { type: [String], default: [] }
+        description: { type: [String], default: [] }
     },
 
     mission: {
