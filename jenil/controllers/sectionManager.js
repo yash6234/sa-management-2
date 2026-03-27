@@ -13,7 +13,7 @@ const setNested = (obj, path, value) => {
 };
 
 const getActiveDocument = async (Model) => {
-    let doc = await Model.findOne({ isActive: true });
+    let doc = await Model.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!doc) doc = await Model.create({ isActive: true });
     return doc;
 };

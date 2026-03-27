@@ -2,7 +2,7 @@ const ContactPage = require('../models/ContactPage');
 const ContactSubmission = require('../models/ContactSubmission');
 
 const getActiveContact = async () => {
-    let contact = await ContactPage.findOne({ isActive: true });
+    let contact = await ContactPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!contact) contact = await ContactPage.create({ isActive: true });
     return contact;
 };

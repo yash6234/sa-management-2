@@ -63,7 +63,7 @@ exports.updateDynamic = async (req, res, next) => {
 
         const fullPath = pathParts.join('.');
 
-        let doc = await Model.findOne({ isActive: true });
+        let doc = await Model.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
         if (!doc) doc = await Model.create({ isActive: true });
 
         const isAdd = rawPath.endsWith('/add');
@@ -136,7 +136,7 @@ exports.getDynamic = async (req, res, next) => {
         const Model = models[page.toLowerCase()];
         if (!Model) return next();
 
-        const doc = await Model.findOne({ isActive: true });
+        const doc = await Model.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
         if (!doc) return res.status(404).json({ success: false, error: 'Document not found' });
 
         // The rawPath here would be something like '/background/image' if the page is 'home'

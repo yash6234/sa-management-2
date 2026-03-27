@@ -16,6 +16,7 @@ const seedData = async () => {
     try {
         await mongoose.connect(process.env.MONGO_URI);
         console.log('Connected to MongoDB.');
+        console.log(`DB: ${mongoose.connection.name} @ ${mongoose.connection.host}:${mongoose.connection.port}`);
 
         // 🔹 CRITICAL: DO NOT use dropDatabase() when connected to the main backend.
         // Instead, clear only the collections that this seeding script owns.

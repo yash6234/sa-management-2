@@ -2,7 +2,7 @@ const PlaygroundPage = require('../models/PlaygroundPage');
 const PlaygroundBooking = require('../models/PlaygroundBooking');
 
 const getActivePlayground = async () => {
-    let playground = await PlaygroundPage.findOne({ isActive: true });
+    let playground = await PlaygroundPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!playground) playground = await PlaygroundPage.create({ isActive: true });
     return playground;
 };

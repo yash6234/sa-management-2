@@ -44,7 +44,7 @@ const normalizePaths = (obj) => {
 };
 
 const getActivePrograms = async () => {
-    let programs = await ProgramsPage.findOne({ isActive: true });
+    let programs = await ProgramsPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!programs) programs = await ProgramsPage.create({ isActive: true });
     return programs;
 };

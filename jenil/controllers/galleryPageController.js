@@ -12,7 +12,7 @@ const setNested = (obj, path, value) => {
 };
 
 const getActiveGallery = async () => {
-    let gallery = await GalleryPage.findOne({ isActive: true });
+    let gallery = await GalleryPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!gallery) gallery = await GalleryPage.create({ isActive: true });
     return gallery;
 };

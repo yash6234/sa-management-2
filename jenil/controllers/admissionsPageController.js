@@ -2,7 +2,7 @@ const AdmissionsPage = require('../models/AdmissionsPage');
 const AdmissionSubmission = require('../models/AdmissionSubmission');
 
 const getActiveAdmissions = async () => {
-    let admissions = await AdmissionsPage.findOne({ isActive: true });
+    let admissions = await AdmissionsPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!admissions) admissions = await AdmissionsPage.create({ isActive: true });
     return admissions;
 };

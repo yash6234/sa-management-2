@@ -44,7 +44,7 @@ const normalizePaths = (obj) => {
 };
 
 const getActiveAbout = async () => {
-    let about = await AboutAcademy.findOne({ isActive: true });
+    let about = await AboutAcademy.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!about) about = await AboutAcademy.create({ isActive: true });
     return about;
 };

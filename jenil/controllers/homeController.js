@@ -56,7 +56,7 @@ const processImageFields = (data) => {
 };
 
 const getActiveHome = async () => {
-    let home = await Home.findOne({ isActive: true });
+    let home = await Home.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!home) home = await Home.create({ isActive: true });
     return home;
 };
@@ -77,7 +77,7 @@ const Footer = require('../models/Footer');
 // 1b. FOOTER ENDPOINT (shared across all pages)
 exports.getFooterData = async (req, res) => {
     try {
-        let footer = await Footer.findOne({ isActive: true });
+        let footer = await Footer.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
         if (!footer) footer = await Footer.create({});
         res.status(200).json({ success: true, data: footer });
     } catch (err) {
@@ -87,7 +87,7 @@ exports.getFooterData = async (req, res) => {
 
 exports.updateFooter = async (req, res) => {
     try {
-        let footer = await Footer.findOne({ isActive: true });
+        let footer = await Footer.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
         if (!footer) footer = await Footer.create({});
 
         let updateData = { ...req.body };
