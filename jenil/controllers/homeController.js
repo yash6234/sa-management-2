@@ -1,6 +1,23 @@
 const Home = require('../models/Home');
 const { saveBase64Image } = require('../utils/fileUtils');
 
+const parseJsonIfLikely = (value) => {
+    if (typeof value !== 'string') return value;
+    const trimmed = value.trim();
+    const looksJsonObject = trimmed.startsWith('{') && trimmed.endsWith('}');
+    const looksJsonArray = trimmed.startsWith('[') && trimmed.endsWith(']');
+    if (!looksJsonObject && !looksJsonArray) return value;
+    try {
+        return JSON.parse(trimmed);
+    } catch {
+        return value;   
+    }
+};
+
+const isPlainObject = (value) => {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+};
+
 // Helper to set nested property by string path (handles both dots and brackets)
 const setNested = (obj, path, value) => {
     const parts = path.replace(/\[(\w+)\]/g, '.$1').split('.');
@@ -47,7 +64,6 @@ const getActiveHome = async () => {
 // 1. PUBLIC AGGREGATED ENDPOINT 
 exports.getHomePageData = async (req, res) => {
     try {
-        console.log(1)
         const homeData = await getActiveHome();
         res.status(200).json({ success: true, data: homeData });
     } catch (err) {
@@ -154,6 +170,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
             } else {
                 home.set(path, value);
             }
+            // CRITICAL: Explicitly mark path as modified for deep updates/arrays
+            home.markModified(path);
         }
 
         await home.save();
@@ -182,23 +200,84 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         const home = await getActiveHome();
         const parts = arrayPath.split('.');
         let targetArray = home;
-        for (const part of parts) {
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            const isLast = i === parts.length - 1;
+            if (targetArray[part] === undefined || targetArray[part] === null) {
+                targetArray[part] = isLast ? [] : {};
+                home.markModified(parts.slice(0, i + 1).join('.'));
+            }
             targetArray = targetArray[part];
         }
 
-        let newItem = normalizePaths(req.body);
+        if (!Array.isArray(targetArray)) {
+            return res.status(400).json({ success: false, message: `${arrayPath} is not an array` });
+        }
+
+        let payload = normalizePaths(req.body);
         if (req.file) {
-            setNested(newItem, req.file.fieldname, req.file.filename);
+            setNested(payload, req.file.fieldname, req.file.filename);
         }
         if (req.files) {
             const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
             files.forEach(file => {
-                setNested(newItem, file.fieldname, file.filename);
+                setNested(payload, file.fieldname, file.filename);
             });
         }
-        newItem = processImageFields(newItem);
+        payload = processImageFields(payload);
 
-        targetArray.push(newItem);
+        // Support common client payloads:
+        // - { quote, name, role }
+        // - { list: [{ quote, name, role }, ...] }
+        // - multipart/form-data with list as a JSON string
+        payload.list = parseJsonIfLikely(payload.list);
+        payload.items = parseJsonIfLikely(payload.items);
+        payload.item = parseJsonIfLikely(payload.item);
+
+        let itemsToAdd;
+        if (payload.list !== undefined) {
+            itemsToAdd = payload.list;
+        } else if (payload.items !== undefined) {
+            itemsToAdd = payload.items;
+        } else if (payload.item !== undefined) {
+            itemsToAdd = payload.item;
+        } else {
+            itemsToAdd = payload;
+        }
+
+        if (typeof itemsToAdd === 'string') itemsToAdd = parseJsonIfLikely(itemsToAdd);
+        if (!Array.isArray(itemsToAdd)) itemsToAdd = [itemsToAdd];
+        itemsToAdd = itemsToAdd
+            .map((item) => (typeof item === 'string' ? parseJsonIfLikely(item) : item))
+            .filter((item) => isPlainObject(item));
+
+        if (itemsToAdd.length === 0) {
+            return res.status(400).json({ success: false, message: 'No valid item found to add' });
+        }
+
+        if (arrayPath === 'testimonials.list') {
+            // Clean up previously inserted empty objects (usually caused by wrong payload shape).
+            for (let i = targetArray.length - 1; i >= 0; i--) {
+                const t = targetArray[i] || {};
+                const isEmpty = !t.quote && !t.name && !t.role;
+                if (isEmpty) targetArray.splice(i, 1);
+            }
+
+            for (const item of itemsToAdd) {
+                const quote = typeof item.quote === 'string' ? item.quote.trim() : '';
+                const name = typeof item.name === 'string' ? item.name.trim() : '';
+                const role = typeof item.role === 'string' ? item.role.trim() : '';
+                if (!quote || !name || !role) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Each testimonial must include quote, name, and role'
+                    });
+                }
+            }
+        }
+
+        for (const item of itemsToAdd) targetArray.push(item);
+        home.markModified(arrayPath);
         await home.save();
         res.status(201).json({ success: true, data: targetArray });
     } catch (err) {
@@ -249,6 +328,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
                     applyItemUpdate(fullPath, value);
                 } else {
                     home.set(fullPath, value);
+                    home.markModified(fullPath);
                 }
             }
         };
@@ -286,12 +366,14 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
             targetArray.shift();
         }
 
+        home.markModified(arrayPath);
         await home.save();
         res.status(200).json({ success: true, message: 'Item deleted safely', data: targetArray });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 };
+
 exports.deleteSocialPost = async (req, res) => {
     try {
         const home = await getActiveHome();
@@ -299,6 +381,7 @@ exports.deleteSocialPost = async (req, res) => {
 
         if (home.tournamentsSection && home.tournamentsSection.list && home.tournamentsSection.list.posts) {
             home.tournamentsSection.list.posts.delete(postKey);
+            home.markModified('tournamentsSection.list.posts');
             await home.save();
             res.status(200).json({ success: true, message: `Social post ${postKey} deleted`, data: home.tournamentsSection.list });
         } else {

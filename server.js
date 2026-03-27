@@ -242,8 +242,11 @@ cmsRouter.post('/upload', upload.any(), standardizeFilePath, (req, res) => {
     const files = Array.isArray(req.files) ? req.files : (req.file ? [req.file] : []);
     if (files.length === 0) return res.status(400).json({ success: false, error: 'No files uploaded' });
     
+    // Return the raw filenames. Because they start with 'uploads/cms/', 
+    // the imageEncryptMiddleware interceptor will detect them and encrypt them 
+    // in a single pass before sending the response to the frontend.
     const responses = files.map(file => ({
-        url: '/acade360/' + encryptImageUrl(file.filename)
+        url: file.filename
     }));
     
     if (responses.length === 1) {

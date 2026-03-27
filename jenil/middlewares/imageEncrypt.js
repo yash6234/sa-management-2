@@ -9,10 +9,15 @@ const IMAGE_URL_FIELDS = new Set([
 
 const looksLikeImagePath = (value) => {
     if (typeof value !== 'string' || value.trim() === '') return false;
+    
+    // 1. If it already starts with our encrypted prefix, don't encrypt it again
+    if (value.startsWith('/acade360/')) return false;
+
     const imageExtensions = /\.(png|jpe?g|gif|webp|svg|avif|bmp|ico|tiff?|mp4|webm|mov|m4v|enc)(\?.*)?$/i;
     const isAbsoluteUrl = value.startsWith('http://') || value.startsWith('https://');
     const isRelativePath = value.startsWith('/') || value.startsWith('./') || value.startsWith('../')
         || value.includes('public/') || value.includes('uploads/');
+    
     return (isAbsoluteUrl || isRelativePath) && imageExtensions.test(value);
 };
 
@@ -65,7 +70,7 @@ const imageEncryptMiddleware = (req, res, next) => {
                 const finalStr = JSON.stringify(body);
                 
                 if (originalStr !== finalStr) {
-                    console.log(`[ImageEncrypt] Encrypted fields in response. (Size: ${finalStr.length})`);
+                    console.log(`[ImageEncrypt] Encrypted fields in response.`);
                 }
             }
         } catch (err) {
