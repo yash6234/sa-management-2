@@ -102,13 +102,31 @@ const normalizePaths = (obj) => {
 };
 
 const processImageFields = (data) => {
-    const imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo'];
-    for (const field of imageFields) {
-        if (data[field] && typeof data[field] === 'string' && data[field].startsWith('data:image')) {
-            const savedPath = saveBase64Image(data[field]);
-            if (savedPath) data[field] = savedPath;
-        }
+    const imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo', 'icon', 'photo', 'avatar', 'src'];
+    
+    // Recursively process arrays
+    if (Array.isArray(data)) {
+        return data.map(item => processImageFields(item));
     }
+    
+    // Recursively process objects
+    if (data !== null && typeof data === 'object') {
+        for (const key in data) {
+            if (data.hasOwnProperty(key)) {
+                const value = data[key];
+                // Check if this is an image field with base64 data
+                if (imageFields.includes(key) && typeof value === 'string' && value.startsWith('data:image')) {
+                    const savedPath = saveBase64Image(value);
+                    if (savedPath) data[key] = savedPath;
+                } else if (typeof value === 'object' && value !== null) {
+                    // Recursively process nested objects/arrays
+                    data[key] = processImageFields(value);
+                }
+            }
+        }
+        return data;
+    }
+    
     return data;
 };
 
