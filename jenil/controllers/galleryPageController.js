@@ -205,6 +205,191 @@ exports.updateSection = (sectionName) => async (req, res) => {
     }
 };
 
+exports.addGalleryGridItem = async (req, res) => {
+    try {
+        const gallery = await getActiveGallery();
+
+        const parseBoolean = (value) => {
+            if (typeof value === 'boolean') return value;
+            if (typeof value !== 'string') return undefined;
+            const normalized = value.trim().toLowerCase();
+            if (['true', '1', 'yes', 'y', 'on'].includes(normalized)) return true;
+            if (['false', '0', 'no', 'n', 'off'].includes(normalized)) return false;
+            return undefined;
+        };
+
+        const pickFirstString = (obj, keys) => {
+            if (!obj || typeof obj !== 'object') return undefined;
+            for (const key of keys) {
+                const value = obj[key];
+                if (typeof value === 'string' && value.trim().length > 0) return value;
+            }
+            return undefined;
+        };
+
+        const normalizeIndexObjectsToArrays = (value) => {
+            if (Array.isArray(value)) return value.map((v) => normalizeIndexObjectsToArrays(v));
+            if (!value || typeof value !== 'object') return value;
+
+            const keys = Object.keys(value);
+            const allNumeric = keys.length > 0 && keys.every((k) => /^\d+$/.test(k));
+            if (allNumeric) {
+                const arr = [];
+                keys
+                    .map((k) => Number(k))
+                    .sort((a, b) => a - b)
+                    .forEach((idx) => {
+                        arr[idx] = normalizeIndexObjectsToArrays(value[String(idx)]);
+                    });
+                return arr;
+            }
+
+            for (const k of keys) value[k] = normalizeIndexObjectsToArrays(value[k]);
+            return value;
+        };
+
+        const files = Array.isArray(req.files) ? req.files : (req.files ? Object.values(req.files).flat() : []);
+
+        // Build a nested payload from multipart keys like `images[0][category]`
+        let payload = {};
+        const rawBody = req.body && typeof req.body === 'object' ? req.body : {};
+        for (const [rawKey, rawValue] of Object.entries(rawBody)) {
+            const dotKey = toDotPath(rawKey);
+            setNested(payload, dotKey, parseJsonIfLikely(rawValue));
+        }
+
+        if (req.file) {
+            setNested(payload, toDotPath(req.file.fieldname), req.file.filename);
+        }
+
+        for (const file of files) {
+            setNested(payload, toDotPath(file.fieldname), file.filename);
+        }
+
+        payload = normalizeIndexObjectsToArrays(payload);
+        payload = processImageFields(payload);
+
+        const rootCategory = pickFirstString(payload, ['category', 'cat']);
+        const rootTitle = pickFirstString(payload, ['title', 'name', 'label']);
+        const rootIsFeatured = parseBoolean(payload.isFeatured ?? payload.featured);
+
+        // Categories-only add (optional)
+        let categoriesToAdd = payload.categories ?? payload.category;
+        categoriesToAdd = parseJsonIfLikely(categoriesToAdd);
+        if (typeof categoriesToAdd === 'string') {
+            categoriesToAdd = categoriesToAdd.split(',').map((s) => s.trim()).filter(Boolean);
+        }
+        if (!Array.isArray(categoriesToAdd)) {
+            categoriesToAdd = categoriesToAdd !== undefined ? [categoriesToAdd] : [];
+        }
+        categoriesToAdd = categoriesToAdd
+            .map((c) => (typeof c === 'string' ? c.trim() : ''))
+            .filter((c) => c.length > 0);
+
+        // Images add
+        let itemsToAdd = payload.item ?? payload.items ?? payload.list ?? payload.images;
+        itemsToAdd = parseJsonIfLikely(itemsToAdd);
+        if (itemsToAdd === undefined) {
+            const rootImage = pickFirstString(payload, ['image', 'imageUrl', 'url', 'src', 'path', 'file', 'imageFile']);
+            const hasRootImage = typeof rootImage === 'string' && rootImage.trim().length > 0;
+            if (hasRootImage || files.length > 0 || req.file) {
+                itemsToAdd = [{
+                    image: rootImage,
+                    category: rootCategory,
+                    title: rootTitle,
+                    isFeatured: payload.isFeatured ?? payload.featured,
+                }];
+            } else {
+                itemsToAdd = [];
+            }
+        }
+        if (!Array.isArray(itemsToAdd)) itemsToAdd = [itemsToAdd];
+
+        const fileQueue = [];
+        if (req.file?.filename) fileQueue.push(req.file.filename);
+        for (const file of files) fileQueue.push(file.filename);
+
+        const normalizeImageItem = (raw) => {
+            if (typeof raw === 'string') raw = { image: raw };
+            if (!isPlainObject(raw)) return null;
+
+            let image = pickFirstString(raw, ['image', 'imageUrl', 'url', 'src', 'path', 'file', 'imageFile']);
+            if ((!image || image.trim().length === 0) && fileQueue.length > 0) {
+                image = fileQueue.shift();
+            }
+            if (!image || typeof image !== 'string' || image.trim().length === 0) return null;
+
+            const category = pickFirstString(raw, ['category', 'cat']) || rootCategory;
+            const title = pickFirstString(raw, ['title', 'name', 'label']) || rootTitle;
+
+            const featured = parseBoolean(raw.isFeatured ?? raw.featured);
+            const isFeatured = featured !== undefined ? featured : rootIsFeatured;
+
+            const item = { image: image.trim() };
+            if (typeof category === 'string' && category.trim().length > 0) item.category = category.trim();
+            if (typeof title === 'string' && title.trim().length > 0) item.title = title.trim();
+            if (typeof isFeatured === 'boolean') item.isFeatured = isFeatured;
+            return item;
+        };
+
+        let imageItems = itemsToAdd
+            .map((item) => (typeof item === 'string' ? parseJsonIfLikely(item) : item))
+            .map((item) => normalizeImageItem(item))
+            .filter(Boolean);
+
+        if (imageItems.length === 0 && fileQueue.length > 0) {
+            imageItems = fileQueue.map((filename) => {
+                const item = { image: filename };
+                if (typeof rootCategory === 'string' && rootCategory.trim().length > 0) item.category = rootCategory.trim();
+                if (typeof rootTitle === 'string' && rootTitle.trim().length > 0) item.title = rootTitle.trim();
+                if (typeof rootIsFeatured === 'boolean') item.isFeatured = rootIsFeatured;
+                return item;
+            });
+            fileQueue.length = 0;
+        }
+
+        const existingCategories = Array.isArray(gallery.categories) ? gallery.categories.slice() : [];
+        const existingLower = new Set(existingCategories.map((c) => (typeof c === 'string' ? c.toLowerCase() : '')));
+        let didUpdateCategories = false;
+
+        const addCategoryIfMissing = (cat) => {
+            if (typeof cat !== 'string') return;
+            const trimmed = cat.trim();
+            if (!trimmed) return;
+            const lower = trimmed.toLowerCase();
+            if (existingLower.has(lower)) return;
+            existingLower.add(lower);
+            existingCategories.push(trimmed);
+            didUpdateCategories = true;
+        };
+
+        for (const cat of categoriesToAdd) addCategoryIfMissing(cat);
+        for (const img of imageItems) {
+            if (img.category) addCategoryIfMissing(img.category);
+        }
+
+        if (didUpdateCategories) {
+            gallery.categories = existingCategories;
+            gallery.markModified('categories');
+        }
+
+        if (imageItems.length > 0) {
+            for (const img of imageItems) gallery.images.push(img);
+            gallery.markModified('images');
+        }
+
+        if (!didUpdateCategories && imageItems.length === 0) {
+            return res.status(400).json({ success: false, message: 'No valid categories or images found to add' });
+        }
+
+        await gallery.save();
+        return res.status(201).json({ success: true, data: getGalleryGrid(gallery) });
+    } catch (err) {
+        console.error("Add Gallery Grid Item Error:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         const gallery = await getActiveGallery();

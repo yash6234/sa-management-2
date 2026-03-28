@@ -506,22 +506,55 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             return undefined;
         };
 
+        // If admin sends item data as `list` JSON but uploads the image as a top-level `image` field,
+        // merge that file into the item so it doesn't get saved as an imageless card.
+        if (expectsEmbeddedDocs && allowedEmbeddedKeys?.length && Array.isArray(itemsToAdd) && itemsToAdd.length > 0) {
+            const rootDefaults = {
+                name: pickFirstString(payload, ['name', 'founderName', 'fullName', 'title']),
+                role: pickFirstString(payload, ['role', 'position', 'designation', 'subtitle']),
+                bio: pickFirstString(payload, ['bio', 'description', 'about', 'text']),
+                image: pickFirstString(payload, ['image', 'imageUrl', 'photo', 'img', 'src', 'url', 'path', 'file', 'imageFile', 'founderImage', 'founderPhoto']),
+            };
+
+            const hasAnyRootDefault = Object.values(rootDefaults).some((v) => typeof v === 'string' && v.trim().length > 0);
+            if (hasAnyRootDefault) {
+                itemsToAdd = itemsToAdd.map((item, index) => {
+                    if (!isPlainObject(item)) return item;
+
+                    // Only apply root defaults when adding a single card (avoid duplicating across batch adds)
+                    if (itemsToAdd.length > 1 && index !== 0) return item;
+
+                    const merged = { ...item };
+                    for (const [key, value] of Object.entries(rootDefaults)) {
+                        if (!allowedEmbeddedKeys.includes(key)) continue;
+                        const existing = merged[key];
+                        const isEmptyString = typeof existing === 'string' && existing.trim().length === 0;
+                        const isMissing = existing === undefined || existing === null || isEmptyString;
+                        if (isMissing && typeof value === 'string' && value.trim().length > 0) {
+                            merged[key] = value;
+                        }
+                    }
+                    return merged;
+                });
+            }
+        }
+
         const cleanEmbeddedItem = (item) => {
             if (!isPlainObject(item)) return null;
 
             // Map common aliases (helps generic admin forms)
             const mapped = { ...item };
-            if (allowedEmbeddedKeys?.includes('name') && mapped.name === undefined) {
+            if (allowedEmbeddedKeys?.includes('name') && (mapped.name === undefined || (typeof mapped.name === 'string' && mapped.name.trim().length === 0))) {
                 mapped.name = pickFirstString(item, ['name', 'founderName', 'fullName', 'title']);
             }
-            if (allowedEmbeddedKeys?.includes('role') && mapped.role === undefined) {
+            if (allowedEmbeddedKeys?.includes('role') && (mapped.role === undefined || (typeof mapped.role === 'string' && mapped.role.trim().length === 0))) {
                 mapped.role = pickFirstString(item, ['role', 'position', 'designation', 'subtitle']);
             }
-            if (allowedEmbeddedKeys?.includes('bio') && mapped.bio === undefined) {
+            if (allowedEmbeddedKeys?.includes('bio') && (mapped.bio === undefined || (typeof mapped.bio === 'string' && mapped.bio.trim().length === 0))) {
                 mapped.bio = pickFirstString(item, ['bio', 'description', 'about', 'text']);
             }
-            if (allowedEmbeddedKeys?.includes('image') && mapped.image === undefined) {
-                mapped.image = pickFirstString(item, ['image', 'imageUrl', 'photo', 'img', 'src', 'url', 'path']);
+            if (allowedEmbeddedKeys?.includes('image') && (mapped.image === undefined || (typeof mapped.image === 'string' && mapped.image.trim().length === 0))) {
+                mapped.image = pickFirstString(item, ['image', 'imageUrl', 'photo', 'img', 'src', 'url', 'path', 'file', 'imageFile', 'founderImage', 'founderPhoto']);
             }
 
             if (!allowedEmbeddedKeys) {

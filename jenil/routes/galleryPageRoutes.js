@@ -22,9 +22,17 @@ router.delete('/categories/delete', galleryPageController.deleteSection('categor
 
 // 2b. GALLERY GRID (Categories + Images in one section)
 router.get('/gallery-grid', galleryPageController.getSection('galleryGrid'));
+router.post('/gallery-grid/add', upload.any(), standardizeFilePath, galleryPageController.addGalleryGridItem);
 router.post('/gallery-grid/update', upload.any(), standardizeFilePath, galleryPageController.updateSection('galleryGrid'));
 router.put('/gallery-grid/update', upload.any(), standardizeFilePath, galleryPageController.updateSection('galleryGrid'));
 router.delete('/gallery-grid/delete', galleryPageController.deleteSection('galleryGrid'));
+
+// Aliases (frontend-friendly)
+router.get('/grid', galleryPageController.getSection('galleryGrid'));
+router.post('/grid/add', upload.any(), standardizeFilePath, galleryPageController.addGalleryGridItem);
+router.post('/grid/update', upload.any(), standardizeFilePath, galleryPageController.updateSection('galleryGrid'));
+router.put('/grid/update', upload.any(), standardizeFilePath, galleryPageController.updateSection('galleryGrid'));
+router.delete('/grid/delete', galleryPageController.deleteSection('galleryGrid'));
 
 // 3. TRAINING MOMENTS
 router.get('/training-moments', galleryPageController.getSection('trainingMoments'));
