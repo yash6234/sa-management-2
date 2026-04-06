@@ -226,15 +226,18 @@ app.use('/acade360/academy/secure/route', require('./routes/otherRoutes'));
 // ------------------------------ CMS (Website Management) ------------------------------
 const cmsRouter = express.Router();
 const imageEncryptMiddleware = require('./jenil/middlewares/imageEncrypt');
-const { encryptResponse, optionalDecryptPayload } = require('./jenil/middlewares/encryptedPayload');
+const { optionalDecryptPayload, encryptResponse } = require('./jenil/middlewares/encryptedPayload');
 const cmsHomeController = require('./jenil/controllers/homeController');
 const { serveImage } = require('./jenil/controllers/imageController');
 const { upload, standardizeFilePath } = require('./jenil/middlewares/upload');
 
-// Apply image encryption and JSON encryption to all CMS responses
-// Image encryption: converts file paths to secure tokens
-// JSON encryption: encrypts response data (controlled via headers/query params)
+// Apply decryption middleware to all CMS routes (supports body/header encrypted payloads)
+cmsRouter.use(optionalDecryptPayload);
+
+// Apply image encryption (converts file paths to secure tokens)
 cmsRouter.use(imageEncryptMiddleware);
+
+// Always encrypt all CMS responses
 cmsRouter.use(encryptResponse);
 
 // 1. Generic Media Upload (for quill editor or standalone admin use)

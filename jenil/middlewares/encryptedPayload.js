@@ -22,6 +22,7 @@ const isPlainObject = (value) => {
  * Looks for encrypted data in:
  * 1. req.body.encrypted (if body has { encrypted: true, data: "..." })
  * 2. req.headers['x-encrypted-payload'] (encrypted string)
+ * 3. req.params.data (legacy URL param)
  * Decrypted data is attached to req.decryptedBody
  */
 const decryptPayload = (req, res, next) => {

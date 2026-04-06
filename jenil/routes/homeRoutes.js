@@ -3,7 +3,6 @@ const router = express.Router();
 const homeController = require('../controllers/homeController');
 const universalController = require('../controllers/universalController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
-const { optionalDecryptPayload } = require('../middlewares/encryptedPayload');
 
 // 1. PUBLIC AGGREGATED ENDPOINT
 router.get('/', homeController.getHomePageData);
