@@ -3,7 +3,7 @@ const router = express.Router();
 const contactPageController = require('../controllers/contactPageController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
 
-// 1. PUBLIC AGGREGATED ENDPOINT 
+// 1. PUBLIC AGGREGATED ENDPOINT
 router.get('/', contactPageController.getContactData);
 
 // 2. CONTACT MESSAGE SUBMISSION (User Response)

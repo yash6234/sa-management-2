@@ -3,13 +3,13 @@ const router = express.Router();
 const playgroundPageController = require('../controllers/playgroundPageController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
 
-// 1. PUBLIC AGGREGATED ENDPOINT 
+// 1. PUBLIC AGGREGATED ENDPOINT
 router.get('/', playgroundPageController.getPlaygroundData);
 
 // 2. USER SUBMISSION (Requested: ONLY POST to get response)
 router.post('/submit', playgroundPageController.submitBooking);
 
-// 3. ADMIN SECTION-WISE ENDPOINTS 
+// 3. ADMIN SECTION-WISE ENDPOINTS
 // --- HERO ---
 router.get('/hero', playgroundPageController.getSection('hero'));
 router.post('/hero/add', upload.single('backgroundImage'), standardizeFilePath, playgroundPageController.updateSection('hero'));

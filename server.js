@@ -27,38 +27,35 @@ app.use(cors());
 // Middleware
 app.use(express.json());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-    .then(async () => {
-        logger.info('MongoDB connected');
+const connectToDatabase = async () => {
+    await mongoose.connect(process.env.MONGO_URI);
+    logger.info('MongoDB connected');
 
-        // 🔹 RUN ONCE AFTER DB CONNECT
-        try {
-            const adminExists = await Admin.findOne({
-                email: "shivam@nuviontech.com"
+    // Run once after DB connect
+    try {
+        const adminExists = await Admin.findOne({
+            email: "shivam@nuviontech.com"
+        });
+
+        if (!adminExists) {
+            await Admin.create({
+                name: "SS",
+                mobile_no: "8799523738",
+                email: "shivam@nuviontech.com",
+                date_of_birth: new Date("2003-12-27"),
+                gender: "male",
+                password: "Ss@27122003", // ⚠️ hash recommended
+                isVerified: true,
             });
 
-            if (!adminExists) {
-                await Admin.create({
-                    name: "SS",
-                    mobile_no: "8799523738",
-                    email: "shivam@nuviontech.com",
-                    date_of_birth: new Date("2003-12-27"),
-                    gender: "male",
-                    password: "Ss@27122003", // ⚠️ hash recommended
-                    isVerified: true,
-                });
-
-                logger.info("✅ Default admin created");
-            } else {
-                logger.info("ℹ️ Default admin already exists");
-            }
-        } catch (err) {
-            logger.error("❌ Error creating default admin:", err);
+            logger.info("✅ Default admin created");
+        } else {
+            logger.info("ℹ️ Default admin already exists");
         }
-
-    })
-    .catch(err => logger.error('MongoDB connection error:', err));
+    } catch (err) {
+        logger.error("❌ Error creating default admin:", err);
+    }
+};
 
 // app.use('/superuser', require("./adminRoutes/superuserRoutes"));
 
@@ -229,26 +226,29 @@ app.use('/acade360/academy/secure/route', require('./routes/otherRoutes'));
 // ------------------------------ CMS (Website Management) ------------------------------
 const cmsRouter = express.Router();
 const imageEncryptMiddleware = require('./jenil/middlewares/imageEncrypt');
+const { encryptResponse, optionalDecryptPayload } = require('./jenil/middlewares/encryptedPayload');
 const cmsHomeController = require('./jenil/controllers/homeController');
 const { serveImage } = require('./jenil/controllers/imageController');
 const { upload, standardizeFilePath } = require('./jenil/middlewares/upload');
-const { encryptImageUrl } = require('./jenil/utils/imageToken');
 
-// Apply image encryption to all CMS JSON responses
+// Apply image encryption and JSON encryption to all CMS responses
+// Image encryption: converts file paths to secure tokens
+// JSON encryption: encrypts response data (controlled via headers/query params)
 cmsRouter.use(imageEncryptMiddleware);
+cmsRouter.use(encryptResponse);
 
 // 1. Generic Media Upload (for quill editor or standalone admin use)
 cmsRouter.post('/upload', upload.any(), standardizeFilePath, (req, res) => {
     const files = Array.isArray(req.files) ? req.files : (req.file ? [req.file] : []);
     if (files.length === 0) return res.status(400).json({ success: false, error: 'No files uploaded' });
-    
+
     // Return the raw filenames. Because they start with 'uploads/cms/', 
     // the imageEncryptMiddleware interceptor will detect them and encrypt them 
     // in a single pass before sending the response to the frontend.
     const responses = files.map(file => ({
         url: file.filename
     }));
-    
+
     if (responses.length === 1) {
         return res.status(200).json({ success: true, url: responses[0].url, data: responses[0] });
     }
@@ -908,5 +908,16 @@ setInterval(updateTimeLeft, 60 * 1000);
 
 // Start server
 const PORT = process.env.PORT || 5005;
-console.log('🏁 Reached final listen() call on port', PORT);
-app.listen(PORT, () => logger.info(`Server running on port ${PORT}`));
+
+const startServer = async () => {
+    try {
+        await connectToDatabase();
+        console.log('🏁 Reached final listen() call on port', PORT);
+        app.listen(PORT, () => logger.info(`Server running on port ${PORT}`));
+    } catch (err) {
+        logger.error('MongoDB connection error:', err);
+        process.exit(1);
+    }
+};
+
+startServer();

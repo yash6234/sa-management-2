@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../utils/mongoose');
 
 const playgroundBookingSchema = new mongoose.Schema({
     sport: { type: String, required: true }, // Cricket, Football

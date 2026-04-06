@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../utils/mongoose');
 
 const footerSchema = new mongoose.Schema({
     academyName: { type: String, default: 'Gandhinagar Sports Academy' },

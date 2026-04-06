@@ -3,7 +3,7 @@ const router = express.Router();
 const admissionsPageController = require('../controllers/admissionsPageController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
 
-// 1. PUBLIC AGGREGATED ENDPOINT 
+// 1. PUBLIC AGGREGATED ENDPOINT
 router.get('/', admissionsPageController.getAdmissionsData);
 
 // 2. ADMISSION ENQUIRY SUBMISSION (With field names for file uploads)
@@ -13,7 +13,8 @@ router.post('/submit', upload.any(), standardizeFilePath, admissionsPageControll
 // --- HERO ---
 router.get('/hero', admissionsPageController.getSection('hero'));
 router.post('/hero/add', upload.any(), standardizeFilePath, admissionsPageController.updateSection('hero'));
-router.put('/hero/update', upload.any(), standardizeFilePath, admissionsPageController.updateSection('hero'));
+router.put('/hero/update',
+    upload.any(), standardizeFilePath, admissionsPageController.updateSection('hero'));
 router.delete('/hero/delete', admissionsPageController.deleteSection('hero'));
 
 // --- FORM CONTENT ---

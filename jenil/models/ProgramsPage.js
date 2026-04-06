@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../utils/mongoose');
 
 const programsPageSchema = new mongoose.Schema({
     hero: {
@@ -8,35 +8,19 @@ const programsPageSchema = new mongoose.Schema({
         backgroundImage: { type: String }
     },
 
-    // Level-based sections
-    // Public frontend expects: `levels.beginner|intermediate|advanced|camp`
-    levels: {
-        beginner: {
-            title: { type: String, default: "Beginner Level" },
-            description: { type: String, default: "" },
-            features: { type: [String], default: [] },
-            image: { type: String, default: "" }
-        },
-        intermediate: {
-            title: { type: String, default: "Intermediate Level" },
-            description: { type: String, default: "" },
-            features: { type: [String], default: [] },
-            image: { type: String, default: "" }
-        },
-        advanced: {
-            title: { type: String, default: "Advanced Level" },
-            description: { type: String, default: "" },
-            features: { type: [String], default: [] },
-            image: { type: String, default: "" }
-        },
-        camp: {
-            title: { type: String, default: "Special Coaching & Summer Camps" },
-            description: { type: String, default: "" },
-            features: { type: [String], default: [] },
-            duration: { type: String, default: "" },
-            image: { type: String, default: "" }
-        }
-    },
+    // Level-based sections - Now an array with IDs
+    levels: [{
+        _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+        key: { type: String, required: true }, // 'beginner', 'intermediate', 'advanced', 'camp'
+        title: { type: String, default: "" },
+        description: { type: String, default: "" },
+        features: [{
+            _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+            text: { type: String }
+        }],
+        duration: { type: String, default: "" },
+        image: { type: String, default: "" }
+    }],
 
     isActive: { type: Boolean, default: true }
 }, { timestamps: true });

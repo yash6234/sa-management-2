@@ -1,3 +1,4 @@
+const mongoose = require('../utils/mongoose');
 const ProgramsPage = require('../models/ProgramsPage');
 const { saveBase64Image } = require('../utils/fileUtils');
 
@@ -130,42 +131,13 @@ const processImageFields = (data) => {
 
 const getActivePrograms = async () => {
     let programs = await ProgramsPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
-    if (!programs) programs = await ProgramsPage.create({ isActive: true });
-
-    // Ensure `levels.*` exists for older DB docs created before this schema structure.
-    // This keeps the public frontend (`programsData.levels.beginner|intermediate|advanced|camp`) working.
-    let levelsDirty = false;
-    if (!programs.levels || typeof programs.levels !== 'object') {
-        programs.levels = {};
-        levelsDirty = true;
+    if (!programs) {
+        programs = await ProgramsPage.create({ isActive: true, levels: [] });
     }
 
-    const ensureLevel = (key, defaults) => {
-        if (!programs.levels[key] || typeof programs.levels[key] !== 'object') {
-            programs.levels[key] = { ...defaults };
-            levelsDirty = true;
-            return;
-        }
-
-        for (const [field, value] of Object.entries(defaults)) {
-            if (programs.levels[key][field] === undefined) {
-                programs.levels[key][field] = value;
-                levelsDirty = true;
-            }
-        }
-
-        if (!Array.isArray(programs.levels[key].features)) {
-            programs.levels[key].features = [];
-            levelsDirty = true;
-        }
-    };
-
-    ensureLevel('beginner', { title: 'Beginner Level', description: '', features: [], image: '' });
-    ensureLevel('intermediate', { title: 'Intermediate Level', description: '', features: [], image: '' });
-    ensureLevel('advanced', { title: 'Advanced Level', description: '', features: [], image: '' });
-    ensureLevel('camp', { title: 'Special Coaching & Summer Camps', description: '', features: [], duration: '', image: '' });
-
-    if (levelsDirty) {
+    // Ensure levels is an array
+    if (!Array.isArray(programs.levels)) {
+        programs.levels = [];
         programs.markModified('levels');
         await programs.save();
     }
@@ -195,14 +167,13 @@ exports.getProgramsData = async (req, res) => {
 exports.getLevels = async (req, res) => {
     try {
         const programs = await getActivePrograms();
-        const levels = programs.levels?.toObject ? programs.levels.toObject() : JSON.parse(JSON.stringify(programs.levels || {}));
+        const levels = programs.levels || [];
 
-        const orderedKeys = ['beginner', 'intermediate', 'advanced', 'camp'];
-        const list = orderedKeys
-            .filter((key) => levels && levels[key])
-            .map((key) => ({ key, ...levels[key] }));
+        // Order by key: beginner, intermediate, advanced, camp
+        const orderMap = { beginner: 0, intermediate: 1, advanced: 2, camp: 3 };
+        const sortedLevels = [...levels].sort((a, b) => (orderMap[a.key] || 99) - (orderMap[b.key] || 99));
 
-        res.status(200).json({ success: true, data: { ...levels, list } });
+        res.status(200).json({ success: true, data: { list: sortedLevels, levels: sortedLevels } });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
@@ -461,7 +432,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
         for (const part of parts) {
             targetArray = targetArray[part];
         }
-        
+
         if (req.params.itemId) {
             if (typeof targetArray.id === 'function') {
                 const item = targetArray.id(req.params.itemId);
@@ -484,10 +455,150 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
                 }
             }
         }
-        
+
         programs.markModified(arrayPath);
         await programs.save();
         res.status(200).json({ success: true, message: 'Item deleted safely', data: targetArray });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+// LEVELS MANAGEMENT (new array-based structure)
+exports.getLevelById = async (req, res) => {
+    try {
+        const programs = await getActivePrograms();
+        const level = programs.levels.id(req.params.levelId);
+        if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
+        res.status(200).json({ success: true, data: level });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.addLevel = async (req, res) => {
+    try {
+        const programs = await getActivePrograms();
+        const { key, title, description, duration, image, features } = req.body;
+
+        if (!key || !title) {
+            return res.status(400).json({ success: false, message: 'key and title are required' });
+        }
+
+        const newLevel = {
+            _id: new mongoose.Types.ObjectId(),
+            key,
+            title,
+            description: description || '',
+            duration: duration || '',
+            image: image || '',
+            features: Array.isArray(features) ? features.map(f => ({
+                _id: new mongoose.Types.ObjectId(),
+                text: typeof f === 'string' ? f : f.text
+            })) : []
+        };
+
+        programs.levels.push(newLevel);
+        programs.markModified('levels');
+        await programs.save();
+        res.status(201).json({ success: true, data: programs.levels });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.updateLevel = async (req, res) => {
+    try {
+        const programs = await getActivePrograms();
+        const level = programs.levels.id(req.params.levelId);
+        if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
+
+        const { key, title, description, duration, image } = req.body;
+        if (key) level.key = key;
+        if (title) level.title = title;
+        if (description !== undefined) level.description = description;
+        if (duration !== undefined) level.duration = duration;
+        if (image !== undefined) level.image = image;
+
+        programs.markModified('levels');
+        await programs.save();
+        res.status(200).json({ success: true, data: programs.levels });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.deleteLevel = async (req, res) => {
+    try {
+        const programs = await getActivePrograms();
+        const level = programs.levels.id(req.params.levelId);
+        if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
+
+        programs.levels.pull(req.params.levelId);
+        programs.markModified('levels');
+        await programs.save();
+        res.status(200).json({ success: true, message: 'Level deleted', data: programs.levels });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+// FEATURES MANAGEMENT
+exports.addFeature = async (req, res) => {
+    try {
+        const programs = await getActivePrograms();
+        const level = programs.levels.id(req.params.levelId);
+        if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
+
+        const { text } = req.body;
+        if (!text) return res.status(400).json({ success: false, message: 'text is required' });
+
+        level.features.push({
+            _id: new mongoose.Types.ObjectId(),
+            text
+        });
+
+        programs.markModified('levels');
+        await programs.save();
+        res.status(201).json({ success: true, data: level });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.updateFeature = async (req, res) => {
+    try {
+        const programs = await getActivePrograms();
+        const level = programs.levels.id(req.params.levelId);
+        if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
+
+        const feature = level.features.id(req.params.featureId);
+        if (!feature) return res.status(404).json({ success: false, message: 'Feature not found' });
+
+        const { text } = req.body;
+        if (text) feature.text = text;
+
+        programs.markModified('levels');
+        await programs.save();
+        res.status(200).json({ success: true, data: level });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.deleteFeature = async (req, res) => {
+    try {
+        const programs = await getActivePrograms();
+        const level = programs.levels.id(req.params.levelId);
+        if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
+
+        const feature = level.features.id(req.params.featureId);
+        if (!feature) return res.status(404).json({ success: false, message: 'Feature not found' });
+
+        level.features.pull(req.params.featureId);
+        programs.markModified('levels');
+        await programs.save();
+        res.status(200).json({ success: true, message: 'Feature deleted', data: level });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

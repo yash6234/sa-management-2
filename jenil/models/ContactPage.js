@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../utils/mongoose');
 
 const contactPageSchema = new mongoose.Schema({
     hero: {

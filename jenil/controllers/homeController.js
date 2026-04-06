@@ -509,15 +509,22 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 exports.deleteSocialPost = async (req, res) => {
     try {
         const home = await getActiveHome();
-        const { postKey } = req.params;
+        const { postId } = req.params;
 
         if (home.tournamentsSection && home.tournamentsSection.list && home.tournamentsSection.list.posts) {
-            home.tournamentsSection.list.posts.delete(postKey);
+            const posts = home.tournamentsSection.list.posts;
+            const postIndex = posts.findIndex(p => p._id.toString() === postId);
+
+            if (postIndex === -1) {
+                return res.status(404).json({ success: false, message: 'Social post not found' });
+            }
+
+            posts.splice(postIndex, 1);
             home.markModified('tournamentsSection.list.posts');
             await home.save();
-            res.status(200).json({ success: true, message: `Social post ${postKey} deleted`, data: home.tournamentsSection.list });
+            res.status(200).json({ success: true, message: `Social post ${postId} deleted`, data: home.tournamentsSection.list });
         } else {
-            res.status(404).json({ success: false, message: 'Posts map not found' });
+            res.status(404).json({ success: false, message: 'Posts not found' });
         }
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../utils/mongoose');
 
 const admissionSubmissionSchema = new mongoose.Schema({
     traineeName: { type: String },

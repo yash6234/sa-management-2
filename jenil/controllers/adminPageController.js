@@ -35,22 +35,20 @@ const formatName = (str) => {
 exports.getPageDataSectionWise = async (req, res) => {
     try {
         logger.info('Admin Request Received for Get Page Data Section Wise');
-        
-        // 1. Validate Admin (Pattern: /acade360/admin/sections/view/:data)
-        // This validates the academy status, user status, and token.
+
+        // 1. Validate Admin
         const valResult = await validateAdminRequest(req, res);
         if (valResult.error) {
             return res.status(valResult.status).json({ message: valResult.message });
         }
 
-        // 2. Extract pageName from decrypted adminData
-        // valResult.adminData is the second-level decrypted object: { token, id, email, pageName, ... }
-        const { pageName } = valResult.adminData || {};
-        
+        // 2. Extract pageName from query params
+        const { pageName } = req.query;
+
         if (!pageName) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'pageName is required in the encrypted adminData payload' 
+            return res.status(400).json({
+                success: false,
+                message: 'pageName is required in query params'
             });
         }
 
@@ -166,19 +164,10 @@ exports.updatePageSection = async (req, res) => {
             return res.status(valResult.status).json({ message: valResult.message });
         }
 
-        // 2. Decrypt Payload
-        let decryptedData;
-        try {
-            const fixedCipher = decodeURIComponent(req.body.data).replace(/ /g, '+');
-            decryptedData = decryptData(fixedCipher);
-        } catch (error) {
-            logger.error(`Decryption failed in updatePageSection: ${error.message}`);
-            return res.status(400).json({ message: "Invalid data payload" });
-        }
-
-        const { pageName, sectionId, ...payload } = decryptedData || {};
+        // 2. Extract pageName and sectionId from body
+        const { pageName, sectionId, ...payload } = req.body;
         if (!pageName || !sectionId) {
-            return res.status(400).json({ success: false, message: 'pageName and sectionId are required' });
+            return res.status(400).json({ success: false, message: 'pageName and sectionId are required in request body' });
         }
 
         const normalizedPage = pageName.toLowerCase();
@@ -253,15 +242,16 @@ exports.deletePageSection = async (req, res) => {
     try {
         logger.info('Admin Request Received to Delete/Reset Page Section');
 
-        // 1. Validate Admin (Pattern: /acade360/admin/sections/delete/:data)
+        // 1. Validate Admin
         const valResult = await validateAdminRequest(req, res);
         if (valResult.error) {
             return res.status(valResult.status).json({ message: valResult.message });
         }
 
-        const { pageName, sectionId } = valResult.adminData || {};
+        // 2. Extract pageName and sectionId from query params
+        const { pageName, sectionId } = req.query;
         if (!pageName || !sectionId) {
-            return res.status(400).json({ success: false, message: 'pageName and sectionId are required' });
+            return res.status(400).json({ success: false, message: 'pageName and sectionId are required in query params' });
         }
 
         const normalizedPage = pageName.toLowerCase();

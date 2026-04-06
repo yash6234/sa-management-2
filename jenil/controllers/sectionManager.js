@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../utils/mongoose');
 
 // Helper to set nested property by string path
 const setNested = (obj, path, value) => {

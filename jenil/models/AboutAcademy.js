@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../utils/mongoose');
 
 const aboutAcademySchema = new mongoose.Schema({
     hero: {
@@ -54,7 +54,10 @@ const aboutAcademySchema = new mongoose.Schema({
 
     whyChooseUs: {
         sectionTitle: { type: String, default: "Why Choose Us" },
-        features: { type: [String], default: [] }
+        features: [{
+            _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+            text: { type: String }
+        }]
     },
 
 

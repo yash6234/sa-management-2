@@ -3,10 +3,10 @@ const router = express.Router();
 const aboutAcademyController = require('../controllers/aboutAcademyController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
 
-// 1. PUBLIC AGGREGATED ENDPOINT 
+// 1. PUBLIC AGGREGATED ENDPOINT
 router.get('/', aboutAcademyController.getAboutData);
 
-// 2. ADMIN SECTION-WISE ENDPOINTS 
+// 2. ADMIN SECTION-WISE ENDPOINTS
 
 // 1. HERO
 router.get('/hero', aboutAcademyController.getSection('hero'));
@@ -58,7 +58,8 @@ router.get('/why-choose-us', aboutAcademyController.getSection('whyChooseUs'));
 router.post('/why-choose-us/add', upload.any(), standardizeFilePath, aboutAcademyController.addArrayItem('whyChooseUs.features'));
 router.put('/why-choose-us/update', upload.any(), standardizeFilePath, aboutAcademyController.updateSection('whyChooseUs'));
 router.delete('/why-choose-us/delete', aboutAcademyController.deleteSection('whyChooseUs'));
-router.delete('/why-choose-us/:index/delete', aboutAcademyController.deleteArrayItem('whyChooseUs.features'));
+router.put('/why-choose-us/features/:itemId', upload.any(), standardizeFilePath, aboutAcademyController.updateArrayItem('whyChooseUs.features'));
+router.delete('/why-choose-us/features/:itemId', aboutAcademyController.deleteArrayItem('whyChooseUs.features'));
 
 
 module.exports = router;

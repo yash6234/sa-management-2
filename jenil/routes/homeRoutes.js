@@ -3,11 +3,12 @@ const router = express.Router();
 const homeController = require('../controllers/homeController');
 const universalController = require('../controllers/universalController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
+const { optionalDecryptPayload } = require('../middlewares/encryptedPayload');
 
-// 1. PUBLIC AGGREGATED ENDPOINT 
+// 1. PUBLIC AGGREGATED ENDPOINT
 router.get('/', homeController.getHomePageData);
 
-// 2. ADMIN SECTION-WISE ENDPOINTS 
+// 2. ADMIN SECTION-WISE ENDPOINTS
 
 // 1. HERO
 router.get('/hero', homeController.getSection('hero'));
@@ -38,13 +39,18 @@ router.get('/programs-facilities', homeController.getSection('programsAndFacilit
 router.post('/programs-facilities/add', upload.any(), standardizeFilePath, homeController.updateSection('programsAndFacilities'));
 router.put('/programs-facilities/update', upload.any(), standardizeFilePath, homeController.updateSection('programsAndFacilities'));
 router.delete('/programs-facilities/delete', homeController.deleteSection('programsAndFacilities'));
+router.post('/programs-facilities/facilities/features/add', upload.any(), standardizeFilePath, homeController.addArrayItem('programsAndFacilities.facilitiesCard.features'));
+router.put('/programs-facilities/facilities/features/:itemId', upload.any(), standardizeFilePath, homeController.updateArrayItem('programsAndFacilities.facilitiesCard.features'));
+router.delete('/programs-facilities/facilities/features/:itemId', homeController.deleteArrayItem('programsAndFacilities.facilitiesCard.features'));
 
 // 5. TOURNAMENTS
 router.get('/tournaments', homeController.getSection('tournamentsSection'));
 router.post('/tournaments/add', upload.any(), standardizeFilePath, homeController.updateSection('tournamentsSection'));
 router.put('/tournaments/update', upload.any(), standardizeFilePath, homeController.updateSection('tournamentsSection'));
 router.delete('/tournaments/delete', homeController.deleteSection('tournamentsSection'));
-router.delete('/tournaments/social/:postKey', homeController.deleteSocialPost);
+router.delete('/tournaments/social/:postId', homeController.deleteSocialPost);
+router.post('/tournaments/social/add', homeController.addArrayItem('tournamentsSection.list.posts'));
+router.put('/tournaments/social/:postId', homeController.updateArrayItem('tournamentsSection.list.posts'));
 
 
 // 8. TESTIMONIALS

@@ -3,10 +3,10 @@ const router = express.Router();
 const galleryPageController = require('../controllers/galleryPageController');
 const { upload, standardizeFilePath } = require('../middlewares/upload');
 
-// 1. PUBLIC AGGREGATED ENDPOINT 
+// 1. PUBLIC AGGREGATED ENDPOINT
 router.get('/', galleryPageController.getGalleryData);
 
-// 2. ADMIN SECTION-WISE ENDPOINTS 
+// 2. ADMIN SECTION-WISE ENDPOINTS
 
 // 1. HERO
 router.get('/hero', galleryPageController.getSection('hero'));

@@ -85,14 +85,14 @@ const seedData = async () => {
                     title: "World-Class Facilities to Elevate Your Game",
                     description: "At Gandhinagar Sports Academy, we provide world-class facilities to support comprehensive cricket coaching.",
                     features: [
-                        "Practice Nets",
-                        "Match Practice Sessions",
-                        "Fitness Training",
-                        "Professional Coaching Guidance",
-                        "Skill Development Drills",
-                        "Safe Practice Environment",
-                        "Discipline Focus Training",
-                        "Tournament Opportunities"
+                        { _id: new mongoose.Types.ObjectId(), text: "Practice Nets" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Match Practice Sessions" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Fitness Training" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Professional Coaching Guidance" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Skill Development Drills" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Safe Practice Environment" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Discipline Focus Training" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Tournament Opportunities" }
                     ],
                     image: "public/home/Bowling.jpg",
                     buttonText: "View Programs",
@@ -113,14 +113,14 @@ const seedData = async () => {
                     title: "Latest on our Social",
                     subtitle: "Follow for more",
                     followUrl: "https://www.instagram.com/gandhinagarsportsacademy/",
-                    posts: {
-                        "postUrl1": "https://www.instagram.com/p/DKYmJRkqasG/",
-                        "postUrl2": "https://www.instagram.com/p/CdJ1Re8vlJl/",
-                        "postUrl3": "https://www.instagram.com/reels/CtftqHcNM7Q/",
-                        "postUrl4": "https://www.instagram.com/p/DCo8vyQh42G/",
-                        "postUrl5": "https://www.instagram.com/p/DT9hCwuimTN/",
-                        "postUrl6": "https://www.instagram.com/p/C7OuwK5R2VP/",
-                    }
+                    posts: [
+                        { _id: new mongoose.Types.ObjectId(), url: "https://www.instagram.com/p/DKYmJRkqasG/" },
+                        { _id: new mongoose.Types.ObjectId(), url: "https://www.instagram.com/p/CdJ1Re8vlJl/" },
+                        { _id: new mongoose.Types.ObjectId(), url: "https://www.instagram.com/reels/CtftqHcNM7Q/" },
+                        { _id: new mongoose.Types.ObjectId(), url: "https://www.instagram.com/p/DCo8vyQh42G/" },
+                        { _id: new mongoose.Types.ObjectId(), url: "https://www.instagram.com/p/DT9hCwuimTN/" },
+                        { _id: new mongoose.Types.ObjectId(), url: "https://www.instagram.com/p/C7OuwK5R2VP/" }
+                    ]
                 }
             },
             testimonials: {
@@ -204,13 +204,13 @@ const seedData = async () => {
             whyChooseUs: {
                 sectionTitle: "Why Choose Us",
                 features: [
-                    "Professional coaching environment",
-                    "Focus on discipline and fitness",
-                    "Regular match practice",
-                    "Individual attention",
-                    "Safe and positive environment",
-                    "Skill development programs",
-                    "Tournament exposure"
+                    { _id: new mongoose.Types.ObjectId(), text: "Professional coaching environment" },
+                    { _id: new mongoose.Types.ObjectId(), text: "Focus on discipline and fitness" },
+                    { _id: new mongoose.Types.ObjectId(), text: "Regular match practice" },
+                    { _id: new mongoose.Types.ObjectId(), text: "Individual attention" },
+                    { _id: new mongoose.Types.ObjectId(), text: "Safe and positive environment" },
+                    { _id: new mongoose.Types.ObjectId(), text: "Skill development programs" },
+                    { _id: new mongoose.Types.ObjectId(), text: "Tournament exposure" }
                 ]
             },
             journey: {
@@ -237,33 +237,65 @@ const seedData = async () => {
                 description: "Structured cricket pathways for every stage of a player's journey.",
                 backgroundImage: "public/Programs/image.png"
             },
-            levels: {
-                beginner: {
+            levels: [
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    key: "beginner",
                     title: "Beginner Level",
                     description: "For students starting cricket basics.",
-                    features: ["Basic batting techniques", "Bowling action correction", "Fielding basics", "Fitness training", "Game rules understanding"],
+                    features: [
+                        { _id: new mongoose.Types.ObjectId(), text: "Basic batting techniques" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Bowling action correction" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Fielding basics" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Fitness training" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Game rules understanding" }
+                    ],
                     image: "public/Programs/cricpro.png"
                 },
-                intermediate: {
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    key: "intermediate",
                     title: "Intermediate Level",
                     description: "For players with basic cricket knowledge.",
-                    features: ["Advanced batting skills", "Bowling variations", "Match strategy", "Fitness improvement", "Match simulations"],
+                    features: [
+                        { _id: new mongoose.Types.ObjectId(), text: "Advanced batting skills" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Bowling variations" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Match strategy" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Fitness improvement" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Match simulations" }
+                    ],
                     image: "public/Programs/footballpro.png"
                 },
-                advanced: {
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    key: "advanced",
                     title: "Advanced Level",
                     description: "For experienced players looking for national level training.",
-                    features: ["Professional match practice", "Video analysis", "Specific skill sets", "Mental conditioning", "Tournament participation"],
+                    features: [
+                        { _id: new mongoose.Types.ObjectId(), text: "Professional match practice" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Video analysis" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Specific skill sets" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Mental conditioning" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Tournament participation" }
+                    ],
                     image: "public/home/Bowling.jpg"
                 },
-                camp: {
+                {
+                    _id: new mongoose.Types.ObjectId(),
+                    key: "camp",
                     title: "Seasonal Training & Summer Camps",
                     description: "Special seasonal training programs including intensive cricket training, fitness drills, skill competitions, match practice, awards & certificates.",
-                    features: ["Intensive training", "Fitness drills", "Skill competitions", "Match practice", "Awards & Certificates"],
+                    features: [
+                        { _id: new mongoose.Types.ObjectId(), text: "Intensive training" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Fitness drills" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Skill competitions" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Match practice" },
+                        { _id: new mongoose.Types.ObjectId(), text: "Awards & Certificates" }
+                    ],
                     duration: "Seasonal",
                     image: "public/about/programs.png"
                 }
-            }
+            ]
         });
 
         // 4. Gallery Data

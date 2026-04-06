@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('../utils/mongoose');
 
 const homeSchema = new mongoose.Schema({
     // 1. Hero Section (Single Object)
@@ -36,18 +36,10 @@ const homeSchema = new mongoose.Schema({
         facilitiesCard: {
             title: { type: String, default: "World-Class Facilities to Elevate Your Game" },
             description: { type: String, default: "At Gandhinagar Sports Academy, we provide world-class facilities to support comprehensive cricket coaching." },
-            features: {
-                type: [String], default: [
-                    "Practice Nets",
-                    "Match Practice Sessions",
-                    "Fitness Training",
-                    "Professional Coaching Guidance",
-                    "Skill Development Drills",
-                    "Safe Practice Environment",
-                    "Discipline Focus Training",
-                    "Tournament Opportunities"
-                ]
-            },
+            features: [{
+                _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+                text: { type: String }
+            }],
             image: { type: String },
             buttonText: { type: String, default: "View Programs" },
             buttonLink: { type: String, default: "/programs" },
@@ -69,11 +61,10 @@ const homeSchema = new mongoose.Schema({
             title: { type: String, default: "Latest on our Social" },
             subtitle: { type: String, default: "Follow for more" },
             followUrl: { type: String, default: "https://www.instagram.com/gandhinagarsportsacademy/" },
-            posts: {
-                type: Map,
-                of: String,
-                default: {}
-            }
+            posts: [{
+                _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+                url: { type: String }
+            }]
         }
     },
 
