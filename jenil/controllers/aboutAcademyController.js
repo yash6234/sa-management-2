@@ -762,3 +762,4 @@ exports.deleteArrayItemByIndex = (arrayPath) => async (req, res) => {
     req.params.itemId = req.params.index;
     return exports.deleteArrayItem(arrayPath)(req, res);
 };
+

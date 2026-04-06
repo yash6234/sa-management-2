@@ -103,12 +103,12 @@ const normalizePaths = (obj) => {
 
 const processImageFields = (data) => {
     const imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo', 'icon', 'photo', 'avatar', 'src'];
-    
+
     // Recursively process arrays
     if (Array.isArray(data)) {
         return data.map(item => processImageFields(item));
     }
-    
+
     // Recursively process objects
     if (data !== null && typeof data === 'object') {
         for (const key in data) {
@@ -126,7 +126,7 @@ const processImageFields = (data) => {
         }
         return data;
     }
-    
+
     return data;
 };
 
@@ -361,16 +361,15 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         }
 
         if (arrayPath === 'testimonials.list') {
-            for (let i = targetArray.length - 1; i >= 0; i--) {
-                const t = targetArray[i] || {};
-                const isEmpty = !t.quote && !t.parentName && !t.relation;
-                if (isEmpty) targetArray.splice(i, 1);
-            }
-
             for (const item of itemsToAdd) {
-                const quote = typeof item.quote === 'string' ? item.quote.trim() : '';
-                const parentName = typeof item.parentName === 'string' ? item.parentName.trim() : '';
-                const relation = typeof item.relation === 'string' ? item.relation.trim() : '';
+                if (typeof item.quote === 'string') item.quote = item.quote.trim();
+                if (typeof item.parentName === 'string') item.parentName = item.parentName.trim();
+                if (typeof item.relation === 'string') item.relation = item.relation.trim();
+
+                const quote = item.quote || '';
+                const parentName = item.parentName || '';
+                const relation = item.relation || '';
+
                 if (!quote || !parentName || !relation) {
                     return res.status(400).json({
                         success: false,
@@ -380,7 +379,36 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             }
         }
 
-        for (const item of itemsToAdd) targetArray.push(item);
+        // The frontend may send the entire list including old items.
+        // To satisfy "only new data should be created at a time", we strictly filter out 
+        // items that already exist in the database, and ONLY push the new ones.
+
+        for (const item of itemsToAdd) {
+            let isDuplicate = false;
+            
+            if (arrayPath === 'testimonials.list') {
+                isDuplicate = targetArray.some(t => {
+                    const tQuote = typeof t.quote === 'string' ? t.quote.trim() : '';
+                    const tParent = typeof t.parentName === 'string' ? t.parentName.trim() : '';
+                    const tRel = typeof t.relation === 'string' ? t.relation.trim() : '';
+                    
+                    return tQuote === item.quote && tParent === item.parentName && tRel === item.relation;
+                });
+            } else {
+                // Generic duplicate check for other arrays if _id is present
+                if (item._id) {
+                    isDuplicate = !!(targetArray.id ? targetArray.id(item._id) : targetArray.find(t => t._id && t._id.toString() === item._id.toString()));
+                } else {
+                    isDuplicate = targetArray.some(t => JSON.stringify(t) === JSON.stringify(item));
+                }
+            }
+
+            // Only create new data at a time!
+            if (!isDuplicate) {
+                targetArray.push(item);
+            }
+        }
+
         home.markModified(arrayPath);
         await home.save();
         res.status(201).json({ success: true, data: targetArray });

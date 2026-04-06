@@ -263,6 +263,7 @@ cmsRouter.use('/gallery', require('./jenil/routes/galleryPageRoutes'));
 cmsRouter.use('/playground', require('./jenil/routes/playgroundPageRoutes'));
 cmsRouter.use('/admissions', require('./jenil/routes/admissionsPageRoutes'));
 cmsRouter.use('/contact', require('./jenil/routes/contactPageRoutes'));
+cmsRouter.use('/admin/sections', require('./jenil/routes/adminPageRoutes'));
 
 // 3. Shared Endpoints
 cmsRouter.get('/footer', cmsHomeController.getFooterData);
@@ -285,9 +286,7 @@ cmsRouter.use(require('./jenil/middlewares/errorHandler'));
 // Mount CMS under /acade360
 app.use('/acade360', cmsRouter);
 // --------------------------------------------------------------------------------------
-
 // --------------------------------------------------------------------------------------
-
 //LOGO ROUTE
 app.get('/acade360/academy/logo/:file_name', (req, res) => {
     const { file_name } = req.params;

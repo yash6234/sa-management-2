@@ -71,12 +71,12 @@ const normalizePaths = (obj) => {
 
 const processImageFields = (data) => {
     const imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo', 'icon', 'photo', 'avatar', 'src'];
-    
+
     // Recursively process arrays
     if (Array.isArray(data)) {
         return data.map(item => processImageFields(item));
     }
-    
+
     // Recursively process objects
     if (data !== null && typeof data === 'object') {
         for (const key in data) {
@@ -94,7 +94,7 @@ const processImageFields = (data) => {
         }
         return data;
     }
-    
+
     return data;
 };
 
@@ -143,7 +143,7 @@ exports.getSection = (sectionName) => async (req, res) => {
         }
 
         if (target === undefined) {
-             return res.status(404).json({ success: false, message: 'Section not found' });
+            return res.status(404).json({ success: false, message: 'Section not found' });
         }
         res.status(200).json({ success: true, data: target });
     } catch (err) {
@@ -189,17 +189,17 @@ exports.updateSection = (sectionName) => async (req, res) => {
         };
 
         if (sectionName === 'galleryGrid') {
-             // Handle the virtual section 'galleryGrid' which maps to 'categories' and 'images'
-             if (updateData.categories !== undefined) {
-                 gallery.categories = Array.isArray(updateData.categories) ? updateData.categories : updateData.categories.split(',').map(s => s.trim()).filter(Boolean);
-                 gallery.markModified('categories');
-             }
-             if (Array.isArray(updateData.images)) {
-                 gallery.images = updateData.images;
-                 gallery.markModified('images');
-             }
-             await gallery.save();
-             return res.status(200).json({ success: true, data: getGalleryGrid(gallery) });
+            // Handle the virtual section 'galleryGrid' which maps to 'categories' and 'images'
+            if (updateData.categories !== undefined) {
+                gallery.categories = Array.isArray(updateData.categories) ? updateData.categories : updateData.categories.split(',').map(s => s.trim()).filter(Boolean);
+                gallery.markModified('categories');
+            }
+            if (Array.isArray(updateData.images)) {
+                gallery.images = updateData.images;
+                gallery.markModified('images');
+            }
+            await gallery.save();
+            return res.status(200).json({ success: true, data: getGalleryGrid(gallery) });
         }
 
         const flattenedUpdates = flattenObject(updateData, sectionName);
@@ -214,7 +214,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
         }
 
         await gallery.save();
-        
+
         const result = sectionName.split('.').reduce((obj, part) => obj && obj[part], gallery);
         res.status(200).json({ success: true, data: result });
     } catch (err) {
@@ -451,7 +451,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             if (!obj || typeof obj !== 'object' || typeof dotPath !== 'string') return undefined;
             return dotPath.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
         };
-        
+
         let payload = normalizePaths(req.body);
         payload = processImageFields(payload);
 
@@ -464,7 +464,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
                 setNested(payload, toDotPath(file.fieldname), file.filename);
             });
         }
-        
+
         payload.list = parseJsonIfLikely(payload.list);
         payload.items = parseJsonIfLikely(payload.items);
         payload.item = parseJsonIfLikely(payload.item);
@@ -480,7 +480,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         if (directItems !== undefined) {
             itemsToAdd = directItems;
         } else if (lastPartItems !== undefined) {
-             itemsToAdd = lastPartItems;
+            itemsToAdd = lastPartItems;
         } else if (payload.list !== undefined) {
             itemsToAdd = payload.list;
         } else if (payload.items !== undefined) {
@@ -500,7 +500,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             const candidates = ['value', 'text', 'feature', 'features', 'label', 'name', 'title', 'image', 'url', 'src', 'path', 'item', 'category'];
             for (const key of candidates) {
                 if (typeof item[key] === 'string') return item[key];
-                 if (Array.isArray(item[key]) && item[key].length === 1 && typeof item[key][0] === 'string') return item[key][0];
+                if (Array.isArray(item[key]) && item[key].length === 1 && typeof item[key][0] === 'string') return item[key][0];
             }
             const stringValues = Object.values(item).filter((v) => typeof v === 'string');
             if (stringValues.length === 1) return stringValues[0];
@@ -541,10 +541,10 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         for (const part of parts) {
             targetArray = targetArray[part];
         }
-        
+
         const item = targetArray.id(req.params.itemId);
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
-        
+
         const index = targetArray.indexOf(item);
         const itemPath = `${arrayPath}.${index}`;
 
@@ -560,7 +560,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
                 setNested(updateData, toDotPath(file.fieldname), file.filename);
             });
         }
-        
+
         const applyItemUpdate = (prefix, data) => {
             for (const key in data) {
                 const value = data[key];
@@ -591,7 +591,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
         for (const part of parts) {
             targetArray = targetArray[part];
         }
-        
+
         if (req.params.itemId) {
             if (typeof targetArray.id === 'function') {
                 const item = targetArray.id(req.params.itemId);
@@ -602,7 +602,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
                     if (!isNaN(index) && index >= 0 && index < targetArray.length) {
                         targetArray.splice(index, 1);
                     } else {
-                         return res.status(404).json({ success: false, message: 'Item not found' });
+                        return res.status(404).json({ success: false, message: 'Item not found' });
                     }
                 }
             } else {
@@ -614,7 +614,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
                 }
             }
         }
-        
+
         gallery.markModified(arrayPath);
         await gallery.save();
         res.status(200).json({ success: true, message: 'Item deleted safely', data: targetArray });
