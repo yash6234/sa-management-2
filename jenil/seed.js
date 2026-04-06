@@ -127,16 +127,19 @@ const seedData = async () => {
                 sectionTitle: "What Parents Say",
                 list: [
                     {
+                        _id: new mongoose.Types.ObjectId(),
                         quote: "My son has become more disciplined and confident after joining this academy. The coaches focus on both skills and character.",
                         parentName: "Rakesh Patel",
                         relation: "Father of U-14 player"
                     },
                     {
+                        _id: new mongoose.Types.ObjectId(),
                         quote: "The training structure is excellent. We can clearly see improvement in technique, fitness, and match temperament.",
                         parentName: "Neha Shah",
                         relation: "Mother of U-16 player"
                     },
                     {
+                        _id: new mongoose.Types.ObjectId(),
                         quote: "Safe environment, individual attention, and regular match exposure. This is exactly what we were looking for.",
                         parentName: "Mitesh Desai",
                         relation: "Parent of academy trainee"

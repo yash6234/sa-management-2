@@ -385,22 +385,22 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
         for (const item of itemsToAdd) {
             let isDuplicate = false;
-            
-            if (arrayPath === 'testimonials.list') {
+
+            if (item._id) {
+                // Check by ID if provided
+                isDuplicate = !!(targetArray.id ? targetArray.id(item._id) : targetArray.find(t => t._id && t._id.toString() === item._id.toString()));
+            } else if (arrayPath === 'testimonials.list') {
+                // For testimonials without ID, check by content
                 isDuplicate = targetArray.some(t => {
                     const tQuote = typeof t.quote === 'string' ? t.quote.trim() : '';
                     const tParent = typeof t.parentName === 'string' ? t.parentName.trim() : '';
                     const tRel = typeof t.relation === 'string' ? t.relation.trim() : '';
-                    
+
                     return tQuote === item.quote && tParent === item.parentName && tRel === item.relation;
                 });
             } else {
-                // Generic duplicate check for other arrays if _id is present
-                if (item._id) {
-                    isDuplicate = !!(targetArray.id ? targetArray.id(item._id) : targetArray.find(t => t._id && t._id.toString() === item._id.toString()));
-                } else {
-                    isDuplicate = targetArray.some(t => JSON.stringify(t) === JSON.stringify(item));
-                }
+                // Generic duplicate check for other arrays
+                isDuplicate = targetArray.some(t => JSON.stringify(t) === JSON.stringify(item));
             }
 
             // Only create new data at a time!

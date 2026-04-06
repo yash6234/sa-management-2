@@ -81,10 +81,10 @@ const homeSchema = new mongoose.Schema({
     testimonials: {
         sectionTitle: { type: String, default: "What Parents Say" },
         list: [{
+            _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
             quote: { type: String },
             parentName: { type: String },
-            relation: { type: String },
-            _id: false
+            relation: { type: String }
         }]
     },
     isActive: { type: Boolean, default: true }
