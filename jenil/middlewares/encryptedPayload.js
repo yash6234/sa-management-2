@@ -140,8 +140,8 @@ const encryptResponse = (req, res, next) => {
 
         // Skip encryption if explicitly disabled
         const skipEncrypt = req.headers['x-encrypt-response'] === 'false' ||
-                           req.query?.encrypt === 'false' ||
-                           req.query?.raw === 'true';
+            req.query?.encrypt === 'false' ||
+            req.query?.raw === 'true';
 
         // If already encrypted wrapper, pass through
         if (data?.encrypted === true && data?.data) {
@@ -174,9 +174,9 @@ const encryptResponse = (req, res, next) => {
 const conditionalEncryptResponse = (req, res, next) => {
     const originalJson = res.json.bind(res);
 
-    res.json = function(data) {
+    res.json = function (data) {
         const shouldEncrypt = req.headers['x-encrypt-response'] === 'true' ||
-                              req.query?.encrypt === 'true';
+            req.query?.encrypt === 'true';
 
         if (shouldEncrypt && data && typeof data === 'object' && !(data?.encrypted === true)) {
             const encrypted = encryptData(data);

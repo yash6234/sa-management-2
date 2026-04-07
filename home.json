@@ -1,0 +1,137 @@
+{
+  "hero": {
+    "title": "GANDHINAGAR SPORTS ACADEMY",
+    "highlightTitle": "Building Future Cricket Champions",
+    "subtitle": "Gandhinagar Sports Academy is a professional cricket coaching centre dedicated to developing young talent through structured training, discipline and match exposure. Our mission is to nurture players with modern coaching techniques and professional guidance.",
+    "backgroundImage": "public/home/slide_4.webp",
+    "primaryButtonText": "Join Now",
+    "primaryButtonLink": "/admissions",
+    "secondaryButtonText": "Explore Gallery",
+    "secondaryButtonLink": "/gallery"
+  },
+  "about": {
+    "title": "Welcome to Gandhinagar Sports Academy",
+    "highlightText": "The Best Sports Academy in Gandhinagar and Gujarat",
+    "descriptionParagraphs": [
+      "Are you ready to pursue your passion for sports without compromising on academics? We're proud to offer structured training for young athletes with flexible routines that support both learning and performance.",
+      "At Gandhinagar Sports Academy, our coaching programs—residential and non-residential—go beyond physical training. We focus on building a winning mindset, discipline, teamwork, and long-term athletic development with guidance from experienced coaches.",
+      "Our mission is simple: to empower every athlete to excel in their game and build confidence for life. The journey starts here—train smart, stay consistent, and grow into your best self."
+    ],
+    "image": "public/home/join_img.webp"
+  },
+  "programsAndFacilities": {
+    "facilitiesCard": {
+      "title": "World-Class Facilities to Elevate Your Game",
+      "description": "At Gandhinagar Sports Academy, we provide world-class facilities to support comprehensive cricket coaching.",
+      "features": [
+        {
+          "_id": "69d37066ad5f3f85e466d5c0",
+          "text": "Practice Nets"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5c1",
+          "text": "Match Practice Sessions"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5c2",
+          "text": "Fitness Training"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5c3",
+          "text": "Professional Coaching Guidance"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5c4",
+          "text": "Skill Development Drills"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5c5",
+          "text": "Safe Practice Environment"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5c6",
+          "text": "Discipline Focus Training"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5c7",
+          "text": "Tournament Opportunities"
+        }
+      ],
+      "image": "public/home/Bowling.jpg",
+      "buttonText": "View Programs",
+      "buttonLink": "/programs"
+    },
+    "quoteBlock": {
+      "quote": "Excellence in Sports, Excellence in Life.",
+      "author": "Gandhinagar Sports Academy",
+      "authorTitle": "",
+      "buttonText": "Explore Programs",
+      "buttonLink": "/programs"
+    },
+    "sectionTitle": "Our Sports Programs",
+    "image": "public/home/bg_image.png"
+  },
+  "tournamentsSection": {
+    "list": {
+      "title": "Latest on our Social",
+      "subtitle": "Follow for more",
+      "followUrl": "https://www.instagram.com/gandhinagarsportsacademy/",
+      "posts": [
+        {
+          "_id": "69d37066ad5f3f85e466d5c8",
+          "url": "https://www.instagram.com/p/DKYmJRkqasG/"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5c9",
+          "url": "https://www.instagram.com/p/CdJ1Re8vlJl/"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5ca",
+          "url": "https://www.instagram.com/reels/CtftqHcNM7Q/"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5cb",
+          "url": "https://www.instagram.com/p/DCo8vyQh42G/"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5cc",
+          "url": "https://www.instagram.com/p/DT9hCwuimTN/"
+        },
+        {
+          "_id": "69d37066ad5f3f85e466d5cd",
+          "url": "https://www.instagram.com/p/C7OuwK5R2VP/"
+        }
+      ]
+    },
+    "smallTitle": "JOIN OUR SPORTS TOURNAMENTS",
+    "largeTitle": "Tournaments"
+  },
+  "testimonials": {
+    "sectionTitle": "What Parents Say",
+    "list": [
+      {
+        "_id": "69d37066ad5f3f85e466d5ce",
+        "quote": "My son has become more disciplined and confident after joining this academy. The coaches focus on both skills and character.",
+        "parentName": "Rakesh Patel",
+        "relation": "Father of U-14 player"
+      },
+      {
+        "_id": "69d37066ad5f3f85e466d5cf",
+        "quote": "The training structure is excellent. We can clearly see improvement in technique, fitness, and match temperament.",
+        "parentName": "Neha Shah",
+        "relation": "Mother of U-16 player"
+      },
+      {
+        "_id": "69d37066ad5f3f85e466d5d0",
+        "quote": "Safe environment, individual attention, and regular match exposure. This is exactly what we were looking for.",
+        "parentName": "Mitesh Desai",
+        "relation": "Parent of academy trainee"
+      }
+    ]
+  },
+  "_id": "69d37066ad5f3f85e466d5d1",
+  "isActive": true,
+  "createdAt": "2026-04-06T08:35:50.302Z",
+  "updatedAt": "2026-04-06T08:35:50.302Z",
+  "__v": 0
+}

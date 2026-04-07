@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('./utils/mongoose');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
@@ -44,7 +44,6 @@ const seedData = async () => {
         console.log('Jenil collections cleared. Seeding new data...');
 
         // 1. Home Data
-        await Home.deleteMany({});
         await Home.create({
             hero: {
                 title: "GANDHINAGAR SPORTS ACADEMY",
@@ -149,7 +148,6 @@ const seedData = async () => {
         });
 
         // Seed Footer
-        await Footer.deleteMany({});
         await Footer.create({
             academyName: "Gandhinagar Sports Academy",
             missionDescription: "Professional Cricket Coaching in Gandhinagar focused on developing skills, discipline and sportsmanship.",
@@ -163,7 +161,6 @@ const seedData = async () => {
         });
 
         // 2. About Academy Data
-        await AboutAcademy.deleteMany({});
         await AboutAcademy.create({
             hero: {
                 subtitle: "ABOUT ACADEMY",
@@ -229,7 +226,6 @@ const seedData = async () => {
         });
 
         // 3. Programs Data
-        await ProgramsPage.deleteMany({});
         await ProgramsPage.create({
             hero: {
                 tagline: "Programs",
@@ -299,7 +295,6 @@ const seedData = async () => {
         });
 
         // 4. Gallery Data
-        await GalleryPage.deleteMany({});
         await GalleryPage.create({
             hero: {
                 tagline: "MOMENTS AT GANDHINAGAR SPORTS ACADEMY",
@@ -354,7 +349,6 @@ const seedData = async () => {
         });
 
         // 5. Playground Data
-        await PlaygroundPage.deleteMany({});
         await PlaygroundPage.create({
             hero: {
                 subtitle: "RESERVE YOUR GROUND",
@@ -391,7 +385,6 @@ const seedData = async () => {
         });
 
         // 6. Admissions Data
-        await AdmissionsPage.deleteMany({});
         await AdmissionsPage.create({
             hero: {
                 subtitle: "START YOUR JOURNEY",
@@ -431,7 +424,6 @@ const seedData = async () => {
         });
 
         // 7. Contact Data
-        await ContactPage.deleteMany({});
         await ContactPage.create({
             hero: {
                 subtitle: "CONTACT US",

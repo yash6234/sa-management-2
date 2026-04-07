@@ -30,43 +30,80 @@ const serveImage = (req, res, next) => {
         return next ? next() : res.status(400).json({ success: false, error: 'Token missing' });
     }
 
-    // 2. Decrypt it to a raw (unprefixed) path
+    // 2. Try to decrypt it to a raw (unprefixed) path
     const realUrl = decryptImageUrl(token);
-    if (!realUrl) {
-        console.warn(`[ImageController] Failed to decrypt token: ${token.substring(0, 10)}... (likely double-encrypted or invalid)`);
-        return next ? next() : res.status(400).json({ success: false, error: 'Invalid token' });
+
+    // 3. Determine the relative path to serve
+    //    - If decryption succeeded, use the decrypted URL
+    //    - If decryption failed, fall back to the full request path as a plain file path
+    let relativePath;
+
+    if (realUrl) {
+        // Decrypted successfully — normalize the URL
+        let pathname = realUrl;
+        try {
+            if (realUrl.startsWith('http')) {
+                pathname = new URL(realUrl).pathname;
+            }
+        } catch (e) { }
+
+        const cleanPath = decodeURIComponent(pathname).split('?')[0];
+        relativePath = cleanPath.replace(/^\/+/, '');
+        console.log(`[ImageController] Serving decrypted image -> Token: ${token.substring(0, 8)}... Path: ${relativePath}`);
+    } else {
+        // Decryption failed — treat the full request path as a plain file path
+        // e.g. /public/home/join_img.webp -> public/home/join_img.webp
+        const rawPath = decodeURIComponent(req.path).split('?')[0];
+        relativePath = rawPath.replace(/^\/+/, '');
+        console.log(`[ImageController] Serving plain file path: ${relativePath}`);
     }
 
-    // 3. Normalize the decrypted URL into a local filesystem path
-    let pathname = realUrl;
-    try {
-        if (realUrl.startsWith('http')) {
-            pathname = new URL(realUrl).pathname;
+    // 4. Try to find and serve the file from known directories
+    return resolveAndServe(relativePath, res, next);
+};
+
+const resolveAndServe = (relativePath, res, next) => {
+    // Normalize backslashes
+    relativePath = relativePath.replace(/\\/g, '/');
+
+    // Build a list of candidate paths to try
+    const candidates = [];
+
+    // 1. Try as-is from ROOT_DIR
+    candidates.push(path.join(ROOT_DIR, relativePath));
+
+    // 2. If path contains 'public/', extract from 'public/' onwards and try ROOT_DIR
+    //    e.g. "home/public/home/join_img.webp" -> "public/home/join_img.webp"
+    const pubIdx = relativePath.indexOf('public/');
+    if (pubIdx > 0) {
+        const fromPublic = relativePath.substring(pubIdx); // "public/home/join_img.webp"
+        candidates.push(path.join(ROOT_DIR, fromPublic));
+        // Also try PUBLIC_DIR + path after 'public/'
+        const afterPublic = fromPublic.replace('public/', ''); // "home/join_img.webp"
+        candidates.push(path.join(PUBLIC_DIR, afterPublic));
+    }
+
+    // 3. If path contains 'uploads/', extract from 'uploads/' onwards and try ROOT_DIR
+    const uplIdx = relativePath.indexOf('uploads/');
+    if (uplIdx > 0) {
+        candidates.push(path.join(ROOT_DIR, relativePath.substring(uplIdx)));
+    }
+
+    // 4. Try PUBLIC_DIR directly (strip 'public/' prefix if present)
+    let pubRelative = relativePath;
+    if (pubRelative.startsWith('public/')) {
+        pubRelative = pubRelative.replace('public/', '');
+    }
+    candidates.push(path.join(PUBLIC_DIR, pubRelative));
+
+    // Try each candidate
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+            return streamFile(candidate, res);
         }
-    } catch (e) { }
-
-    const cleanPath = decodeURIComponent(pathname).split('?')[0];
-    let relativePath = cleanPath.replace(/^\/+/, '');
-
-    console.log(`[ImageController] Serving image -> Token: ${token.substring(0, 8)}... Result path: ${relativePath}`);
-
-    // 1. Try ROOT_DIR + relativePath (for 'uploads/...')
-    let localPath = path.join(ROOT_DIR, relativePath);
-    if (fs.existsSync(localPath)) {
-        return streamFile(localPath, res);
     }
 
-    // 2. Try PUBLIC_DIR + relativePath (for static assets)
-    // Strip 'public/' from the start if it exists
-    if (relativePath.startsWith('public/')) {
-        relativePath = relativePath.replace('public/', '');
-    }
-    localPath = path.join(PUBLIC_DIR, relativePath);
-    if (fs.existsSync(localPath)) {
-        return streamFile(localPath, res);
-    }
-
-    console.warn(`[ImageController] Resolved path does not exist: ${localPath} (Raw decrypted: ${realUrl})`);
+    console.warn(`[ImageController] File not found: ${relativePath}`);
     if (next) return next();
     res.status(404).json({ success: false, error: 'File not found' });
 };

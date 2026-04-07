@@ -47,8 +47,8 @@ const standardizeFilePath = (req, res, next) => {
         // 1. Strip common prefixes (/acade360/img/ or /acade360/)
         let clean = raw.replace(/^\/?acade360\/img\//, '').replace(/^\/?acade360\//, '').replace(/^\//, '');
 
-        // 2. If it's a token (contains a dot), try to decrypt it
-        if (clean.includes('.')) {
+        // 2. If it looks like an encrypted token (32-char hex IV + dot + hex ciphertext), try to decrypt it
+        if (/^[0-9a-f]{32}\./i.test(clean)) {
             const decrypted = decryptImageUrl(clean);
             if (decrypted) {
                 console.log(`[StandardizePath] Decrypted token and cleaned: ${val} -> ${decrypted}`);
