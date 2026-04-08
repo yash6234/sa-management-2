@@ -69,6 +69,8 @@ const normalizePaths = (obj) => {
     return newObj;
 };
 
+const { decryptData: decryptCryptoJS } = require('../utils/encryption');
+
 const processImageFields = (data) => {
     const imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo', 'icon', 'photo', 'avatar', 'src'];
 
@@ -79,20 +81,49 @@ const processImageFields = (data) => {
 
     // Recursively process objects
     if (data !== null && typeof data === 'object') {
-        for (const key in data) {
-            if (data.hasOwnProperty(key)) {
-                const value = data[key];
-                // Check if this is an image field with base64 data
+        const result = { ...data };
+        for (const key in result) {
+            if (result.hasOwnProperty(key)) {
+                const value = result[key];
+                
+                // 1. Handle base64 images
                 if (imageFields.includes(key) && typeof value === 'string' && value.startsWith('data:image')) {
                     const savedPath = saveBase64Image(value);
-                    if (savedPath) data[key] = savedPath;
-                } else if (typeof value === 'object' && value !== null) {
-                    // Recursively process nested objects/arrays
-                    data[key] = processImageFields(value);
+                    if (savedPath) result[key] = savedPath;
+                } 
+                // 2. Handle CryptoJS encrypted paths (starts with 'U2FsdGVkX1')
+                else if (typeof value === 'string' && value.startsWith('U2FsdGVkX1')) {
+                    try {
+                        let decrypted = decryptCryptoJS(value);
+                        
+                        // Fallback to ROOT secret if necessary
+                        if (!decrypted && process.env.ENCRYPTION_SECRET) {
+                            const CryptoJS = require('crypto-js');
+                            try {
+                                const bytes = CryptoJS.AES.decrypt(value, process.env.ENCRYPTION_SECRET);
+                                const raw = bytes.toString(CryptoJS.enc.Utf8);
+                                if (raw) {
+                                    try { decrypted = JSON.parse(raw); } catch { decrypted = raw; }
+                                }
+                            } catch (e) { }
+                        }
+
+                        if (decrypted) {
+                            if (typeof decrypted === 'string') {
+                                result[key] = decrypted;
+                            } else if (decrypted && typeof decrypted === 'object') {
+                                result[key] = decrypted.url || decrypted.path || decrypted.filename || value;
+                            }
+                        }
+                    } catch (err) { }
+                }
+                // 3. Recurse
+                else if (typeof value === 'object' && value !== null) {
+                    result[key] = processImageFields(value);
                 }
             }
         }
-        return data;
+        return result;
     }
 
     return data;

@@ -217,42 +217,54 @@ exports.updatePageSection = async (req, res) => {
         }
 
         // 5. Flatten and Apply to Mongoose
-        const processImageFields = (data, imageFields = ['image', 'icon', 'logo', 'photo', 'banner']) => {
-            if (data !== null && typeof data === 'object') {
-                const result = { ...data };
-                for (const key in result) {
-                    if (result.hasOwnProperty(key)) {
-                        const value = result[key];
+const processImageFields = (data, imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo', 'icon', 'photo', 'avatar', 'src', 'banner']) => {
+    if (data !== null && typeof data === 'object') {
+        const result = { ...data };
+        for (const key in result) {
+            if (result.hasOwnProperty(key)) {
+                const value = result[key];
+                
+                // 1. Handle base64 images
+                if (imageFields.includes(key) && typeof value === 'string' && value.startsWith('data:image')) {
+                    const savedPath = saveBase64Image(value);
+                    if (savedPath) result[key] = savedPath;
+                } 
+                // 2. Handle CryptoJS encrypted paths (starts with 'U2FsdGVkX1')
+                else if (typeof value === 'string' && value.startsWith('U2FsdGVkX1')) {
+                    try {
+                        let decrypted = decryptCryptoJS(value);
                         
-                        // 1. Handle base64 images
-                        if (imageFields.includes(key) && typeof value === 'string' && value.startsWith('data:image')) {
-                            const savedPath = saveBase64Image(value);
-                            if (savedPath) result[key] = savedPath;
-                        } 
-                        // 2. Handle CryptoJS encrypted paths (starts with 'U2FsdGVkX1')
-                        else if (typeof value === 'string' && value.startsWith('U2FsdGVkX1')) {
+                        // Fallback to ROOT secret
+                        if (!decrypted && process.env.ENCRYPTION_SECRET) {
+                            const CryptoJS = require('crypto-js');
                             try {
-                                const decrypted = decryptCryptoJS(value);
-                                // If it decrypts to a string (path), use it. If it's an object, check if it has a url/path.
-                                if (typeof decrypted === 'string') {
-                                    result[key] = decrypted;
-                                } else if (decrypted && typeof decrypted === 'object') {
-                                    result[key] = decrypted.url || decrypted.path || decrypted.filename || value;
+                                const bytes = CryptoJS.AES.decrypt(value, process.env.ENCRYPTION_SECRET);
+                                const raw = bytes.toString(CryptoJS.enc.Utf8);
+                                if (raw) {
+                                    try { decrypted = JSON.parse(raw); } catch { decrypted = raw; }
                                 }
-                            } catch (err) {
-                                // If decryption fails, keep original
+                            } catch (e) { }
+                        }
+
+                        if (decrypted) {
+                            if (typeof decrypted === 'string') {
+                                result[key] = decrypted;
+                            } else if (decrypted && typeof decrypted === 'object') {
+                                result[key] = decrypted.url || decrypted.path || decrypted.filename || value;
                             }
                         }
-                        // 3. Recurse
-                        else if (typeof value === 'object' && value !== null) {
-                            result[key] = processImageFields(value);
-                        }
-                    }
+                    } catch (err) { }
                 }
-                return result;
+                // 3. Recurse
+                else if (typeof value === 'object' && value !== null) {
+                    result[key] = processImageFields(value, imageFields);
+                }
             }
-            return data;
-        };
+        }
+        return result;
+    }
+    return data;
+};
 
         const processedData = processImageFields(updateData);
 
