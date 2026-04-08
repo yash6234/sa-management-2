@@ -1,17 +1,102 @@
 const Home = require('../models/Home');
 const { saveBase64Image } = require('../utils/fileUtils');
+const { decryptData: decryptCryptoJS } = require('../utils/encryption');
 
 const parseJsonIfLikely = (value) => {
-    if (typeof value !== 'string') return value;
+    if (typeof value !== 'string' || value === '') return value;
     const trimmed = value.trim();
-    const looksJsonObject = trimmed.startsWith('{') && trimmed.endsWith('}');
-    const looksJsonArray = trimmed.startsWith('[') && trimmed.endsWith(']');
-    if (!looksJsonObject && !looksJsonArray) return value;
+    // Handle quoted JSON strings like '"{...}"'
+    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+        const inner = trimmed.slice(1, -1);
+        if ((inner.startsWith('{') && inner.endsWith('}')) || (inner.startsWith('[') && inner.endsWith(']'))) {
+            try {
+                return JSON.parse(inner);
+            } catch {
+                // Fall through to normal parsing
+            }
+        }
+    }
+    if (!(trimmed.startsWith('{') && trimmed.endsWith('}')) && !(trimmed.startsWith('[') && trimmed.endsWith(']'))) return value;
     try {
-        return JSON.parse(trimmed);
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === 'string') return parseJsonIfLikely(parsed); // Recursive unescape
+        return parsed;
     } catch {
         return value;
     }
+};
+
+const recursivelyParseJson = (obj) => {
+    if (typeof obj === 'string') {
+        return parseJsonIfLikely(obj);
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(item => recursivelyParseJson(item));
+    }
+    if (obj !== null && typeof obj === 'object') {
+        const newObj = {};
+        for (const [key, value] of Object.entries(obj)) {
+            newObj[key] = recursivelyParseJson(value);
+        }
+        return newObj;
+    }
+    return obj;
+};
+
+// Helper to convert arrays of strings to arrays of objects for specific schema paths like 'features'
+// It also tries to RECONCILE IDs with existing data in the document to prevent unnecessary ID changes.
+const transformSchemaMismatches = (path, value, currentDoc) => {
+    // 1. Handle common junk fields from some frontend form implementations
+    const junkValues = new Set(['handleProgramAdd', 'handleProgramDelete', 'undefined', 'null', '[object Object]']);
+    if (typeof value === 'string' && junkValues.has(value)) return null;
+
+    // 2. Handle 'features' array (expected [{ text: string }])
+    if (path.endsWith('.features')) {
+        // Find existing features in the document for reconciliation
+        const existingFeatures = currentDoc ? (currentDoc.get(path) || []) : [];
+        const featureToId = new Map();
+        existingFeatures.forEach(f => {
+            if (f && f.text && f._id) featureToId.set(f.text.trim().toLowerCase(), f._id);
+        });
+
+        const reconcileItem = (item) => {
+            if (typeof item === 'string') {
+                if (junkValues.has(item)) return null;
+                const text = item.trim();
+                const existingId = featureToId.get(text.toLowerCase());
+                return existingId ? { _id: existingId, text } : { text };
+            }
+            if (item && item.text) {
+                const text = item.text.trim();
+                const existingId = featureToId.get(text.toLowerCase());
+                // If it doesn't have an ID yet, try to find one
+                if (!item._id && existingId) return { ...item, _id: existingId, text };
+            }
+            return item;
+        };
+
+        if (Array.isArray(value)) {
+            return value.map(reconcileItem).filter(item => item !== null);
+        } else if (typeof value === 'string' && !junkValues.has(value)) {
+            const text = value.trim();
+            const existingId = featureToId.get(text.toLowerCase());
+            return [existingId ? { _id: existingId, text } : { text }];
+        }
+    }
+
+    // 3. Handle 'testimonials.list' (expected [{ quote, parentName, ... }])
+    if (path.endsWith('.testimonials.list')) {
+        const existing = currentDoc ? (currentDoc.get(path) || []) : [];
+        if (Array.isArray(value)) {
+            return value.map(item => {
+                if (!item.quote || item._id) return item;
+                const match = existing.find(e => e.quote === item.quote && e.parentName === item.parentName);
+                return match ? { ...item, _id: match._id } : item;
+            });
+        }
+    }
+
+    return value;
 };
 
 const isPlainObject = (value) => {
@@ -111,20 +196,59 @@ const processImageFields = (data) => {
 
     // Recursively process objects
     if (data !== null && typeof data === 'object') {
-        for (const key in data) {
-            if (data.hasOwnProperty(key)) {
-                const value = data[key];
-                // Check if this is an image field with base64 data
+        const result = { ...data };
+        for (const key in result) {
+            if (result.hasOwnProperty(key)) {
+                const value = result[key];
+                
+                // 1. Handle base64 images
                 if (imageFields.includes(key) && typeof value === 'string' && value.startsWith('data:image')) {
                     const savedPath = saveBase64Image(value);
-                    if (savedPath) data[key] = savedPath;
-                } else if (typeof value === 'object' && value !== null) {
-                    // Recursively process nested objects/arrays
-                    data[key] = processImageFields(value);
+                    if (savedPath) result[key] = savedPath;
+                } 
+                // 2. Handle CryptoJS encrypted paths (starts with 'U2FsdGVkX1')
+                else if (typeof value === 'string' && value.startsWith('U2FsdGVkX1')) {
+                    console.log(`[HomeController] Attempting to decrypt field: ${key}`);
+                    try {
+                        // Try COMMON secret first (Jenil CMS standard)
+                        let decrypted = decryptCryptoJS(value);
+                        
+                        // If it failed, try the ROOT ADMIN secret (fallback)
+                        if (!decrypted && process.env.ENCRYPTION_SECRET) {
+                            const CryptoJS = require('crypto-js');
+                            try {
+                                const bytes = CryptoJS.AES.decrypt(value, process.env.ENCRYPTION_SECRET);
+                                const raw = bytes.toString(CryptoJS.enc.Utf8);
+                                if (raw) {
+                                    // Try to parse if it was doubled stringified
+                                    try { decrypted = JSON.parse(raw); } catch { decrypted = raw; }
+                                    console.log(`[HomeController] Decrypted using ROOT secret for field: ${key}`);
+                                }
+                            } catch (e) { }
+                        }
+
+                        if (decrypted) {
+                            if (typeof decrypted === 'string') {
+                                result[key] = decrypted;
+                                console.log(`[HomeController] Successfully decrypted ${key} to -> ${decrypted}`);
+                            } else if (decrypted && typeof decrypted === 'object') {
+                                result[key] = decrypted.url || decrypted.path || decrypted.filename || value;
+                                console.log(`[HomeController] Decrypted ${key} (Object) to -> ${result[key]}`);
+                            }
+                        } else {
+                            console.warn(`[HomeController] Failed to decrypt encrypted string in ${key}. Key may be mismatched.`);
+                        }
+                    } catch (err) {
+                        console.error(`[HomeController] Decryption error for field ${key}:`, err.message);
+                    }
+                }
+                // 3. Recurse
+                else if (typeof value === 'object' && value !== null) {
+                    result[key] = processImageFields(value);
                 }
             }
         }
-        return data;
+        return result;
     }
 
     return data;
@@ -220,10 +344,25 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         const home = await getActiveHome();
-        // Normalize all keys from brackets to dots
-        let updateData = normalizePaths(req.body);
+        
+        // 0. Build base payload from req.body, but parse every field in case of stringified JSON
+        const rawPayload = {};
+        for (const [key, val] of Object.entries(req.body || {})) {
+            rawPayload[key] = (typeof val === 'string') ? parseJsonIfLikely(val) : val;
+        }
 
-        // 1. Handle file uploads (both single and multiple)
+        // 1. Normalize dots/brackets and unwrap nested 'body' field if present
+        let updateData = normalizePaths(rawPayload);
+        if (isPlainObject(updateData.body)) {
+            const bodyContent = updateData.body;
+            delete updateData.body;
+            Object.assign(updateData, bodyContent);
+        }
+
+        // Recursively parse any JSON strings in updateData
+        updateData = recursivelyParseJson(updateData);
+
+        // 2. Handle file uploads (both single and multiple)
         if (req.file) {
             const relativePath = toSectionRelativeFieldPath(sectionName, req.file.fieldname);
             setNested(updateData, relativePath, req.file.filename);
@@ -236,55 +375,56 @@ exports.updateSection = (sectionName) => async (req, res) => {
             });
         }
 
-        // 2. Process any base64 images that might still be in the body
+        // 3. Process base64 images
         updateData = processImageFields(updateData);
 
-        // 3. APPLY UPDATES GENERICALLY
-        // Helper to flatten nested objects into dot-notation paths
+        // 4. Special Transformation for tournamentsSection (Array-to-Object bridge)
+        // In the DB, list is an object. But the frontend expects/sends an array.
+        if (sectionName === 'tournamentsSection' && Array.isArray(updateData.list)) {
+            if (updateData.list.length > 0) {
+                updateData.list = { ...updateData.list[0] };
+            } else {
+                updateData.list = { posts: [] };
+            }
+        }
+
+        // 5. Flatten and Apply Updates
         const flattenObject = (obj, prefix = '') => {
             return Object.keys(obj).reduce((acc, k) => {
                 const pre = prefix.length ? prefix + '.' : '';
                 const fullPath = pre + k;
+                const value = obj[k];
 
-                if (obj[k] === null) {
-                    acc[fullPath] = null; // Mark for deletion
-                } else if (typeof obj[k] === 'object' && !Array.isArray(obj[k])) {
-                    Object.assign(acc, flattenObject(obj[k], fullPath));
+                if (value === null) {
+                    acc[fullPath] = null;
+                } else if (isPlainObject(value)) {
+                    Object.assign(acc, flattenObject(value, fullPath));
                 } else {
-                    acc[fullPath] = obj[k];
+                    acc[fullPath] = value;
                 }
                 return acc;
             }, {});
         };
 
-        console.log(`[HomeController] Updating section ${sectionName} with data:`, updateData);
+        console.log(`[HomeController] Updating ${sectionName} with processed data:`, JSON.stringify(updateData, null, 2));
         const flattenedUpdates = flattenObject(updateData, sectionName);
-        console.log(`[HomeController] Flattened updates for Mongoose:`, flattenedUpdates);
 
-        for (const [path, value] of Object.entries(flattenedUpdates)) {
-            let normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
-            normalizedPath = normalizeHeroBackgroundPath(sectionName, normalizedPath);
+        for (let [path, value] of Object.entries(flattenedUpdates)) {
+            path = normalizeDuplicatedSectionPrefix(sectionName, path);
+            path = normalizeHeroBackgroundPath(sectionName, path);
+            
+            // Clean/Transform values and RECONCILE IDs with current doc
+            value = transformSchemaMismatches(path, value, home);
+
             if (value === null) {
-                // Handle deletion for Maps or setting undefined for regular fields
-                const parentPath = normalizedPath.substring(0, normalizedPath.lastIndexOf('.'));
-                const key = normalizedPath.substring(normalizedPath.lastIndexOf('.') + 1);
-                try {
-                    const parent = home.get(parentPath);
-                    if (parent instanceof Map) {
-                        parent.delete(key);
-                    } else {
-                        home.set(normalizedPath, undefined);
-                    }
-                } catch (e) { home.set(normalizedPath, undefined); }
+                home.set(path, undefined);
             } else {
-                home.set(normalizedPath, value);
+                home.set(path, value);
             }
-            // CRITICAL: Explicitly mark path as modified for deep updates/arrays
-            home.markModified(normalizedPath);
+            home.markModified(path);
         }
 
         await home.save();
-        console.log(`[HomeController] Successfully saved section ${sectionName}. Returning:`, home[sectionName]);
         res.status(200).json({ success: true, data: home[sectionName] });
     } catch (err) {
         console.error("Update Section Error:", err);

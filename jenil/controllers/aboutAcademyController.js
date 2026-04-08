@@ -1,14 +1,15 @@
 const AboutAcademy = require('../models/AboutAcademy');
 const { saveBase64Image } = require('../utils/fileUtils');
+const { decryptData: decryptCryptoJS } = require('../utils/encryption');
 
 const parseJsonIfLikely = (value) => {
-    if (typeof value !== 'string') return value;
+    if (typeof value !== 'string' || value === '') return value;
     const trimmed = value.trim();
-    const looksJsonObject = trimmed.startsWith('{') && trimmed.endsWith('}');
-    const looksJsonArray = trimmed.startsWith('[') && trimmed.endsWith(']');
-    if (!looksJsonObject && !looksJsonArray) return value;
+    if (!(trimmed.startsWith('{') && trimmed.endsWith('}')) && !(trimmed.startsWith('[') && trimmed.endsWith(']'))) return value;
     try {
-        return JSON.parse(trimmed);
+        const parsed = JSON.parse(trimmed);
+        if (typeof parsed === 'string') return parseJsonIfLikely(parsed); // Recursive unescape
+        return parsed;
     } catch {
         return value;
     }
@@ -117,20 +118,37 @@ const processImageFields = (data) => {
     
     // Recursively process objects
     if (data !== null && typeof data === 'object') {
-        for (const key in data) {
-            if (data.hasOwnProperty(key)) {
-                const value = data[key];
-                // Check if this is an image field with base64 data
+        const result = { ...data };
+        for (const key in result) {
+            if (result.hasOwnProperty(key)) {
+                const value = result[key];
+                
+                // 1. Handle base64 images
                 if (imageFields.includes(key) && typeof value === 'string' && value.startsWith('data:image')) {
                     const savedPath = saveBase64Image(value);
-                    if (savedPath) data[key] = savedPath;
-                } else if (typeof value === 'object' && value !== null) {
-                    // Recursively process nested objects/arrays
-                    data[key] = processImageFields(value);
+                    if (savedPath) result[key] = savedPath;
+                } 
+                // 2. Handle CryptoJS encrypted paths (starts with 'U2FsdGVkX1')
+                else if (typeof value === 'string' && value.startsWith('U2FsdGVkX1')) {
+                    try {
+                        const decrypted = decryptCryptoJS(value);
+                        // If it decrypts to a string (path), use it. If it's an object, check if it has a url/path.
+                        if (typeof decrypted === 'string') {
+                            result[key] = decrypted;
+                        } else if (decrypted && typeof decrypted === 'object') {
+                            result[key] = decrypted.url || decrypted.path || decrypted.filename || value;
+                        }
+                    } catch (err) {
+                        // If decryption fails, keep original
+                    }
+                }
+                // 3. Recurse
+                else if (typeof value === 'object' && value !== null) {
+                    result[key] = processImageFields(value);
                 }
             }
         }
-        return data;
+        return result;
     }
     
     return data;
@@ -329,11 +347,22 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         const about = await getActiveAbout();
-        // Normalize all keys from brackets to dots
-        let updateData = normalizePaths(req.body);
-        updateData = processImageFields(updateData);
+        
+        // 0. Build base payload from req.body, but parse every field in case of stringified JSON
+        const rawPayload = {};
+        for (const [key, val] of Object.entries(req.body || {})) {
+            rawPayload[key] = (typeof val === 'string') ? parseJsonIfLikely(val) : val;
+        }
 
-        // 1. Handle file uploads (both single and multiple)
+        // 1. Normalize dots/brackets and unwrap nested 'body' field if present
+        let updateData = normalizePaths(rawPayload);
+        if (isPlainObject(updateData.body)) {
+            const bodyContent = updateData.body;
+            delete updateData.body;
+            Object.assign(updateData, bodyContent);
+        }
+
+        // 2. Handle file uploads (both single and multiple)
         if (req.file) {
             const relativePath = toSectionRelativeFieldPath(sectionName, req.file.fieldname);
             setNested(updateData, relativePath, req.file.filename);
@@ -346,43 +375,45 @@ exports.updateSection = (sectionName) => async (req, res) => {
             });
         }
 
-        // 2. APPLY UPDATES GENERICALLY
-        // Helper to flatten nested objects into dot-notation paths
+        // 3. Process base64 images
+        updateData = processImageFields(updateData);
+
+        // 4. Flatten and Apply Updates
         const flattenObject = (obj, prefix = '') => {
             return Object.keys(obj).reduce((acc, k) => {
                 const pre = prefix.length ? prefix + '.' : '';
                 const fullPath = pre + k;
+                const value = obj[k];
 
-                if (obj[k] === null) {
-                    acc[fullPath] = null; // Mark for deletion
-                } else if (typeof obj[k] === 'object' && !Array.isArray(obj[k])) {
-                    Object.assign(acc, flattenObject(obj[k], fullPath));
+                if (value === null) {
+                    acc[fullPath] = null;
+                } else if (isPlainObject(value)) {
+                    Object.assign(acc, flattenObject(value, fullPath));
                 } else {
-                    acc[fullPath] = obj[k];
+                    acc[fullPath] = value;
                 }
                 return acc;
             }, {});
         };
 
-        console.log(`[AboutController] Updating section ${sectionName} with data:`, updateData);
+        console.log(`[AboutController] Updating ${sectionName} with processed data:`, JSON.stringify(updateData, null, 2));
         const flattenedUpdates = flattenObject(updateData, sectionName);
-        console.log(`[AboutController] Flattened updates for Mongoose:`, flattenedUpdates);
 
-        for (const [path, value] of Object.entries(flattenedUpdates)) {
-            let normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
-            normalizedPath = normalizeHeroBackgroundPath(sectionName, normalizedPath);
-            normalizedPath = normalizeIntroParagraphsPath(sectionName, normalizedPath);
+        for (let [path, value] of Object.entries(flattenedUpdates)) {
+            path = normalizeDuplicatedSectionPrefix(sectionName, path);
+            path = normalizeHeroBackgroundPath(sectionName, path);
+            path = normalizeIntroParagraphsPath ? normalizeIntroParagraphsPath(sectionName, path) : path;
+            
             if (value === null) {
-                about.set(normalizedPath, undefined);
+                about.set(path, undefined);
             } else {
-                about.set(normalizedPath, value);
+                about.set(path, value);
             }
-            about.markModified(normalizedPath);
+            about.markModified(path);
         }
 
         await about.save();
-        console.log(`[AboutController] Successfully saved section ${sectionName}.`);
-
+        
         // Return the updated section
         const parts = sectionName.split('.');
         const result = parts.reduce((obj, part) => obj && obj[part], about);

@@ -43,10 +43,16 @@ const validateAdminRequest = async (req, res) => {
         }
 
         // Decrypt incoming data
+        let encryptedRaw = req.params.data || req.query.data || req.headers['x-admin-data'];
+
+        if (!encryptedRaw) {
+            logger.warn("Missing admin validation data");
+            return { error: true, status: 401, message: "Authentication data missing" };
+        }
+
         let newData, decryptedData;
         try {
-
-            decryptedData = decryptData(req.params.data);
+            decryptedData = decryptData(encryptedRaw);
             newData = decryptData(decryptedData.data);
         } catch (error) {
             logger.error(`Decryption failed: ${error.message}`);
@@ -206,5 +212,26 @@ const validateAdminRequestPost = async (req, res) => {
 };
 
 
-module.exports = {validateAdminRequest,validateAdminRequestPost};
-// module.exports=validateAdminRequestPost;
+const middlewareAdmin = async (req, res, next) => {
+    const result = await validateAdminRequest(req, res);
+    if (result.error) {
+        return res.status(result.status).json({ message: result.message });
+    }
+    req.admin = result.user;
+    req.academy = result.academy;
+    req.adminData = result.adminData;
+    next();
+};
+
+const middlewareAdminPost = async (req, res, next) => {
+    const result = await validateAdminRequestPost(req, res);
+    if (result.error) {
+        return res.status(result.status).json({ message: result.message });
+    }
+    req.admin = result.user;
+    req.hostel = result.hostel; // Matches the naming in validateAdminRequestPost
+    req.adminData = result.adminData;
+    next();
+};
+
+module.exports = { validateAdminRequest, validateAdminRequestPost, middlewareAdmin, middlewareAdminPost };

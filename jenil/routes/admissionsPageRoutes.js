@@ -13,8 +13,7 @@ router.post('/submit', upload.any(), standardizeFilePath, admissionsPageControll
 // --- HERO ---
 router.get('/hero', admissionsPageController.getSection('hero'));
 router.post('/hero/add', upload.any(), standardizeFilePath, admissionsPageController.updateSection('hero'));
-router.put('/hero/update',
-    upload.any(), standardizeFilePath, admissionsPageController.updateSection('hero'));
+router.put('/hero/update', upload.any(), standardizeFilePath, admissionsPageController.updateSection('hero'));
 router.delete('/hero/delete', admissionsPageController.deleteSection('hero'));
 
 // --- FORM CONTENT ---

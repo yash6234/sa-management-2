@@ -25,7 +25,8 @@ const AttendanceSync = require('./adminControllers/harsh/services/attendanceSync
 // CORS configuration: allow everything
 app.use(cors());
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const connectToDatabase = async () => {
     await mongoose.connect(process.env.MONGO_URI);
@@ -266,6 +267,7 @@ cmsRouter.use('/gallery', require('./jenil/routes/galleryPageRoutes'));
 cmsRouter.use('/playground', require('./jenil/routes/playgroundPageRoutes'));
 cmsRouter.use('/admissions', require('./jenil/routes/admissionsPageRoutes'));
 cmsRouter.use('/contact', require('./jenil/routes/contactPageRoutes'));
+cmsRouter.use('/admin', require('./jenil/routes/cmsAdminRoutes'));
 cmsRouter.use('/admin/sections', require('./jenil/routes/adminPageRoutes'));
 
 // 3. Shared Endpoints

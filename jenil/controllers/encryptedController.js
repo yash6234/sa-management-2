@@ -122,7 +122,6 @@ exports.fetchEncrypted = (modelName, options = {}) => async (req, res) => {
 
         const data = req.decryptedBody || req.body || {};
         const { _id, ...filters } = data;
-
         let result;
 
         if (_id) {

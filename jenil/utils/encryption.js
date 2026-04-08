@@ -1,25 +1,31 @@
 const CryptoJS = require("crypto-js");
 require('dotenv').config();
 
-const decryptData = (encryptedData) => {
+// Generic helper
+const decrypt = (encryptedData, secret) => {
     try {
         if (!encryptedData) return null;
-        const bytes = CryptoJS.AES.decrypt(encryptedData, process.env.ENCRYPTION_SECRET_COMMON);
+        const bytes = CryptoJS.AES.decrypt(encryptedData, secret);
         const decrypted = bytes.toString(CryptoJS.enc.Utf8);
         if (!decrypted) return null;
-        return JSON.parse(decrypted);
+        
+        try {
+            return JSON.parse(decrypted);
+        } catch {
+            return decrypted; 
+        }
     } catch (error) {
         console.error('Decryption error:', error.message);
         return null;
     }
 };
 
-const encryptData = (data) => {
+const encrypt = (data, secret) => {
     try {
         if (!data) return null;
         return CryptoJS.AES.encrypt(
             JSON.stringify(data),
-            process.env.ENCRYPTION_SECRET_COMMON
+            secret
         ).toString();
     } catch (error) {
         console.error('Encryption error:', error.message);
@@ -27,4 +33,17 @@ const encryptData = (data) => {
     }
 };
 
-module.exports = { decryptData, encryptData };
+// Admin specific (using ENCRYPTION_SECRET)
+const decryptData = (encryptedData) => decrypt(encryptedData, process.env.ENCRYPTION_SECRET);
+const encryptData = (data) => encrypt(data, process.env.ENCRYPTION_SECRET);
+
+// Common/User specific (using ENCRYPTION_SECRET_COMMON)
+const decryptDataCommon = (encryptedData) => decrypt(encryptedData, process.env.ENCRYPTION_SECRET_COMMON);
+const encryptDataCommon = (data) => encrypt(data, process.env.ENCRYPTION_SECRET_COMMON);
+
+module.exports = { 
+    decryptData, 
+    encryptData, 
+    decryptDataCommon, 
+    encryptDataCommon 
+};

@@ -324,7 +324,7 @@ const seedData = async () => {
                 { image: "public/about/programs.png", category: "Summer Camp" },
                 { image: "public/about/founder.png", category: "Student Achievements" },
                 { image: "public/Programs/swimmingpro.png", category: "Events" },
- 
+
                 // Matches section 
                 { image: "public/Programs/cricpro.png", category: "Matches" },
                 { image: "public/Programs/footballpro.png", category: "Matches" },

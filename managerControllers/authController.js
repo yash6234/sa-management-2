@@ -35,7 +35,7 @@ const sendOtpEmail = async (email,name, otp) => {
         html,
         body {
             margin: 0 auto !important;
-            padding: 0 !important;
+            padding: 0 !important;  
             height: 100% !important;
             width: 100% !important;
             background-color: #f4f4f4; /* Light grey background for the body */
