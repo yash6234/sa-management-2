@@ -42,7 +42,6 @@ const serveImage = (req, res, next) => {
         const cleanPath = decodeURIComponent(pathname).split('?')[0];
         relativePath = cleanPath.replace(/^\/+/, '');
     } else {
-        // Decryption failed — treat the full request path as a plain file path
         const rawPath = decodeURIComponent(req.path).split('?')[0];
         relativePath = rawPath.replace(/^\/+/, '');
     }
@@ -57,28 +56,32 @@ const resolveAndServe = (relativePath, res, next) => {
     // 1. Try as-is from ROOT_DIR
     candidates.push(path.join(ROOT_DIR, relativePath));
 
-    // 2. Try to find 'uploads/' or 'public/uploads' anywhere in the path and use the remainder
+    // 2. Look for 'uploads/' anywhere in the path
     const uplIdx = relativePath.indexOf('uploads/');
     if (uplIdx >= 0) {
         const fromUploads = relativePath.substring(uplIdx);
         candidates.push(path.join(ROOT_DIR, fromUploads));
-        
-        // Also check if it's inside public
-        if (fromUploads.startsWith('public/')) {
-            candidates.push(path.join(PUBLIC_DIR, fromUploads.replace('public/', '')));
-        }
+        candidates.push(path.join(ROOT_DIR, 'jenil', fromUploads));
     }
 
-    // 3. Try to strip common section prefixes (like gallery/, hero/, etc.)
-    // If we have "something/filename.png", try just "filename.png" in public/uploads/cms
+    // 3. Look for 'public/' anywhere in the path
+    const pubIdx = relativePath.indexOf('public/');
+    if (pubIdx >= 0) {
+        const afterPublic = relativePath.substring(pubIdx + 7);
+        candidates.push(path.join(PUBLIC_DIR, afterPublic));
+        candidates.push(path.join(ROOT_DIR, 'public', afterPublic)); // if root public
+    }
+
+    // 4. Try stripping segments from the front one by one
     const segments = relativePath.split('/');
     if (segments.length > 1) {
-        const filename = segments[segments.length - 1];
-        candidates.push(path.join(ROOT_DIR, 'uploads', 'cms', filename));
-        candidates.push(path.join(PUBLIC_DIR, 'uploads', filename));
+        // Try the last two segments as a relative path from common root folders
+        const lastTwo = segments.slice(-2).join('/');
+        candidates.push(path.join(PUBLIC_DIR, lastTwo));
+        candidates.push(path.join(ROOT_DIR, 'uploads', 'cms', segments[segments.length - 1]));
     }
 
-    // 4. Try PUBLIC_DIR directly (strip leading 'public/' if present)
+    // 5. Try PUBLIC_DIR directly (strip leading 'public/' if present)
     let pubRelative = relativePath;
     if (pubRelative.startsWith('public/')) {
         pubRelative = pubRelative.replace('public/', '');
