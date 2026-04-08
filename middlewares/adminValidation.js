@@ -43,7 +43,7 @@ const validateAdminRequest = async (req, res) => {
         }
 
         // Decrypt incoming data
-        let encryptedRaw = req.params.data || req.query.data || req.headers['x-admin-data'];
+        let encryptedRaw = req.params.data || req.query.data || req.headers['x-admin-data'] || req.headers['x-encrypted-payload'];
 
         if (!encryptedRaw) {
             logger.warn("Missing admin validation data");
@@ -52,10 +52,29 @@ const validateAdminRequest = async (req, res) => {
 
         let newData, decryptedData;
         try {
-            decryptedData = decryptData(encryptedRaw);
-            newData = decryptData(decryptedData.data);
+            // Fix URL encoding issues: Express converts '+' to ' ' in query/params
+            const normalized = decodeURIComponent(encryptedRaw.trim()).replace(/ /g, '+');
+            
+            // Layer 1
+            decryptedData = decryptData(normalized);
+            
+            if (!decryptedData) {
+                throw new Error("First layer decryption returned null");
+            }
+
+            // Layer 2: Some requests wrap the inner token in a 'data' field, others don't.
+            if (decryptedData.data && typeof decryptedData.data === 'string') {
+                const normalizedInner = decodeURIComponent(decryptedData.data.trim()).replace(/ /g, '+');
+                newData = decryptData(normalizedInner);
+                if (!newData) throw new Error("Second layer decryption failed");
+            } else {
+                // If it's already the credential object, just use it
+                newData = decryptedData;
+            }
+
         } catch (error) {
-            logger.error(`Decryption failed: ${error.message}`);
+            logger.error(`Decryption failed: ${error.message} for URL: ${req.originalUrl}`);
+            // console.error("DEBUG - Failed Payload:", encryptedRaw);
             return { error: true, status: 400, message: "Invalid data" };
         }
 
@@ -140,33 +159,36 @@ const validateAdminRequestPost = async (req, res) => {
         }
 
         // Decrypt incoming data
-        let newData, decryptedData;
+        let newData1, decryptedData;
 
         try {
             decryptedData = req.body;
+            if (!decryptedData || !decryptedData.data) {
+                throw new Error("Missing encrypted body data");
+            }
         } catch (error) {
             logger.error(`Decryption failed1: ${error.message}`);
             return { error: true, status: 400, message: "Invalid data" };
         }
-        try {
-            const fixedCipher = decodeURIComponent(decryptedData.data);
-            newData = decryptData(fixedCipher);
-        } catch (error) {
-            console.log(error)
-            logger.error(`Decryption failed2: ${error.message}`);
-            return { error: true, status: 400, message: "Invalid data" };
-        }
 
         try {
-            const fixedCipher = decodeURIComponent(newData.data);
-            newData1 = decryptData(fixedCipher);
+            // Fix URL encoding issues: Express converts '+' to ' ' in body if urlencoded
+            const fixedCipher = decodeURIComponent(decryptedData.data.trim()).replace(/ /g, "+");
+            const newData = decryptData(fixedCipher);
 
-            // newData = decryptData(decryptedData.data);
+            if (!newData) throw new Error("First layer decryption failed");
 
+            // Handle optional inner wrapping
+            if (newData.data && typeof newData.data === 'string') {
+                const fixedInner = decodeURIComponent(newData.data.trim()).replace(/ /g, "+");
+                newData1 = decryptData(fixedInner);
+                if (!newData1) throw new Error("Second layer decryption failed");
+            } else {
+                newData1 = newData;
+            }
 
         } catch (error) {
-            console.log(error)
-            logger.error(`Decryption failed2: ${error.message}`);
+            logger.error(`Decryption error in POST: ${error.message} for URL: ${req.originalUrl}`);
             return { error: true, status: 400, message: "Invalid data" };
         }
 

@@ -11,7 +11,8 @@ const AddAcademySession = async (req, res) => {
         logger.info('Adding New Academy Session Request Received');
         const result = await validateAdminRequest(req, res);
         if (result.error) {
-            return res.status(result.status).json({ message: result.message });
+                        return res.status(result.status).json({ success: false, message: result.message });
+
         }
         let decryptedData;
         try {
@@ -33,7 +34,8 @@ const AddAcademySession = async (req, res) => {
         await adt.save()
         logger.info(`New Session Created Successfully - ${name} added successfully`)
 
-        return res.status(200).json({message:'Session Created Successfully'});
+                return res.status(200).json({ success: true, message:'Session Created Successfully', data: null });
+
     } catch (err){
         logger.error(`AddAcademySession Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -49,7 +51,8 @@ const ViewAcademySession = async (req, res) => {
         }
         const dt = await AcademySessions.find({active:true,delete:false});
         logger.info("Academy Sessions Fetched and Sent Successfully")
-        return res.status(200).json({message:'Academy Sessions Fetched Successfully',data:encryptData(dt)});
+                return res.status(200).json({ success: true, message:'Academy Sessions Fetched Successfully', data:encryptData(dt) });
+
     } catch (err){
         logger.error(`ViewAcademySession Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -65,7 +68,8 @@ const ViewAllAcademySession = async (req, res) => {
         }
         const dt = await AcademySessions.find({delete:false});
         logger.info("Academy Sessions Fetched and Sent Successfully")
-        return res.status(200).json({message:'Academy Sessions Fetched Successfully',data:encryptData(dt)});
+                return res.status(200).json({ success: true, message:'Academy Sessions Fetched Successfully', data:encryptData(dt) });
+
     } catch (err){
         logger.error(`ViewAllAcademySession Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -108,7 +112,8 @@ const EditAcademySession = async (req, res) => {
 
         await AcademySessions.findByIdAndUpdate(id, updatedFields, { new: true });
         logger.info("AcademySessions updated successfully");
-        return res.status(200).json({ message: "Academy Session updated successfully" });
+                return res.status(200).json({ success: true, message: "Academy Session updated successfully", data: null });
+
     } catch (err){
         logger.error(`EditAcademySessions Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -140,7 +145,8 @@ const DeleteAcademySession = async (req, res) => {
         adt.delete = true;
         await adt.save();
         logger.info(`Successfully Deleted ${adt.name}`)
-        return res.status(200).json({message:`Session Deleted Successfully : ${adt.name}`})
+                return res.status(200).json({ success: true, message:`Session Deleted Successfully : ${adt.name}`, data: null })
+
     } catch (err){
         logger.error(`DeleteAcademySession Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})

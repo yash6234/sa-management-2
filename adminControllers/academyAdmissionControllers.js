@@ -69,7 +69,8 @@ const AddAcademyAdmission = async (req, res) => {
     // 1) Basic request validation (admin)
     const result = await validateAdminRequestPost(req, res);
     if (result.error) {
-      return res.status(result.status).json({ message: result.message });
+            return res.status(result.status).json({ success: false, message: result.message });
+
     }
 
     // 2) Decrypt payload
@@ -80,7 +81,8 @@ const AddAcademyAdmission = async (req, res) => {
       console.log('add adm decryptedData', decryptedData);
     } catch (error) {
       logger.error(`Decryption failed: ${error.message}`);
-      return res.status(400).json({ message: "Invalid data" });
+            return res.status(400).json({ success: false, message: "Invalid data" });
+
     }
 
     logger.info("User Verified Successfully");
@@ -300,6 +302,7 @@ const AddAcademyAdmission = async (req, res) => {
 
     logger.info(`New Admission Created Successfully ${roll_no}`);
     return res.status(200).json({
+      success: true,
       message: "Admission Created Successfully",
       data: encryptData(admissionDoc)
     });
@@ -308,7 +311,8 @@ const AddAcademyAdmission = async (req, res) => {
     console.log(err);
     session.endSession();
     logger.error(`AddAcademyAdmission Error : ${err.stack || err}`);
-    return res.status(400).json({ message: err.message || "Server error" });
+        return res.status(400).json({ success: false, message: err.message || "Server error" });
+
   }
 };
 
@@ -324,7 +328,8 @@ const ViewSelectedAdmission = async (req, res) => {
             decryptedData = decryptData(req.params.data);
         } catch (error) {
             logger.error(`Decryption failed: ${error.message}`);
-            return res.status(400).json({ message: "Invalid data" });
+                        return res.status(400).json({ success: false, message: "Invalid data" });
+
         }
         logger.info("User Verified Successfully");
         const { admission_id }=decryptedData;
@@ -332,7 +337,8 @@ const ViewSelectedAdmission = async (req, res) => {
         const dt = await AcademyAdmissions.findById(admission_id).populate("plan_id").populate("sports_id").populate("session_id").populate("academy_id");
         if(!dt || dt.delete==true ){
             logger.error("Admission Not Found")
-            return res.status(404).json({message:"Admission Not Found"})
+                        return res.status(404).json({ success: false, message: "Admission Not Found" })
+
         }
         const time_left_formatted = formatTimeLeft(dt.time_left);
 
@@ -343,10 +349,12 @@ const ViewSelectedAdmission = async (req, res) => {
         logger.info(`Admission Fetched Successfully`)
         const admission= {details:dt,time_left_formatted,accounts:accountsdt,inventory:inv_aldt};
 
-        return res.status(200).json({message:'Admission Fetched Successfully',data:encryptData(admission)});
+                return res.status(200).json({ success: true, message:'Admission Fetched Successfully', data:encryptData(admission) });
+
     } catch (err){
         logger.error(`ViewSelectedAdmission Error : ${err}`);
-        return res.status(500).json({message:'SERVER ERROR'})
+                return res.status(500).json({ success: false, message:'SERVER ERROR' })
+
     }
 }
 

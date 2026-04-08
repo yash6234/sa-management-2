@@ -55,7 +55,8 @@ const AddAcademyPlan = async (req, res) => {
         await adt.save()
         logger.info(`New Plan Created Successfully - ${name} added successfully`)
 
-        return res.status(200).json({message:'Plan Created Successfully'});
+                return res.status(200).json({ success: true, message:'Plan Created Successfully', data: null });
+
     } catch (err){
         logger.error(`AddAcademyPlan Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -71,7 +72,8 @@ const ViewAcademyPlan = async (req, res) => {
         }
         const dt = await AcademyPlans.find({active:true,delete:false}).populate('session_id academy sports');
         logger.info("Academy Plans Fetched and Sent Successfully")
-        return res.status(200).json({message:'Academy Plans Fetched Successfully',data:encryptData(dt)});
+                return res.status(200).json({ success: true, message:'Academy Plans Fetched Successfully', data:encryptData(dt) });
+
     } catch (err){
         logger.error(`ViewAcademyPlan Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -87,7 +89,8 @@ const ViewAllAcademyPlan = async (req, res) => {
         }
         const dt = await AcademyPlans.find({delete:false}).populate('session_id academy sports');
         logger.info("Academy Plans Fetched and Sent Successfully")
-        return res.status(200).json({message:'Academy Plans Fetched Successfully',data:encryptData(dt)});
+                return res.status(200).json({ success: true, message:'Academy Plans Fetched Successfully', data:encryptData(dt) });
+
     } catch (err){
         logger.error(`ViewAllAcademyPlan Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -184,7 +187,8 @@ const EditAcademyPlan = async (req, res) => {
         await AcademyPlans.findByIdAndUpdate(id, updatedFields, { new: true });
 
         logger.info("AcademyPlans updated successfully");
-        return res.status(200).json({ message: "Academy Plan updated successfully" });
+                return res.status(200).json({ success: true, message: "Academy Plan updated successfully", data: null });
+
 
     } catch (err) {
         logger.error(`EditAcademyPlans Error : ${err}`);
@@ -218,7 +222,8 @@ const DeleteAcademyPlan = async (req, res) => {
         adt.delete = true;
         await adt.save();
         logger.info(`Successfully Deleted ${adt.name}`)
-        return res.status(200).json({message:`Plan Deleted Successfully : ${adt.name}`})
+                return res.status(200).json({ success: true, message:`Plan Deleted Successfully : ${adt.name}`, data: null })
+
     } catch (err){
         logger.error(`DeleteAcademyPlan Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})

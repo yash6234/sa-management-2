@@ -22,7 +22,7 @@ const admissionSubmissionSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['Pending', 'Contacted', 'Enrolled', 'Rejected'],
-        default: 'Pending'
+        default: 'Pending',
     },
     adminNotes: { type: String }
 }, { timestamps: true });

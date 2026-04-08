@@ -57,14 +57,16 @@ const AddTransaction = async (req, res) => {
         logger.info("Add New Transaction   Request Received");
 
         const result = await validateAdminRequest(req, res);
-        if (result.error) return res.status(result.status).json({ message: result.message });
+                if (result.error) return res.status(result.status).json({ success: false, message: result.message });
+
 
         let decryptedData;
         try {
             decryptedData = decryptData(req.params.data);
         } catch (err) {
             logger.error("Decryption Failed", err);
-            return res.status(400).json({ message: "Invalid data" });
+                        return res.status(400).json({ success: false, message: "Invalid data" });
+
         }
 
         const {amt_in_out, amount, description, payment_method, date } = decryptedData;
@@ -83,13 +85,15 @@ const AddTransaction = async (req, res) => {
         await ndt.save()
 
         return res.status(200).json({
+            success: true,
             message: "Transaction Added Successfully",
             data: encryptData(ndt),
         });
 
     } catch (err) {
         logger.error("AddTransaction Error", err);
-        return res.status(500).json({ message: "SERVER ERROR" });
+                return res.status(500).json({ success: false, message: "SERVER ERROR" });
+
     }
 };
 
@@ -99,7 +103,7 @@ const FetchTransaction = async (req, res) => {
 
         const result = await validateAdminRequest(req, res);
         if (result.error) {
-            return res.status(result.status).json({ message: result.message });
+            return res.status(result.status).json({ success: false, message: result.message });
         }
 
         let decryptedData;
@@ -107,7 +111,8 @@ const FetchTransaction = async (req, res) => {
             decryptedData = decryptData(req.params.data);
         } catch (error) {
             logger.error(`Decryption failed: ${error.message}`);
-            return res.status(400).json({ message: "Invalid data" });
+                        return res.status(400).json({ success: false, message: "Invalid data" });
+
         }
 
         logger.info("User Verified Successfully");
@@ -182,6 +187,7 @@ const FetchTransaction = async (req, res) => {
         // --------------------------------------- //
 
         return res.status(200).json({
+            success: true,
             message: "Transactions Fetched Successfully",
             data: encryptData({
                 receipts: dt,
@@ -203,7 +209,8 @@ const FetchTransaction = async (req, res) => {
 
     } catch (err) {
         logger.error(`FetchTransaction Error : ${err}`);
-        return res.status(500).json({ message: 'SERVER ERROR' });
+                return res.status(500).json({ success: false, message: 'SERVER ERROR' });
+
     }
 };
 
@@ -212,14 +219,15 @@ const DeleteTransaction = async (req, res) => {
         logger.info(`Delete Transaction Request Received`);
         const result = await validateAdminRequest(req, res);
         if (result.error) {
-            return res.status(result.status).json({ message: result.message });
+            return res.status(result.status).json({ success: false, message: result.message });
         }
         let decryptedData;
         try {
             decryptedData = decryptData(req.params.data);
         } catch (error) {
             logger.error(`Decryption failed: ${error.message}`);
-            return res.status(400).json({ message: "Invalid data" });
+                        return res.status(400).json({ success: false, message: "Invalid data" });
+
         }
         logger.info("User Verified Successfully");
         const { transaction_id }=decryptedData;
@@ -233,10 +241,12 @@ const DeleteTransaction = async (req, res) => {
         dt.active=false;
         await dt.save();
         logger.info("Transaction Deleted Successfully")
-        return res.status(200).json({message:'Transaction Deleted Successfully'});
+                return res.status(200).json({ success: true, message:'Transaction Deleted Successfully', data: null });
+
     } catch (err){
         logger.error(`DeleteTransaction Error : ${err}`);
-        return res.status(500).json({message:'SERVER ERROR'})
+                return res.status(500).json({ success: false, message: 'SERVER ERROR' });
+
     }
 }
 
@@ -341,6 +351,7 @@ const SearchTransaction = async (req, res) => {
             .lean();
 
         return res.status(200).json({
+            success: true,
             message: "Search Success",
             data: encryptData({
                 results,
@@ -355,7 +366,8 @@ const SearchTransaction = async (req, res) => {
 
     } catch (err) {
         logger.error("SearchTransaction Error", err);
-        return res.status(500).json({ message: "SERVER ERROR" });
+                return res.status(500).json({ success: false, message: "SERVER ERROR" });
+
     }
 };
 
