@@ -316,8 +316,7 @@ exports.getSection = (sectionName) => async (req, res) => {
             return res.status(200).json({
                 success: true,
                 data: {
-                    paragraphs,
-                    description: Array.isArray(intro.description) ? intro.description : paragraphs,
+                    description: Array.isArray(intro.description) ? intro.description : null,
                 }
             });
         }

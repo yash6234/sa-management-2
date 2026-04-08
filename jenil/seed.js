@@ -169,7 +169,7 @@ const seedData = async () => {
                 backgroundImage: "public/about/about_up.jpg"
             },
             introSection: {
-                paragraphs: [
+                description: [
                     "Gandhinagar Sports Academy is committed to promoting cricket and developing young athletes with professional training and proper guidance. Our academy focuses on skill development, physical fitness, discipline and sportsmanship.",
                     "We provide a structured coaching program designed for beginners as well as advanced players. Our goal is not only to improve cricket skills but also to build confidence, leadership and teamwork qualities in every student.",
                     "Through regular practice sessions, match practice and tournaments, we prepare students for competitive cricket."
