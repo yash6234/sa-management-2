@@ -411,6 +411,7 @@ exports.getSection = (sectionName) => async (req, res) => {
             data2: encryptData(Date.now())
         });
     } catch (err) {
+        console.log("ERROR----------------------",err)
         res.status(500).json({ success: false, error: err.message });
     }
 };
