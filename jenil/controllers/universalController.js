@@ -61,7 +61,7 @@ exports.getAll = async (req, res) => {
 exports.getById = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -82,7 +82,7 @@ exports.getById = async (req, res) => {
 exports.update = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -106,7 +106,7 @@ exports.update = async (req, res) => {
 exports.delete = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
