@@ -1,5 +1,6 @@
 const GalleryPage = require('../models/GalleryPage');
 const { saveBase64Image } = require('../utils/fileUtils');
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
 const parseJsonIfLikely = (value) => {
     if (typeof value !== 'string') return value;
@@ -159,6 +160,9 @@ exports.getGalleryData = async (req, res) => {
 // 2. CONFIG SECTIONS
 exports.getSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const gallery = await getActiveGallery();
         if (sectionName === 'galleryGrid') {
             return res.status(200).json({ success: true, data: getGalleryGrid(gallery) });
@@ -184,6 +188,9 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const gallery = await getActiveGallery();
         // Normalize all keys from brackets to dots
         let updateData = normalizePaths(req.body);
@@ -256,6 +263,9 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.addGalleryGridItem = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const gallery = await getActiveGallery();
 
         const parseBoolean = (value) => {
@@ -441,6 +451,9 @@ exports.addGalleryGridItem = async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const gallery = await getActiveGallery();
         if (sectionName === 'galleryGrid') {
             gallery.categories = [];
@@ -461,6 +474,9 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 // 3. ARRAY SECTIONS (Images, Training Moments, Categories)
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const gallery = await getActiveGallery();
         const parts = arrayPath.split('.');
         let targetArray = gallery;
@@ -566,6 +582,9 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const gallery = await getActiveGallery();
         const parts = arrayPath.split('.');
         let targetArray = gallery;
@@ -616,6 +635,9 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
 exports.deleteArrayItem = (arrayPath) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const gallery = await getActiveGallery();
         const parts = arrayPath.split('.');
         let targetArray = gallery;

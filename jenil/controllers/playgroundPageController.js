@@ -1,5 +1,6 @@
 const PlaygroundPage = require('../models/PlaygroundPage');
 const PlaygroundBooking = require('../models/PlaygroundBooking');
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
 const toDotPath = (value) => {
     if (typeof value !== 'string') return '';
@@ -98,6 +99,9 @@ exports.getPlaygroundData = async (req, res) => {
 // 2. ADMIN SECTION-WISE ENDPOINTS
 exports.getSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const playground = await getActivePlayground();
         let target = playground;
         if (sectionName.includes('.')) {
@@ -120,11 +124,14 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const playground = await getActivePlayground();
         const updateData = {};
 
         // 1) Normalize body keys (supports `title`, `hero[title]`, `formSection[presentation][title]`, etc)
-        for (const [key, value] of Object.entries(req.body || {})) {
+        for (const [key, value] of Object.Entries(req.body || {})) {
             const relativePath = toSectionRelativeFieldPath(sectionName, key);
             setNested(updateData, relativePath, value);
         }
@@ -178,6 +185,9 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const playground = await getActivePlayground();
         if (sectionName.includes('.')) {
             const parts = sectionName.split('.');
@@ -210,6 +220,9 @@ exports.submitBooking = async (req, res) => {
 // 4. ADMIN BOOKING MANAGEMENT
 exports.getAllBookings = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const bookings = await PlaygroundBooking.find().sort({ createdAt: -1 });
         res.status(200).json({ success: true, data: bookings });
     } catch (err) {

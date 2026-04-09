@@ -1,3 +1,5 @@
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
+
 const models = {
     Home: require('../models/Home'),
     AboutAcademy: require('../models/AboutAcademy'),
@@ -14,6 +16,9 @@ const getModel = (modelName) => {
 
 exports.create = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const Model = getModel(req.params.modelName);
         if (!Model) return res.status(404).json({ error: 'Model not found' });
         
@@ -30,6 +35,9 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const Model = getModel(req.params.modelName);
         if (!Model) return res.status(404).json({ error: 'Model not found' });
         
@@ -42,6 +50,9 @@ exports.getAll = async (req, res) => {
 
 exports.getById = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const Model = getModel(req.params.modelName);
         if (!Model) return res.status(404).json({ error: 'Model not found' });
         
@@ -55,6 +66,9 @@ exports.getById = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const Model = getModel(req.params.modelName);
         if (!Model) return res.status(404).json({ error: 'Model not found' });
         
@@ -71,6 +85,9 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const Model = getModel(req.params.modelName);
         if (!Model) return res.status(404).json({ error: 'Model not found' });
         

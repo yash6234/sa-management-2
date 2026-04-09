@@ -213,7 +213,8 @@ const Login = async (req, res) => {
         // sendOtpEmail(user.email,user.name, otp);
 
         logger.info(`User Verified and OTP Sent to Admin User on ${user.email} and OTP : ${user.otp}`);
-        res.status(200).json({ data: encryptData("User_Authenticated_And_OTP_Sent"), data1: encryptData(user.email), data2: encryptData(user._id) });
+        res.status(200).json({ success: true, message: "OTP Sent Successfully", data: encryptData("User_Authenticated_And_OTP_Sent"), data1: encryptData(user.email), data2: encryptData(user._id) });
+
         logger.info("Login Completed Successfully")
     } catch (error) {
         logger.error(`Login error: ${error.message}`);
@@ -264,7 +265,8 @@ const LoginApp = async (req, res) => {
         // sendOtpEmail(user.email,user.name, otp);
 
         logger.info(`User Verified and OTP Sent to Admin User on ${user.email} and OTP : ${user.otp}`);
-        res.status(200).json({ data: encryptData("User_Authenticated_And_OTP_Sent"), data1: encryptData(user.email), data2: encryptData(user._id) });
+        res.status(200).json({ success: true, message: "OTP Sent Successfully", data: { status: encryptData("User_Authenticated_And_OTP_Sent"), email: encryptData(user.email), id: encryptData(user._id) } });
+
         logger.info("Login Completed Successfully")
     } catch (error) {
         logger.error(`Login error: ${error.message}`);

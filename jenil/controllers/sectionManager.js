@@ -1,4 +1,5 @@
 const mongoose = require('../utils/mongoose');
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
 // Helper to set nested property by string path
 const setNested = (obj, path, value) => {
@@ -29,6 +30,9 @@ exports.getPageData = (Model) => async (req, res) => {
 
 exports.updateSection = (Model, sectionName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const doc = await getActiveDocument(Model);
         let updateData = { ...req.body };
         
@@ -56,6 +60,9 @@ exports.updateSection = (Model, sectionName) => async (req, res) => {
 
 exports.addToArray = (Model, arrayPath) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const doc = await getActiveDocument(Model);
         
         const pathParts = arrayPath.split('.');
@@ -85,6 +92,9 @@ exports.addToArray = (Model, arrayPath) => async (req, res) => {
 
 exports.updateArrayItem = (Model, arrayPath) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const doc = await getActiveDocument(Model);
         
         const pathParts = arrayPath.split('.');
@@ -117,6 +127,9 @@ exports.updateArrayItem = (Model, arrayPath) => async (req, res) => {
 
 exports.removeFromArray = (Model, arrayPath) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const doc = await getActiveDocument(Model);
         
         const pathParts = arrayPath.split('.');

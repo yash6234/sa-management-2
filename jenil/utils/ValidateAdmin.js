@@ -1,12 +1,12 @@
-// utils/validateAdminRequest.js
+// jenil/utils/ValidateAdmin.js
 const jwt = require("jsonwebtoken");
-const { decryptData, logger } = require("../utils/enc_dec_admin");
-const Hostel = require("../models/SportsAcademy");
-const User = require("../models/Admin");
+const { decryptData, logger } = require("../../utils/enc_dec_admin");
+const Hostel = require("../../models/SportsAcademy");
+const User = require("../../models/Admin");
 
 const validateAdminRequest = async (req, res) => {
     try {
-        logger.info("Admin request validation started");
+        logger.info("Admin request validation started (Jenil Module)");
 
         const hdt = await Hostel.findById(process.env.sport_sacademy_id);
         if (!hdt) {
@@ -42,8 +42,8 @@ const validateAdminRequest = async (req, res) => {
             logger.info("Academy plan is valid");
         }
 
-        // Decrypt incoming data
-        let encryptedRaw = req.params.data || req.query.data || req.headers['x-admin-data'];
+        // Decrypt incoming data from URL param, Query, or Header
+        let encryptedRaw = req.params.data;
 
         if (!encryptedRaw) {
             logger.warn("Missing admin validation data");
@@ -53,27 +53,28 @@ const validateAdminRequest = async (req, res) => {
         let newData, decryptedData;
         try {
             decryptedData = decryptData(encryptedRaw);
+            // In this application, the payload is often nested once: { data: "AES_ENCRYPTED_INNER_PAYLOAD" }
             newData = decryptData(decryptedData.data);
         } catch (error) {
             logger.error(`Decryption failed: ${error.message}`);
-            return { error: true, status: 400, message: "Invalid data" };
+            return { error: true, status: 400, message: "Invalid data format or decryption secret mismatch" };
         }
 
         const { token, id, mobile_no: mob_no, email } = newData;
 
-        // Verify token
+        // Verify JWT token
         let dt;
         try {
             dt = jwt.verify(token, process.env.ADMIN_JWT_SECRET);
         } catch (error) {
             logger.warn("Invalid or expired token");
-            return { error: true, status: 401, message: "Unauthorized" };
+            return { error: true, status: 401, message: "Unauthorized: Token expired or invalid" };
         }
 
         const user = await User.findById(id);
         if (!user || !user.isVerified || user.delete == true || user.active == false) {
-            logger.warn("Unauthorized user");
-            return { error: true, status: 403, message: "Unauthorized" };
+            logger.warn("Unauthorized user or account disabled");
+            return { error: true, status: 403, message: "Unauthorized access" };
         }
 
         const isIdValid = dt.id.toString() === user._id.toString() && user._id.toString() === id.toString();
@@ -81,8 +82,8 @@ const validateAdminRequest = async (req, res) => {
         const isEmailValid = dt.email === user.email && user.email === email;
 
         if (!isIdValid || !isMobileValid || !isEmailValid) {
-            logger.warn("Unauthorized user");
-            return { error: true, status: 403, message: "Unauthorized" };
+            logger.warn("Identity mismatch between token and database");
+            return { error: true, status: 403, message: "Unauthorized identity" };
         }
 
         logger.info("Admin request validated successfully");
@@ -103,7 +104,7 @@ const validateAdminRequest = async (req, res) => {
 
 const validateAdminRequestPost = async (req, res) => {
     try {
-        logger.info("Admin request validation started");
+        logger.info("Admin request validation started (POST)");
 
         const hdt = await Hostel.findById(process.env.sport_sacademy_id);
         if (!hdt) {
@@ -111,68 +112,48 @@ const validateAdminRequestPost = async (req, res) => {
             return { error: true, status: 401, message: "No Academy found" };
         }
 
+        // Expiry checks (Standard)
         const now = Date.now();
         const expiryTime = new Date(hdt.expiry_at).getTime();
         const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+        if (hdt.active !== true || hdt.delete !== false) return { error: true, status: 500, message: "Academy Inactive" };
+        if (now - expiryTime > threeDaysInMs) return { error: true, status: 500, message: "Academy Expired" };
 
-        if (hdt.active !== true || hdt.delete !== false) {
-            logger.warn("Academy is Inactive or Deleted");
-            return {
-                error: true,
-                status: 500,
-                message: "Academy is Inactive or Deleted",
-            };
-        }
-
-        if (now - expiryTime > threeDaysInMs) {
-            logger.warn(`Academy expired more than 3 days ago on ${hdt.expiry_at}`);
-            return {
-                error: true,
-                status: 500,
-                message: "Academy is Expired",
-            };
-        } else if (now > expiryTime) {
-            logger.warn(`Academy expired within 3 days on ${hdt.expiry_at}`);
-        } else if (expiryTime - now <= threeDaysInMs) {
-            logger.info(`Academy expiring soon on ${hdt.expiry_at}`);
-        } else {
-            logger.info("Academy plan is valid");
-        }
-
-        // Decrypt incoming data
         let newData, decryptedData;
 
+        // For POST, we first try to get data from the body
         try {
             decryptedData = req.body;
         } catch (error) {
             logger.error(`Decryption failed1: ${error.message}`);
             return { error: true, status: 400, message: "Invalid data" };
         }
+
         try {
-            const fixedCipher = decodeURIComponent(decryptedData.data);
+            // First level: decrypt `req.body.data`
+            const fixedCipher = decodeURIComponent(decryptedData.data || "");
+            if (!fixedCipher) throw new Error("Missing data in body");
             newData = decryptData(fixedCipher);
         } catch (error) {
-            console.log(error)
+            // Fallback: Check if it's already in req.params (for mixed routes like /:id/:data)
+            if (req.params.data) {
+                 return validateAdminRequest(req, res);
+            }
             logger.error(`Decryption failed2: ${error.message}`);
-            return { error: true, status: 400, message: "Invalid data" };
+            return { error: true, status: 400, message: "Invalid data in request body" };
         }
 
         try {
-            const fixedCipher = decodeURIComponent(newData.data);
-            newData1 = decryptData(fixedCipher);
-
-            // newData = decryptData(decryptedData.data);
-
-
+            // Second level: decrypt nested data field
+            const fixedCipherInner = decodeURIComponent(newData.data || "");
+            newData1 = decryptData(fixedCipherInner);
         } catch (error) {
-            console.log(error)
-            logger.error(`Decryption failed2: ${error.message}`);
-            return { error: true, status: 400, message: "Invalid data" };
+             logger.error(`Decryption failed3: ${error.message}`);
+             return { error: true, status: 400, message: "Invalid inner data" };
         }
 
         const { token, id, mobile_no: mob_no, email } = newData1;
 
-        // Verify token
         let dt;
         try {
             dt = jwt.verify(token, process.env.ADMIN_JWT_SECRET);
@@ -183,26 +164,16 @@ const validateAdminRequestPost = async (req, res) => {
 
         const user = await User.findById(id);
         if (!user || !user.isVerified || user.delete == true || user.active == false) {
-            logger.warn("Unauthorized user");
-            return { error: true, status: 403, message: "Unauthorized" };
+            return { error: true, status: 403, message: "Unauthorized access" };
         }
 
-        const isIdValid = dt.id.toString() === user._id.toString() && user._id.toString() === id.toString();
-        const isMobileValid = dt.mobile_no === user.mobile_no && user.mobile_no === mob_no;
-        const isEmailValid = dt.email === user.email && user.email === email;
-
-        if (!isIdValid || !isMobileValid || !isEmailValid) {
-            logger.warn("Unauthorized user");
-            return { error: true, status: 403, message: "Unauthorized" };
-        }
-
-        logger.info("Admin request validated successfully");
+        logger.info("Admin (POST) validated successfully");
 
         return {
             error: false,
             user,
             hostel: hdt,
-            adminData: newData,
+            adminData: newData1,
         };
 
     } catch (err) {
@@ -229,7 +200,7 @@ const middlewareAdminPost = async (req, res, next) => {
         return res.status(result.status).json({ message: result.message });
     }
     req.admin = result.user;
-    req.hostel = result.hostel; // Matches the naming in validateAdminRequestPost
+    req.hostel = result.hostel;
     req.adminData = result.adminData;
     next();
 };

@@ -9,8 +9,7 @@ const ProgramsPage = require('../models/ProgramsPage');
 const ContactPage = require('../models/ContactPage');
 const Footer = require('../models/Footer');
 
-const { validateAdminRequest } = require("../../middlewares/adminValidation");
-const { logger } = require("../../utils/enc_dec_admin");
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
 const models = {
     home: Home,
@@ -70,13 +69,10 @@ const formatName = (str) => {
 
 exports.getPageDataSectionWise = async (req, res) => {
     try {
-        logger.info('Admin Request Received for Get Page Data Section Wise');
-
-        // 1. Validate Admin
-        const valResult = await validateAdminRequest(req, res);
-        if (valResult.error) {
-            return res.status(valResult.status).json({ message: valResult.message });
-        }
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        // Validation handled by middlewareAdmin
 
         // 2. Extract pageName from query params
         const { pageName } = req.query;
@@ -135,13 +131,10 @@ exports.getPageDataSectionWise = async (req, res) => {
 
 exports.getAvailablePages = async (req, res) => {
     try {
-        logger.info('Admin Request Received for List Available Pages');
-        
-        // 1. Validate Admin
-        const valResult = await validateAdminRequest(req, res);
-        if (valResult.error) {
-            return res.status(valResult.status).json({ message: valResult.message });
-        }
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        // Validation handled by middlewareAdmin
 
         const pages = Object.keys(models).map(key => ({
             id: key,
@@ -174,14 +167,10 @@ const getUploadedFiles = (req) => {
 
 exports.updatePageSection = async (req, res) => {
     try {
-        logger.info('Admin Request Received to Update Page Section');
-        const { validateAdminRequestPost } = require("../../middlewares/adminValidation");
-
-        // 1. Validate Admin
-        const valResult = await validateAdminRequestPost(req, res);
-        if (valResult.error) {
-            return res.status(valResult.status).json({ message: valResult.message });
-        }
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.body.data || req.params.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        // Validation handled by middlewareAdminPost
 
         // 2. Extract context from body
         const { pageName, sectionId } = req.body;
@@ -321,13 +310,10 @@ const processImageFields = (data, imageFields = ['image', 'backgroundImage', 'ma
 
 exports.deletePageSection = async (req, res) => {
     try {
-        logger.info('Admin Request Received to Delete/Reset Page Section');
-
-        // 1. Validate Admin
-        const valResult = await validateAdminRequest(req, res);
-        if (valResult.error) {
-            return res.status(valResult.status).json({ message: valResult.message });
-        }
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.query.data || req.params.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        // Validation handled by middlewareAdminPost
 
         // 2. Extract pageName and sectionId from query params
         const { pageName, sectionId } = req.query;

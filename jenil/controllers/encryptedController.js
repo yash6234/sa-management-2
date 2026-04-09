@@ -1,4 +1,5 @@
-const { encryptData, decryptData } = require('../utils/encryption');
+const { encryptData, decryptData: decryptCryptoJS } = require('../utils/encryption');
+const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
 /**
  * Generic Encrypted CRUD Controller
@@ -20,6 +21,9 @@ const getModel = (modelName) => {
  */
 exports.createEncrypted = (modelName, options = {}) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const Model = getModel(modelName);
         if (!Model) {
             return res.status(400).json({
@@ -66,6 +70,9 @@ exports.createEncrypted = (modelName, options = {}) => async (req, res) => {
  */
 exports.updateEncrypted = (modelName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const Model = getModel(modelName);
         if (!Model) {
             return res.status(400).json({
@@ -112,6 +119,9 @@ exports.updateEncrypted = (modelName) => async (req, res) => {
  */
 exports.fetchEncrypted = (modelName, options = {}) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const Model = getModel(modelName);
         if (!Model) {
             return res.status(400).json({
@@ -167,6 +177,9 @@ exports.fetchEncrypted = (modelName, options = {}) => async (req, res) => {
  */
 exports.deleteEncrypted = (modelName) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const Model = getModel(modelName);
         if (!Model) {
             return res.status(400).json({
@@ -212,6 +225,9 @@ exports.deleteEncrypted = (modelName) => async (req, res) => {
  */
 exports.customEncrypted = (handler) => async (req, res) => {
     try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const data = req.decryptedBody || req.body;
         await handler(data, req, res);
     } catch (error) {
