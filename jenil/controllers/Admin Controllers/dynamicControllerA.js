@@ -1,15 +1,15 @@
-const mongoose = require('../utils/mongoose');
-const { logger, decryptData } = require("../../utils/enc_dec_c");
+const mongoose = require('../../utils/mongoose');
+const { logger, decryptData } = require("../../../utils/enc_dec_admin");
 
 const models = {
-    home: require('../models/Home'),
-    about: require('../models/AboutAcademy'),
-    admissions: require('../models/AdmissionsPage'),
-    gallery: require('../models/GalleryPage'),
-    playground: require('../models/PlaygroundPage'),
-    programs: require('../models/ProgramsPage'),
-    contact: require('../models/ContactPage'),
-    footer: require('../models/Footer')
+    home: require('../../models/Home'),
+    about: require('../../models/AboutAcademy'),
+    admissions: require('../../models/AdmissionsPage'),
+    gallery: require('../../models/GalleryPage'),
+    playground: require('../../models/PlaygroundPage'),
+    programs: require('../../models/ProgramsPage'),
+    contact: require('../../models/ContactPage'),
+    footer: require('../../models/Footer')
 };
 
 // Map of user-friendly names to actual schema field names

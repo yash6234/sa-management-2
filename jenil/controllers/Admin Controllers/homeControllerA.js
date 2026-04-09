@@ -1,7 +1,7 @@
-const Home = require('../models/Home');
-const { saveBase64Image } = require('../utils/fileUtils');
-const Footer = require('../models/Footer');
-const { decryptData: decryptCryptoJS } = require('../utils/encryption');
+const Home = require('../../models/Home');
+const { saveBase64Image } = require('../../utils/fileUtils');
+const { decryptData: decryptCryptoJS } = require('../../utils/encryption');
+const { logger, decryptData, encryptData } = require("../../../utils/enc_dec_admin");
 
 const parseJsonIfLikely = (value) => {
     if (typeof value !== 'string' || value === '') return value;
@@ -264,10 +264,20 @@ const getActiveHome = async () => {
 // 1. PUBLIC AGGREGATED ENDPOINT 
 exports.getHomePageData = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
+
         const homeData = await getActiveHome();
         res.status(200).json({
+            encrypted: true,
             success: true,
-            data: homeData
+            data: encryptData(homeData),
+            data1: encryptData("Homepage Data Fetched"),
+            data2: encryptData(Date.now())
         });
     } catch (err) {
         console.error("Error fetching homepage data:", err);
@@ -275,13 +285,26 @@ exports.getHomePageData = async (req, res) => {
     }
 };
 
+const Footer = require('../../models/Footer');
+
+// 1b. FOOTER ENDPOINT (shared across all pages)
 exports.getFooterData = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
+
         let footer = await Footer.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
         if (!footer) footer = await Footer.create({});
         res.status(200).json({
+            encrypted: true,
             success: true,
-            data: footer
+            data: encryptData(footer),
+            data1: encryptData("Footer Data Fetched"),
+            data2: encryptData(Date.now())
         });
     } catch (err) {
         res.status(500).json({ success: false, error: 'Failed to fetch footer data' });
@@ -290,14 +313,30 @@ exports.getFooterData = async (req, res) => {
 
 exports.updateFooter = async (req, res) => {
     try {
+        let decryptedData;
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            decryptedData = decryptData(encryptedData);
+        } catch (error) {
+            return res.status(400).json({
+                encrypted: true,
+                success: false,
+                data: encryptData('Invalid encryption data')
+            });
+        }
+
         let footer = await Footer.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
         if (!footer) footer = await Footer.create({});
 
-        Object.assign(footer, req.body);
+        let updateData = { ...req.body };
+        Object.assign(footer, updateData);
         await footer.save();
         res.status(200).json({
+            encrypted: true,
             success: true,
-            data: footer
+            data: encryptData(footer),
+            data1: encryptData("Footer Updated Successfully"),
+            data2: encryptData(Date.now())
         });
     } catch (err) {
         res.status(500).json({ success: false, error: 'Failed to update footer' });
@@ -307,6 +346,12 @@ exports.updateFooter = async (req, res) => {
 // 2. OBJECT SECTIONS (About, Footer, ProgramsAndFacilities, TournamentsSection, SocialSection) 
 exports.getSection = (sectionName) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         // Validation and decryption (req.adminData) are already handled by middlewareAdmin
         const home = await getActiveHome();
         const target = home[sectionName];
@@ -358,7 +403,13 @@ exports.getSection = (sectionName) => async (req, res) => {
             });
         }
 
-        res.status(200).json({ success: true, data: target });
+        res.status(200).json({
+            encrypted: true,
+            success: true,
+            data: encryptData(target),
+            data1: encryptData("Fetched Successfully"),
+            data2: encryptData(Date.now())
+        });
     } catch (err) {
         console.log("ERROR----------------------", err)
         res.status(500).json({ success: false, error: err.message });
@@ -367,12 +418,32 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
+        let decryptedData;
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            decryptedData = decryptData(encryptedData);
+            if (decryptedData) {
+                // Safety: If it's a double-stringified JSON, parse it again
+                if (typeof decryptedData === 'string') {
+                    try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+                }
+            }
+        } catch (error) {
+            return res.status(400).json({
+                encrypted: true,
+                success: false,
+                data: encryptData('Invalid encryption data')
+            });
+        }
+
         const home = await getActiveHome();
 
-        // 0. Build base payload from req.body (Already decrypted by middleware)
+        // 0. Build base payload from decryptedData (The Secure Source)
         const rawPayload = {};
-        for (const [key, val] of Object.entries(req.body || {})) {
-            rawPayload[key] = (typeof val === 'string') ? parseJsonIfLikely(val) : val;
+        if (isPlainObject(decryptedData)) {
+            for (const [key, val] of Object.entries(decryptedData)) {
+                rawPayload[key] = (typeof val === 'string') ? parseJsonIfLikely(val) : val;
+            }
         }
 
         // 1. Normalize dots/brackets and unwrap nested 'body' field if present
@@ -451,8 +522,11 @@ exports.updateSection = (sectionName) => async (req, res) => {
         await home.save();
         const target = home[sectionName];
         res.status(200).json({
+            encrypted: true,
             success: true,
-            data: target
+            data: encryptData(target),
+            data1: encryptData("Section Updated Successfully"),
+            data2: encryptData(Date.now())
         });
     } catch (err) {
         console.error("Update Section Error:", err);
@@ -462,13 +536,28 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
+        let decryptedData;
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            decryptedData = decryptData(encryptedData);
+        } catch (error) {
+            return res.status(400).json({
+                encrypted: true,
+                success: false,
+                data: encryptData('Invalid encryption data')
+            });
+        }
+
         const home = await getActiveHome();
         home.set(sectionName, undefined);
         home.markModified(sectionName);
         await home.save();
         res.status(200).json({
+            encrypted: true,
             success: true,
-            message: 'Section deleted successfully'
+            data: encryptData(null),
+            data1: encryptData('Section deleted successfully'),
+            data2: encryptData(Date.now())
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -478,6 +567,20 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 // 3. ARRAY SECTIONS
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
+        let decryptedData;
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            decryptedData = decryptData(encryptedData);
+            if (typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            return res.status(400).json({
+                encrypted: true,
+                success: false,
+                data: encryptData('Invalid encryption data')
+            });
+        }
         const home = await getActiveHome();
         const parts = arrayPath.split('.');
         let targetArray = home;
@@ -495,8 +598,11 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             return res.status(400).json({ success: false, message: `${arrayPath} is not an array` });
         }
 
-        // Build Payload from req.body (Already decrypted by middleware)
-        let payload = normalizePaths(req.body || {});
+        // Build Payload from decryptedData (Security First)
+        let payload = {};
+        if (isPlainObject(decryptedData)) {
+            payload = normalizePaths(decryptedData);
+        }
 
         if (req.file) {
             setNested(payload, req.file.fieldname, req.file.filename);
@@ -585,8 +691,11 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         home.markModified(arrayPath);
         await home.save();
         res.status(201).json({
+            encrypted: true,
             success: true,
-            data: targetArray
+            data: encryptData(targetArray),
+            data1: encryptData("Array Item Added"),
+            data2: encryptData(Date.now())
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -595,6 +704,20 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
+        let decryptedData;
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            decryptedData = decryptData(encryptedData);
+            if (typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            return res.status(400).json({
+                encrypted: true,
+                success: false,
+                data: encryptData('Invalid encryption data')
+            });
+        }
         const home = await getActiveHome();
         const parts = arrayPath.split('.');
         let targetArray = home;
@@ -615,8 +738,11 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
             return res.status(404).json({ success: false, message: 'Item not found' });
         }
 
-        // Build updateData from req.body (Already decrypted by middleware)
-        let updateData = normalizePaths(req.body || {});
+        // Build updateData from decryptedData
+        let updateData = {};
+        if (isPlainObject(decryptedData)) {
+            updateData = normalizePaths(decryptedData);
+        }
 
         if (req.file) {
             setNested(updateData, req.file.fieldname, req.file.filename);
@@ -646,8 +772,11 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         applyItemUpdate(itemPath, updateData);
         await home.save();
         res.status(200).json({
+            encrypted: true,
             success: true,
-            data: targetArray
+            data: encryptData(targetArray),
+            data1: encryptData("Array Item Updated Successfully"),
+            data2: encryptData(Date.now())
         });
     } catch (err) {
         console.error("Update Array Item Error:", err);
@@ -700,8 +829,11 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
         home.markModified(arrayPath);
         await home.save();
         res.status(200).json({
+            encrypted: true,
             success: true,
-            data: targetArray
+            data: encryptData(targetArray),
+            data1: encryptData("Item deleted safely"),
+            data2: encryptData(Date.now())
         });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -710,6 +842,17 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 
 exports.deleteSocialPost = async (req, res) => {
     try {
+        let decryptedData;
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            decryptedData = decryptData(encryptedData);
+        } catch (error) {
+            return res.status(400).json({
+                encrypted: true,
+                success: false,
+                data: encryptData('Invalid encryption data')
+            });
+        }
         const home = await getActiveHome();
         const { postId } = req.params;
 
@@ -725,13 +868,17 @@ exports.deleteSocialPost = async (req, res) => {
             home.markModified('tournamentsSection.list.posts');
             await home.save();
             res.status(200).json({
+                encrypted: true,
                 success: true,
-                data: home.tournamentsSection.list
+                data: encryptData(home.tournamentsSection.list),
+                data1: encryptData(`Social post ${postId} deleted`),
+                data2: encryptData(Date.now())
             });
         } else {
             res.status(404).json({
+                encrypted: true,
                 success: false,
-                message: 'Posts not found'
+                data: encryptData('Posts not found')
             });
         }
     } catch (err) {

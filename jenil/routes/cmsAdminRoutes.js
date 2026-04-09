@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 
 // Controllers
-const homeController = require('../controllers/homeController');
-const aboutAcademyController = require('../controllers/aboutAcademyController');
-const programsPageController = require('../controllers/programsPageController');
-const galleryPageController = require('../controllers/galleryPageController');
-const playgroundPageController = require('../controllers/playgroundPageController');
-const admissionsPageController = require('../controllers/admissionsPageController');
-const contactPageController = require('../controllers/contactPageController');
+const homeController = require('../controllers/Admin Controllers/homeControllerA');
+const aboutAcademyController = require('../controllers/Admin Controllers/aboutAcademyControllerA');
+const programsPageController = require('../controllers/Admin Controllers/programsPageControllerA');
+const galleryPageController = require('../controllers/Admin Controllers/galleryPageControllerA');
+const playgroundPageController = require('../controllers/Admin Controllers/playgroundPageControllerA');
+const admissionsPageController = require('../controllers/Admin Controllers/admissionsPageControllerA');
+const contactPageController = require('../controllers/Admin Controllers/contactPageControllerA');
 
 // Middlewares
 const { upload, standardizeFilePath } = require('../middlewares/upload');

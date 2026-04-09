@@ -1,6 +1,6 @@
-const ProgramsPage = require('../models/ProgramsPage');
-const { saveBase64Image } = require('../utils/fileUtils');
-
+const ProgramsPage = require('../../models/ProgramsPage');
+const { saveBase64Image } = require('../../utils/fileUtils');
+const { logger, decryptData } = require("../../../utils/enc_dec_admin");
 
 const parseJsonIfLikely = (value) => {
     if (typeof value !== 'string') return value;
@@ -166,6 +166,12 @@ exports.getProgramsData = async (req, res) => {
 // Convenience endpoint: returns all level cards in one response (ordered)
 exports.getLevels = async (req, res) => {
     try {
+        // try {
+        //     const encryptedData = req.params.data || req.body.data || req.query.data;
+        //     if (encryptedData) {
+        //         const decryptedData = decryptData(encryptedData);
+        //     }
+        // } catch (e) { }
         const programs = await getActivePrograms();
         const levels = programs.levels;
 
@@ -182,6 +188,12 @@ exports.getLevels = async (req, res) => {
 // 2. CONFIG SECTIONS
 exports.getSection = (sectionName) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         let target = programs;
         if (sectionName.includes('.')) {
@@ -204,6 +216,12 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         let updateData = normalizePaths(req.body);
         updateData = processImageFields(updateData);
@@ -259,6 +277,12 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         programs.set(sectionName, undefined);
         programs.markModified(sectionName);
@@ -272,6 +296,12 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 // 3. ARRAY SECTIONS
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         const parts = arrayPath.split('.');
         let targetArray = programs;
@@ -377,6 +407,12 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         const parts = arrayPath.split('.');
         let targetArray = programs;
@@ -426,6 +462,12 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
 exports.deleteArrayItem = (arrayPath) => async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         const parts = arrayPath.split('.');
         let targetArray = programs;
@@ -467,6 +509,12 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 // LEVELS MANAGEMENT (new array-based structure)
 exports.getLevelById = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         const level = programs.levels.id(req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -478,6 +526,12 @@ exports.getLevelById = async (req, res) => {
 
 exports.addLevel = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         const { key, title, description, duration, image, features } = req.body;
 
@@ -509,6 +563,12 @@ exports.addLevel = async (req, res) => {
 
 exports.updateLevel = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         const level = programs.levels.id(req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -530,6 +590,12 @@ exports.updateLevel = async (req, res) => {
 
 exports.deleteLevel = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         const level = programs.levels.id(req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -546,6 +612,12 @@ exports.deleteLevel = async (req, res) => {
 // FEATURES MANAGEMENT
 exports.addFeature = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         const level = programs.levels.id(req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -568,6 +640,12 @@ exports.addFeature = async (req, res) => {
 
 exports.updateFeature = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         const level = programs.levels.id(req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -588,6 +666,12 @@ exports.updateFeature = async (req, res) => {
 
 exports.deleteFeature = async (req, res) => {
     try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
         const programs = await getActivePrograms();
         const level = programs.levels.id(req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });

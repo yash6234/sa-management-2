@@ -1,12 +1,12 @@
-const { logger, decryptData } = require("../../utils/enc_dec_c");
+const { logger, decryptData } = require("../../../utils/enc_dec_admin");
 
 const models = {
-    Home: require('../models/Home'),
-    AboutAcademy: require('../models/AboutAcademy'),
-    AdmissionsPage: require('../models/AdmissionsPage'),
-    GalleryPage: require('../models/GalleryPage'),
-    PlaygroundPage: require('../models/PlaygroundPage'),
-    ProgramsPage: require('../models/ProgramsPage')
+    Home: require('../../models/Home'),
+    AboutAcademy: require('../../models/AboutAcademy'),
+    AdmissionsPage: require('../../models/AdmissionsPage'),
+    GalleryPage: require('../../models/GalleryPage'),
+    PlaygroundPage: require('../../models/PlaygroundPage'),
+    ProgramsPage: require('../../models/ProgramsPage')
 };
 
 const getModel = (modelName) => {

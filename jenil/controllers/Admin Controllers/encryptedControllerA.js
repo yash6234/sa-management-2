@@ -1,5 +1,5 @@
-const { encryptData, decryptData: decryptCryptoJS } = require('../utils/encryption');
-const { logger, decryptData } = require("../../utils/enc_dec_c");
+const { encryptData, decryptData: decryptCryptoJS } = require('../../utils/encryption');
+const { logger, decryptData } = require("../../../utils/enc_dec_admin");
 
 /**
  * Generic Encrypted CRUD Controller

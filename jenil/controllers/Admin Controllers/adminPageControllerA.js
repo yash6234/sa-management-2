@@ -1,15 +1,15 @@
-const Home = require('../models/Home');
-const AboutAcademy = require('../models/AboutAcademy');
-const AdmissionsPage = require('../models/AdmissionsPage');
-const GalleryPage = require('../models/GalleryPage');
-const { saveBase64Image } = require('../utils/fileUtils');
-const { decryptData: decryptCryptoJS } = require('../utils/encryption');
-const PlaygroundPage = require('../models/PlaygroundPage');
-const ProgramsPage = require('../models/ProgramsPage');
-const ContactPage = require('../models/ContactPage');
-const Footer = require('../models/Footer');
+const Home = require('../../models/Home');
+const AboutAcademy = require('../../models/AboutAcademy');
+const AdmissionsPage = require('../../models/AdmissionsPage');
+const GalleryPage = require('../../models/GalleryPage');
+const { saveBase64Image } = require('../../utils/fileUtils');
+const { decryptData: decryptCryptoJS } = require('../../utils/encryption');
+const PlaygroundPage = require('../../models/PlaygroundPage');
+const ProgramsPage = require('../../models/ProgramsPage');
+const ContactPage = require('../../models/ContactPage');
+const Footer = require('../../models/Footer');
 
-const { logger, decryptData } = require("../../utils/enc_dec_c");
+const { logger, decryptData } = require("../../../utils/enc_dec_admin");
 
 const models = {
     home: Home,

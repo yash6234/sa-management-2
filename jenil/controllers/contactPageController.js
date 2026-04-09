@@ -1,6 +1,6 @@
 const ContactPage = require('../models/ContactPage');
 const ContactSubmission = require('../models/ContactSubmission');
-const { logger, decryptData } = require("../../utils/enc_dec_admin");
+const { logger, decryptData } = require("../../utils/enc_dec_c");
 
 const toDotPath = (value) => {
     if (typeof value !== 'string') return '';

@@ -1,6 +1,6 @@
 const AdmissionsPage = require('../models/AdmissionsPage');
 const AdmissionSubmission = require('../models/AdmissionSubmission');
-const { logger, decryptData } = require("../../utils/enc_dec_admin");
+const { logger, decryptData } = require("../../utils/enc_dec_c");
 
 const toDotPath = (value) => {
     if (typeof value !== 'string') return '';
