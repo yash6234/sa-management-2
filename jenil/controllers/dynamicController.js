@@ -52,7 +52,7 @@ exports.dispatchedHandler = async (req, res, next) => {
 exports.updateDynamic = async (req, res, next) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -145,7 +145,7 @@ exports.updateDynamic = async (req, res, next) => {
 exports.getDynamic = async (req, res, next) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);

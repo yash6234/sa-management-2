@@ -22,7 +22,7 @@ const getModel = (modelName) => {
 exports.createEncrypted = (modelName, options = {}) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -76,7 +76,7 @@ exports.createEncrypted = (modelName, options = {}) => async (req, res) => {
 exports.updateEncrypted = (modelName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -130,7 +130,7 @@ exports.updateEncrypted = (modelName) => async (req, res) => {
 exports.fetchEncrypted = (modelName, options = {}) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -193,7 +193,7 @@ exports.fetchEncrypted = (modelName, options = {}) => async (req, res) => {
 exports.deleteEncrypted = (modelName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);

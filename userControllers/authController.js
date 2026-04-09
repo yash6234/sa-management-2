@@ -1,28 +1,28 @@
 const User = require("../models/Users");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { encryptData, decryptData ,verifyRecaptcha,logger} = require("../utils/enc_dec_u");
+const { encryptData, decryptData, verifyRecaptcha, logger } = require("../utils/enc_dec_u");
 
 const crypto = require("crypto");
 const mongoose = require("mongoose");
 const nodemailer = require('nodemailer');
 const Hostel = require("../models/SportsAcademy")
 
-const sendOtpEmail = async (email,name, otp) => {
-    try{
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-            user: process.env.EMAIL,
-            pass: process.env.EMAIL_PASSWORD,
-        },
-    });
+const sendOtpEmail = async (email, name, otp) => {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
 
-    const mailOptions = {
-        from: process.env.EMAIL,
-        to: email,
-        subject: 'Verify Your Login',
-        html:`
+        const mailOptions = {
+            from: process.env.EMAIL,
+            to: email,
+            subject: 'Verify Your Login',
+            html: `
         <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -148,15 +148,15 @@ const sendOtpEmail = async (email,name, otp) => {
 </body>
 </html>
         `
-    };
+        };
 
-    try {
-        await transporter.sendMail(mailOptions);  //MAIL SENT HERE
-        console.log('OTP email sent successfully');
+        try {
+            await transporter.sendMail(mailOptions);  //MAIL SENT HERE
+            console.log('OTP email sent successfully');
 
-    } catch (error) {
-        console.error('Error sending OTP email:', error);
-    }
+        } catch (error) {
+            console.error('Error sending OTP email:', error);
+        }
     } catch (error) {
         console.error('Error :', error);
         return res.status(400).json({ error: error.message });
@@ -164,134 +164,134 @@ const sendOtpEmail = async (email,name, otp) => {
 };
 
 const Login = async (req, res) => {
-  try {
-    logger.info("User Login request received");
-    const decryptedData = decryptData(req.params.data);
-    logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
-    const { email, password,recaptchaToken } = decryptedData;
-    const recaptchaValid = await verifyRecaptcha(recaptchaToken);
-    if (!recaptchaValid) {
-        logger.error("Recaptcha Verification Failed");
-        return res.status(400).json({ message: 'reCAPTCHA verification failed' });
-    }
+    try {
+        logger.info("User Login request received");
+        const decryptedData = decryptData(req.params.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        const { email, password, recaptchaToken } = decryptedData;
+        // const recaptchaValid = await verifyRecaptcha(recaptchaToken);
+        // if (!recaptchaValid) {
+        //     logger.error("Recaptcha Verification Failed");
+        //     return res.status(400).json({ message: 'reCAPTCHA verification failed' });
+        // }
 
-    logger.info("Recaptcha Verification Successful");
-    const hdt = await Hostel.findById(process.env.sport_sacademy_id);
-        if(!hdt){
-            return res.status(401).json({message: 'No Hostel found'});
+        logger.info("Recaptcha Verification Successful");
+        const hdt = await Hostel.findById(process.env.sport_sacademy_id);
+        if (!hdt) {
+            return res.status(401).json({ message: 'No Hostel found' });
         }
-    const user = await User.findOne({ email });
-    if (!user) {
-      logger.warn("User not found");
-      return res.status(404).json({ message: 'User not found' });
+        const user = await User.findOne({ email });
+        if (!user) {
+            logger.warn("User not found");
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (!user.isVerified) {
+            logger.warn("User Account not verified");
+            return res.status(400).json({ message: 'User Account not verified' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            logger.warn("Invalid credentials");
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        logger.info(`User authenticated successfully - ${user}`);
+
+        // **************************************************************************************************************************************************************
+        // const otp = crypto.randomInt(100000, 999999).toString();
+
+        const otp = 888888;
+
+        const otpExpires = Date.now() + parseInt(process.env.OTP_EXPIRATION);
+
+        user.otp = otp;
+        user.otpExpires = otpExpires;
+        await user.save();
+
+        //**********************************************************************************************************************
+        // sendOtpEmail(user.email,user.name, otp);
+
+        logger.info(`User Verified and OTP Sent to User on ${user.email} and OTP : ${user.otp}`);
+        res.status(200).json(encryptData({ data: "User_Authenticated_And_OTP_Sent", data1: encryptData(user.email), data2: encryptData(user._id) }));
+        logger.info("Login Completed Successfully")
+    } catch (error) {
+        logger.error(`Login error: ${error.message}`);
+        res.status(500).json({ message: 'Error logging in', error: error.message });
     }
-    if (!user.isVerified) {
-      logger.warn("User Account not verified");
-      return res.status(400).json({ message: 'User Account not verified' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      logger.warn("Invalid credentials");
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    logger.info(`User authenticated successfully - ${user}`);
-
-    // **************************************************************************************************************************************************************
-    // const otp = crypto.randomInt(100000, 999999).toString();
-
-      const otp = 888888;
-
-    const otpExpires = Date.now() + parseInt(process.env.OTP_EXPIRATION);
-
-    user.otp = otp;
-    user.otpExpires = otpExpires;
-    await user.save();
-
-    //**********************************************************************************************************************
-    // sendOtpEmail(user.email,user.name, otp);
-
-    logger.info(`User Verified and OTP Sent to User on ${user.email} and OTP : ${user.otp}`);
-    res.status(200).json({ data: encryptData("User_Authenticated_And_OTP_Sent"),data1:encryptData(user.email),data2:encryptData(user._id)  });
-    logger.info("Login Completed Successfully")
-  } catch (error) {
-    logger.error(`Login error: ${error.message}`);
-    res.status(500).json({ message: 'Error logging in', error: error.message });
-  }
 };
 
 const LoginApp = async (req, res) => {
-  try {
-    logger.info("User Login request received (From Application)");
-    const decryptedData = decryptData(req.params.data);
-    logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
-    const { email, password } = decryptedData;
-    const hdt = await Hostel.findById(process.env.sport_sacademy_id);
-        if(!hdt){
-            return res.status(401).json({message: 'No Hostel found'});
+    try {
+        logger.info("User Login request received (From Application)");
+        const decryptedData = decryptData(req.params.data);
+        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        const { email, password } = decryptedData;
+        const hdt = await Hostel.findById(process.env.sport_sacademy_id);
+        if (!hdt) {
+            return res.status(401).json({ message: 'No Hostel found' });
         }
-    const user = await User.findOne({ email });
-    if (!user) {
-      logger.warn("User not found");
-      return res.status(404).json({ message: 'User not found' });
+        const user = await User.findOne({ email });
+        if (!user) {
+            logger.warn("User not found");
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (!user.isVerified) {
+            logger.warn("User Account not verified");
+            return res.status(400).json({ message: 'User Account not verified' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            logger.warn("Invalid credentials");
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        logger.info(`User authenticated successfully - ${user}`);
+
+        // **************************************************************************************************************************************************************
+        // const otp = crypto.randomInt(100000, 999999).toString();
+
+        const otp = 888888;
+
+        const otpExpires = Date.now() + parseInt(process.env.OTP_EXPIRATION);
+
+        user.otp = otp;
+        user.otpExpires = otpExpires;
+        await user.save();
+
+        //**********************************************************************************************************************
+        // sendOtpEmail(user.email,user.name, otp);
+
+        logger.info(`User Verified and OTP Sent to User on ${user.email} and OTP : ${user.otp}`);
+        res.status(200).json({ data: encryptData("User_Authenticated_And_OTP_Sent"), data1: encryptData(user.email), data2: encryptData(user._id) });
+        logger.info("Login Completed Successfully")
+    } catch (error) {
+        logger.error(`Login error: ${error.message}`);
+        res.status(500).json({ message: 'Error logging in', error: error.message });
     }
-    if (!user.isVerified) {
-      logger.warn("User Account not verified");
-      return res.status(400).json({ message: 'User Account not verified' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      logger.warn("Invalid credentials");
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    logger.info(`User authenticated successfully - ${user}`);
-
-    // **************************************************************************************************************************************************************
-    // const otp = crypto.randomInt(100000, 999999).toString();
-
-      const otp = 888888;
-
-    const otpExpires = Date.now() + parseInt(process.env.OTP_EXPIRATION);
-
-    user.otp = otp;
-    user.otpExpires = otpExpires;
-    await user.save();
-
-    //**********************************************************************************************************************
-    // sendOtpEmail(user.email,user.name, otp);
-
-    logger.info(`User Verified and OTP Sent to User on ${user.email} and OTP : ${user.otp}`);
-    res.status(200).json({ data: encryptData("User_Authenticated_And_OTP_Sent"),data1:encryptData(user.email),data2:encryptData(user._id)  });
-    logger.info("Login Completed Successfully")
-  } catch (error) {
-    logger.error(`Login error: ${error.message}`);
-    res.status(500).json({ message: 'Error logging in', error: error.message });
-  }
 };
 
 isOtpExpired = (otpExpires) => {
-  return Date.now() > otpExpires;
+    return Date.now() > otpExpires;
 };
 
-const VerifyOTP = async (req,res)=>{
+const VerifyOTP = async (req, res) => {
     try {
         logger.info("User OTP Verify request received");
         const decryptedData = decryptData(req.params.data);
         logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.otp} - ${decryptedData.id} - ${decryptedData.recaptchaToken}`);
-        let {email,otp,id, recaptchaToken} = decryptedData;
+        let { email, otp, id, recaptchaToken } = decryptedData;
         logger.info(`Request From : ${email} ${otp} ${id} ${recaptchaToken}`)
         const recaptchaValid = await verifyRecaptcha(recaptchaToken);
         if (!recaptchaValid) {
-          logger.error("Recaptcha Verification Failed")
-          return res.status(400).json({message: 'reCAPTCHA verification failed'});
+            logger.error("Recaptcha Verification Failed")
+            return res.status(400).json({ message: 'reCAPTCHA verification failed' });
         }
         logger.info("Recaptcha Token Verified")
         const hdt = await Hostel.findById(process.env.sport_sacademy_id);
-        if(!hdt){
-            return res.status(401).json({message: 'No Hostel found'});
+        if (!hdt) {
+            return res.status(401).json({ message: 'No Hostel found' });
         }
         const now = Date.now();
         const expiryTime = new Date(hdt.expiry_at).getTime();
@@ -299,7 +299,7 @@ const VerifyOTP = async (req,res)=>{
         const daysLeft = Math.ceil((expiryTime - now) / (1000 * 60 * 60 * 24));
 
         let expiryStatus = "PLAN_IS_VALID_THE_USER_CAN_MOVE_FORWARD";
-        if (hdt.active!==true || hdt.delete!==false){
+        if (hdt.active !== true || hdt.delete !== false) {
             expiryStatus = "HOSTEL_IS_INACTIVE_OR_UNDEFINED_FROM_SUPERUSER_CONTACT_ADMIN"
             logger.warn(`Hostel is Inactive or Deleted`)
         }
@@ -313,13 +313,13 @@ const VerifyOTP = async (req,res)=>{
             expiryStatus = "THE_PLAN_IS_EXPIRING_WITHIN_3_DAYS";
             logger.info(`Hostel expiring soon on ${hdt.expiry_at}`);
         }
-        if(expiryStatus=='PLAN_IS_VALID_THE_USER_CAN_MOVE_FORWARD'){
+        if (expiryStatus == 'PLAN_IS_VALID_THE_USER_CAN_MOVE_FORWARD') {
             logger.info('The Plan is Valid of the Hostel')
         }
-        const user = await User.findOne({ email,_id:new mongoose.Types.ObjectId(id),active:true,delete:false });
+        const user = await User.findOne({ email, _id: new mongoose.Types.ObjectId(id), active: true, delete: false });
         if (!user) {
-          logger.error("User Not Found")
-          return res.status(400).json({ message: 'User not found' });
+            logger.error("User Not Found")
+            return res.status(400).json({ message: 'User not found' });
         }
         if (user.otp !== otp || isOtpExpired(user.otpExpires)) {
             logger.error("OTP Verification Failed or Expired")
@@ -331,31 +331,31 @@ const VerifyOTP = async (req,res)=>{
 
         await user.save();
         logger.info("Generating New Token");
-        const token = jwt.sign({ id: user._id,mobile_no:user.mobile_no,email:user.email,expiry_at:hdt.expiry_at }, process.env.USER_JWT_SECRET);
+        const token = jwt.sign({ id: user._id, mobile_no: user.mobile_no, email: user.email, expiry_at: hdt.expiry_at }, process.env.USER_JWT_SECRET);
         logger.info(`Token generated - ${token}`);
-        const dt = { token, id: user._id,name:user.name,mobile_no:user.mobile_no,email:user.email,user:'Verified' };
+        const dt = { token, id: user._id, name: user.name, mobile_no: user.mobile_no, email: user.email, user: 'Verified' };
         logger.info(`Data Created : ${dt.id} - ${dt.name} - ${dt.email} - ${dt.mobile_no} - ${dt.token}`);
         const encdata = encryptData(dt);
         console.log(expiryStatus)
-        res.status(200).json({ data: encdata,message:encryptData({msg1:encryptData("OTP_Verified_Successfully_And_Response_Token_Sent"),daysLeft: encryptData(daysLeft >= 0 ? daysLeft : 0),msg2:encryptData(expiryStatus)}),data1:encryptData(expiryStatus) });
+        res.status(200).json({ data: encdata, message: encryptData({ msg1: encryptData("OTP_Verified_Successfully_And_Response_Token_Sent"), daysLeft: encryptData(daysLeft >= 0 ? daysLeft : 0), msg2: encryptData(expiryStatus) }), data1: encryptData(expiryStatus) });
         logger.info("Verification Response sent");
 
-    } catch (err){
+    } catch (err) {
         logger.error(`Verification error: ${err.message}`);
         res.status(500).json({ message: 'Server Error' });
     }
 }
 
-const VerifyOTPApp = async (req,res)=>{
+const VerifyOTPApp = async (req, res) => {
     try {
         logger.info("User OTP Verify request received (From Application)");
         const decryptedData = decryptData(req.params.data);
         logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.otp} - ${decryptedData.id}`);
-        let {email,otp,id, recaptchaToken} = decryptedData;
+        let { email, otp, id, recaptchaToken } = decryptedData;
         logger.info(`Request From : ${email} ${otp} ${id}`)
         const hdt = await Hostel.findById(process.env.sport_sacademy_id);
-        if(!hdt){
-            return res.status(401).json({message: 'No Hostel found'});
+        if (!hdt) {
+            return res.status(401).json({ message: 'No Hostel found' });
         }
         const now = Date.now();
         const expiryTime = new Date(hdt.expiry_at).getTime();
@@ -363,7 +363,7 @@ const VerifyOTPApp = async (req,res)=>{
         const daysLeft = Math.ceil((expiryTime - now) / (1000 * 60 * 60 * 24));
 
         let expiryStatus = "PLAN_IS_VALID_THE_USER_CAN_MOVE_FORWARD";
-        if (hdt.active!==true || hdt.delete!==false){
+        if (hdt.active !== true || hdt.delete !== false) {
             expiryStatus = "HOSTEL_IS_INACTIVE_OR_UNDEFINED_FROM_SUPERUSER_CONTACT_ADMIN"
             logger.warn(`Hostel is Inactive or Deleted`)
         }
@@ -377,13 +377,13 @@ const VerifyOTPApp = async (req,res)=>{
             expiryStatus = "THE_PLAN_IS_EXPIRING_WITHIN_3_DAYS";
             logger.info(`Hostel expiring soon on ${hdt.expiry_at}`);
         }
-        if(expiryStatus=='PLAN_IS_VALID_THE_USER_CAN_MOVE_FORWARD'){
+        if (expiryStatus == 'PLAN_IS_VALID_THE_USER_CAN_MOVE_FORWARD') {
             logger.info('The Plan is Valid of the Hostel')
         }
-        const user = await User.findOne({ email,_id:new mongoose.Types.ObjectId(id),active:true,delete:false });
+        const user = await User.findOne({ email, _id: new mongoose.Types.ObjectId(id), active: true, delete: false });
         if (!user) {
-          logger.error("User Not Found")
-          return res.status(400).json({ message: 'User not found' });
+            logger.error("User Not Found")
+            return res.status(400).json({ message: 'User not found' });
         }
         if (user.otp !== otp || isOtpExpired(user.otpExpires)) {
             logger.error("OTP Verification Failed or Expired")
@@ -395,20 +395,20 @@ const VerifyOTPApp = async (req,res)=>{
 
         await user.save();
         logger.info("Generating New Token");
-        const token = jwt.sign({ id: user._id,mobile_no:user.mobile_no,email:user.email,expiry_at:hdt.expiry_at }, process.env.USER_JWT_SECRET);
+        const token = jwt.sign({ id: user._id, mobile_no: user.mobile_no, email: user.email, expiry_at: hdt.expiry_at }, process.env.USER_JWT_SECRET);
         logger.info(`Token generated - ${token}`);
-        const dt = { token, id: user._id,name:user.name,mobile_no:user.mobile_no,email:user.email,user:'Verified' };
+        const dt = { token, id: user._id, name: user.name, mobile_no: user.mobile_no, email: user.email, user: 'Verified' };
         logger.info(`Data Created : ${dt.id} - ${dt.name} - ${dt.email} - ${dt.mobile_no} - ${dt.token}`);
         const encdata = encryptData(dt);
         console.log(expiryStatus)
-        res.status(200).json({ data: encdata,message:encryptData({msg1:encryptData("OTP_Verified_Successfully_And_Response_Token_Sent"),daysLeft: encryptData(daysLeft >= 0 ? daysLeft : 0),msg2:encryptData(expiryStatus)}),data1:encryptData(expiryStatus) });
+        res.status(200).json({ data: encdata, message: encryptData({ msg1: encryptData("OTP_Verified_Successfully_And_Response_Token_Sent"), daysLeft: encryptData(daysLeft >= 0 ? daysLeft : 0), msg2: encryptData(expiryStatus) }), data1: encryptData(expiryStatus) });
         logger.info("Verification Response sent");
 
-    } catch (err){
+    } catch (err) {
         logger.error(`Verification error: ${err.message}`);
         res.status(500).json({ message: 'Server Error' });
     }
 }
 
 
-module.exports = { Login,VerifyOTP,LoginApp,VerifyOTPApp};
+module.exports = { Login, VerifyOTP, LoginApp, VerifyOTPApp };

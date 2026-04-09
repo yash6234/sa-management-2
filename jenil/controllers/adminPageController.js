@@ -70,7 +70,7 @@ const formatName = (str) => {
 exports.getPageDataSectionWise = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -137,7 +137,7 @@ exports.getPageDataSectionWise = async (req, res) => {
 exports.getAvailablePages = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -178,7 +178,7 @@ const getUploadedFiles = (req) => {
 exports.updatePageSection = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -326,7 +326,7 @@ const processImageFields = (data, imageFields = ['image', 'backgroundImage', 'ma
 exports.deletePageSection = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);

@@ -165,7 +165,7 @@ const getActiveAbout = async () => {
 exports.getAboutData = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -189,7 +189,7 @@ exports.getAboutData = async (req, res) => {
 exports.getIntroMission = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -222,7 +222,7 @@ exports.getIntroMission = async (req, res) => {
 exports.updateIntroMission = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -320,7 +320,7 @@ exports.updateIntroMission = async (req, res) => {
 exports.deleteIntroMission = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -343,7 +343,7 @@ exports.deleteIntroMission = async (req, res) => {
 exports.getSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -388,7 +388,7 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -476,7 +476,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -497,7 +497,7 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -767,7 +767,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -825,7 +825,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 exports.deleteArrayItem = (arrayPath) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
