@@ -1,4 +1,4 @@
-const ContactPage = require('../models/ContactPage');
+    const ContactPage = require('../models/ContactPage');
 const ContactSubmission = require('../models/ContactSubmission');
 const { logger, decryptData } = require("../../utils/enc_dec_admin");
 

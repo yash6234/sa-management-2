@@ -1,4 +1,4 @@
-const Academy = require("../models/Academy");
+        const Academy = require("../models/Academy");
 const { encryptData, decryptData ,logger} = require("../utils/enc_dec_admin");
 const {validateAdminRequest} = require("../middlewares/adminValidation");
 const SportsAcademy = require("../models/SportsAcademy");
@@ -9,7 +9,7 @@ const AddAcademy = async (req, res) => {
         logger.info('Adding New Academy Request Received');
         const result = await validateAdminRequest(req, res);
         if (result.error) {
-            return res.status(result.status).json({ message: result.message });
+            return res.status(result.status).json({ success: false, message: result.message });
         }
         let decryptedData;
         try {
@@ -22,7 +22,7 @@ const AddAcademy = async (req, res) => {
         const hdt = await SportsAcademy.findById(process.env.sport_sacademy_id);
         if(hdt.add_institute==false || !hdt.add_institute){
             logger.info(`Adding New Institute is Not Allowed For this ${hdt.name}`)
-            return res.status(500).json({message: `Adding New Institute is Not Allowed For this ${hdt.name}`});
+            return res.status(500).json({ success: false, message: `Adding New Institute is Not Allowed For this ${hdt.name}`});
         }
         const {name,address,contact_no,contact_name}=decryptedData;
         const adt = new Academy({
@@ -31,7 +31,7 @@ const AddAcademy = async (req, res) => {
         await adt.save()
         logger.info(`New Institute Created Successfully - ${name} added successfully`)
 
-        return res.status(200).json({message:'Institute Created Successfully'});
+        return res.status(200).json({ success: true, message:'Institute Created Successfully', data: null });
     } catch (err){
         logger.error(`AddAcademy Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -48,7 +48,7 @@ const ViewAcademy = async (req, res) => {
         }
         const dt = await Academy.find({active:true,delete:false});
         logger.info("Academy Fetched and Sent Successfully")
-        return res.status(200).json({message:'Academy Fetched Successfully',data:encryptData(dt)});
+        return res.status(200).json({ success: true, message:'Academy Fetched Successfully', data:encryptData(dt) });
     } catch (err){
         logger.error(`ViewAcademy Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -74,7 +74,7 @@ const EditAcademy = async (req, res) => {
         const existingAcademy = await Academy.findById(id);
         if (!existingAcademy) {
             logger.error('Academy Not Found')
-            return res.status(404).json({ message: "Academy not found" });
+            return res.status(404).json({ success: false, message: "Academy not found" });
         }
         let updatedFields = {};
         if (name && name !== existingAcademy.name) updatedFields.name = name;
@@ -92,12 +92,12 @@ const EditAcademy = async (req, res) => {
         }
 
         if (Object.keys(updatedFields).length === 0) {
-            return res.status(200).json({ message: "No changes detected" });
+            return res.status(200).json({ success: true, message: "No changes detected", data: null });
         }
 
         await Academy.findByIdAndUpdate(id, updatedFields, { new: true });
         logger.info("Academy updated successfully");
-        return res.status(200).json({ message: "Academy updated successfully" });
+        return res.status(200).json({ success: true, message: "Academy updated successfully", data: null });
     } catch (err){
         logger.error(`EditAcademy Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -121,19 +121,19 @@ const DeleteAcademy = async (req, res) => {
         const hdt = await SportsAcademy.findById(process.env.sport_sacademy_id);
         if(hdt.add_institute==false || !hdt.add_institute){
             logger.info(`Deleting Institute is Not Allowed For ${hdt.name}`)
-            return res.status(500).json({message: `Deleting Institute is Not Allowed For ${hdt.name}`});
+            return res.status(500).json({ success: false, message: `Deleting Institute is Not Allowed For ${hdt.name}`});
         }
         logger.info("User Verified Successfully");
         const {id}=decryptedData;
         const adt = await Academy.findById(id);
         if(!adt){
             logger.info('Academy Not Found')
-            return res.status(401).json({message:'Not Found'});
+            return res.status(401).json({ success: false, message:'Not Found' });
         }
         adt.delete = true;
         await adt.save();
         logger.info(`Successfully Deleted ${adt.name}`)
-        return res.status(200).json({message:`Institute Deleted Successfully : ${adt.name}`})
+        return res.status(200).json({ success: true, message:`Institute Deleted Successfully : ${adt.name}`, data: null })
     } catch (err){
         logger.error(`DeleteAcademy Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})

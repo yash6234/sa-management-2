@@ -1,4 +1,3 @@
-const mongoose = require('../utils/mongoose');
 const ProgramsPage = require('../models/ProgramsPage');
 const { saveBase64Image } = require('../utils/fileUtils');
 const { logger, decryptData } = require("../../utils/enc_dec_admin");

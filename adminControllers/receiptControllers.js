@@ -64,14 +64,16 @@ const AddNewReceipt = async (req, res) => {
         logger.info("Add New Receipt Request Received");
 
         const result = await validateAdminRequest(req, res);
-        if (result.error) return res.status(result.status).json({ message: result.message });
+                if (result.error) return res.status(result.status).json({ success: false, message: result.message });
+
 
         let decryptedData;
         try {
             decryptedData = decryptData(req.params.data);
         } catch (err) {
             logger.error("Decryption Failed", err);
-            return res.status(400).json({ message: "Invalid data" });
+                        return res.status(400).json({ success: false, message: "Invalid data" });
+
         }
 
         const { academy_id,name, remarks, transactions, roll_no } = decryptedData;
@@ -133,6 +135,7 @@ const AddNewReceipt = async (req, res) => {
         logger.info(`Receipt Generated Successfully No: ${receipt_no}`);
 
         return res.status(200).json({
+            success: true,
             message: "Receipt Created Successfully",
             data: encryptData({ receipt_no }),
         });
@@ -145,7 +148,8 @@ const AddNewReceipt = async (req, res) => {
         }
 
         logger.error("AddNewReceipt Error", err);
-        return res.status(500).json({ message: "SERVER ERROR" });
+                return res.status(500).json({ success: false, message: "SERVER ERROR" });
+
     }
 };
 
@@ -154,14 +158,15 @@ const FetchReceipts = async (req, res) => {
         logger.info('Fetch Receipts Request Received');
         const result = await validateAdminRequest(req, res);
         if (result.error) {
-            return res.status(result.status).json({ message: result.message });
+            return res.status(result.status).json({ success: false, message: result.message });
         }
         let decryptedData;
         try {
             decryptedData = decryptData(req.params.data);
         } catch (error) {
             logger.error(`Decryption failed: ${error.message}`);
-            return res.status(400).json({ message: "Invalid data" });
+                        return res.status(400).json({ success: false, message: "Invalid data" });
+
         }
         logger.info("User Verified Successfully");
         const { page }=decryptedData;
@@ -186,6 +191,7 @@ const FetchReceipts = async (req, res) => {
         logger.info(``)
 
         return res.status(200).json({
+          success: true,
           message: "Receipts Fetched Successfully",
           data: encryptData({
             receipts: dt,
@@ -200,7 +206,8 @@ const FetchReceipts = async (req, res) => {
     } catch (err){
 
         logger.error(`FetchReceipts Error : ${err}`);
-        return res.status(500).json({message:'SERVER ERROR'})
+                return res.status(500).json({ success: false, message:'SERVER ERROR' })
+
     }
 }
 
@@ -230,17 +237,20 @@ const DeleteReceipt = async (req, res) => {
         dt.active=false;
         await dt.save();
         logger.info("Receipt Deleted Successfully")
-        return res.status(200).json({message:'Receipt Deleted Successfully'});
+                return res.status(200).json({ success: true, message:'Receipt Deleted Successfully', data: null });
+
     } catch (err){
         logger.error(`AddNewReceipt Error : ${err}`);
-        return res.status(500).json({message:'SERVER ERROR'})
+                return res.status(500).json({ success: false, message:'SERVER ERROR' })
+
     }
 }
 
 const SearchReceipt = async (req, res) => {
     try {
         const result = await validateAdminRequest(req, res);
-        if (result.error) return res.status(result.status).json({ message: result.message });
+                if (result.error) return res.status(result.status).json({ success: false, message: result.message });
+
 
         let decryptedData;
         try {
@@ -264,13 +274,15 @@ const SearchReceipt = async (req, res) => {
         const receipts = await Receipts.find(query).sort({ createdAt: -1 });
 
         return res.status(200).json({
+            success: true,
             message: "Search Success",
             data: encryptData(receipts),
         });
 
     } catch (err) {
         logger.error("SearchReceipt Error", err);
-        return res.status(500).json({ message: "SERVER ERROR" });
+                return res.status(500).json({ success: false, message: "SERVER ERROR" });
+
     }
 };
 

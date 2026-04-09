@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"http://[IP_ADDRESS]/acade360/about/\")",
+      "Bash(node:*)"
+    ]
+  }
+}

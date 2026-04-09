@@ -12,7 +12,8 @@ const AddInventory = async (req, res) => {
         logger.info('Adding New Inventory Request Received');
         const result = await validateAdminRequest(req, res);
         if (result.error) {
-            return res.status(result.status).json({ message: result.message });
+                        return res.status(result.status).json({ success: false, message: result.message });
+
         }
         let decryptedData;
         try {
@@ -37,7 +38,8 @@ const AddInventory = async (req, res) => {
         await adt.save()
         logger.info(`New Inventory Created Successfully - ${name} added successfully`)
 
-        return res.status(200).json({message:'Inventory Created Successfully'});
+                return res.status(200).json({ success: true, message:'Inventory Created Successfully', data: null });
+
     } catch (err){
         logger.error(`AddInventory Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -69,7 +71,8 @@ const RemoveInventory = async (req, res) => {
         adt.active=false;
         adt.delete=true;
         await adt.save();
-        return res.status(200).json({message:'Inventory Removed Successfully'});
+                return res.status(200).json({ success: true, message:'Inventory Removed Successfully', data: null });
+
     } catch (err){
         logger.error(`RemoveInventory Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -119,7 +122,8 @@ const EditInventory = async (req, res) => {
         await adt.save()
         logger.info(`Inventory Edit Successful`)
 
-        return res.status(200).json({message:'Inventory Edited Successfully'});
+                return res.status(200).json({ success: true, message:'Inventory Edited Successfully', data: null });
+
     } catch (err){
         logger.error(`EditInventory Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -199,7 +203,8 @@ const AllotInventory = async (req, res) => {
 
         logger.info(`New Inventory Created Successfully - ${name} added successfully`)
 
-        return res.status(200).json({message:'Inventory Created Successfully'});
+                return res.status(200).json({ success: true, message:'Inventory Created Successfully', data: null });
+
     } catch (err){
         logger.error(`AddInventory Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -238,7 +243,8 @@ const AddQtyToInventory = async (req, res) => {
             await adt.save()
         }
 
-        return res.status(200).json({message:'Inventory Qty Updated Successfully'});
+                return res.status(200).json({ success: true, message:'Inventory Qty Updated Successfully', data: null });
+
     } catch (err){
         logger.error(`AddQtyToInventory Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -269,7 +275,8 @@ const FetchAllInventory = async (req, res) => {
         }
 
         const dt = await AcademyInventory.find({academy_id:acad._id,delete:false})
-        return res.status(200).json({message:'Inventory Fetched Successfully',data:encryptData(dt)});
+                return res.status(200).json({ success: true, message:'Inventory Fetched Successfully', data:encryptData(dt) });
+
     } catch (err){
         logger.error(`FetchAllInventory Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -300,7 +307,8 @@ const FetchInventory = async (req, res) => {
         }
         logger.info("Inventory Fetched Successfully");
         const dt = await AcademyInventory.find({academy_id:acad._id,active:true,delete:false})
-        return res.status(200).json({message:'Inventory Fetched Successfully',data:encryptData(dt)});
+                return res.status(200).json({ success: true, message:'Inventory Fetched Successfully', data:encryptData(dt) });
+
     } catch (err){
         logger.error(`FetchInventory Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -331,8 +339,8 @@ const GetInventory = async (req, res) => {
         }
 
         const allot_dt = await InventoryAllotment.find({inventory:dt._id}).populate('academy_id').populate('inventory')
-        return res.status(200).json({message:'Inventory Fetched Successfully'
-            ,data:encryptData(dt),data1:encryptData(allot_dt)});
+        return res.status(200).json({ success: true, message:'Inventory Fetched Successfully', data: { inventory: encryptData(dt), allotments: encryptData(allot_dt) } });
+
     } catch (err){
         logger.error(`GetInventory Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})

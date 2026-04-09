@@ -37,7 +37,8 @@ const AddGround = async (req, res) => {
         logger.info('Adding New Ground Request Received');
         const result = await validateAdminRequestPost(req, res);
         if (result.error) {
-          return res.status(result.status).json({ message: result.message });
+                    return res.status(result.status).json({ success: false, message: result.message });
+
         }
 
         // 2) Decrypt payload
@@ -47,7 +48,8 @@ const AddGround = async (req, res) => {
           decryptedData = decryptData(fixedCipher);
         } catch (error) {
           logger.error(`Decryption failed: ${error.message}`);
-          return res.status(400).json({ message: "Invalid data" });
+                    return res.status(400).json({ success: false, message: "Invalid data" });
+
         }
         const { name,description } = decryptedData
         const images_old = Array.isArray(req.files?.images) ? req.files.images.map(f => f.filename) : [];
@@ -60,7 +62,8 @@ const AddGround = async (req, res) => {
         await adt.save()
         logger.info(`New Ground Created Successfully - ${name} added successfully`)
 
-        return res.status(200).json({message:'Ground Created Successfully'});
+                return res.status(200).json({ success: true, message:'Ground Created Successfully', data: null });
+
     } catch (err){
         logger.error(`AddGround Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -76,7 +79,8 @@ const ViewGround = async (req, res) => {
         }
         const dt = await Ground.find({active:true,delete:false});
         logger.info("Ground Fetched and Sent Successfully")
-        return res.status(200).json({message:'Ground Fetched Successfully',data:encryptData(dt)});
+                return res.status(200).json({ success: true, message:'Ground Fetched Successfully', data:encryptData(dt) });
+
     } catch (err){
         logger.error(`ViewAcademy Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -92,7 +96,8 @@ const ViewAllGround = async (req, res) => {
         }
         const dt = await Ground.find({delete:false});
         logger.info("Ground Fetched and Sent Successfully")
-        return res.status(200).json({message:'Ground Fetched Successfully',data:encryptData(dt)});
+                return res.status(200).json({ success: true, message:'Ground Fetched Successfully', data:encryptData(dt) });
+
     } catch (err){
         logger.error(`ViewAcademy Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})
@@ -169,7 +174,8 @@ const EditGround = async (req, res) => {
 
     logger.info(`Ground Updated Successfully - ${name}`);
 
-    return res.status(200).json({ message: "Ground Updated Successfully" });
+        return res.status(200).json({ success: true, message: "Ground Updated Successfully", data: null });
+
   } catch (err) {
     logger.error("EditGround Error: " + err);
     return res.status(500).json({ message: "SERVER ERROR" });
@@ -201,7 +207,8 @@ const DeleteGround = async (req, res) => {
         adt.delete = true;
         await adt.save();
         logger.info(`Successfully Deleted ${adt.name}`)
-        return res.status(200).json({message:`Ground Deleted Successfully : ${adt.name}`})
+                return res.status(200).json({ success: true, message:`Ground Deleted Successfully : ${adt.name}`, data: null })
+
     } catch (err){
         logger.error(`DeleteGround Error : ${err}`);
         return res.status(500).json({message:'SERVER ERROR'})

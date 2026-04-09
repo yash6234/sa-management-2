@@ -43,12 +43,37 @@ const validateManagerRequest = async (req, res) => {
         }
 
         // Decrypt incoming data
+        let encryptedRaw = req.params.data || req.query.data || req.headers['x-manager-data'] || req.headers['x-encrypted-payload'];
+
+        if (!encryptedRaw) {
+            logger.warn("Missing manager validation data");
+            return { error: true, status: 401, message: "Authentication data missing" };
+        }
+
         let newData, decryptedData;
         try {
-            decryptedData = decryptData(req.params.data);
-            newData = decryptData(decryptedData.data);
+            // Fix URL encoding issues: Express converts '+' to ' ' in query/params
+            const normalized = decodeURIComponent(encryptedRaw.trim()).replace(/ /g, '+');
+            
+            // Layer 1
+            decryptedData = decryptData(normalized);
+            
+            if (!decryptedData) {
+                throw new Error("First layer decryption returned null");
+            }
+
+            // Layer 2: Some requests wrap the inner token in a 'data' field, others don't.
+            if (decryptedData.data && typeof decryptedData.data === 'string') {
+                const normalizedInner = decodeURIComponent(decryptedData.data.trim()).replace(/ /g, '+');
+                newData = decryptData(normalizedInner);
+                if (!newData) throw new Error("Second layer decryption failed");
+            } else {
+                // If it's already the credential object, just use it
+                newData = decryptedData;
+            }
+
         } catch (error) {
-            logger.error(`Decryption failed: ${error.message}`);
+            logger.error(`Decryption failed: ${error.message} for URL: ${req.originalUrl}`);
             return { error: true, status: 400, message: "Invalid data" };
         }
 
@@ -133,21 +158,34 @@ const validateManagerRequestPost = async (req, res) => {
 
         // Decrypt incoming data
         let newData, decryptedData;
-        console.log(req.body)
+
         try {
             decryptedData = req.body.data;
-            console.log(decryptedData)
-
+            if (!decryptedData) {
+                throw new Error("Missing encrypted body data");
+            }
         } catch (error) {
             logger.error(`Decryption failed1: ${error.message}`);
             return { error: true, status: 400, message: "Invalid data" };
         }
+
         try {
-            newData =decryptData(decryptedData);
-            console.log(newData)
+            const normalized = decodeURIComponent(decryptedData.toString().trim()).replace(/ /g, '+');
+            const decrypted = decryptData(normalized);
+            
+            if (!decrypted) throw new Error("First layer decryption failed");
+
+            // Handle optional inner wrapping
+            if (decrypted.data && typeof decrypted.data === 'string') {
+                const normalizedInner = decodeURIComponent(decrypted.data.trim()).replace(/ /g, '+');
+                newData = decryptData(normalizedInner);
+                if (!newData) throw new Error("Second layer decryption failed");
+            } else {
+                newData = decrypted;
+            }
 
         } catch (error) {
-            logger.error(`Decryption failed2: ${error.message}`);
+            logger.error(`Decryption error in POST: ${error.message} for URL: ${req.originalUrl}`);
             return { error: true, status: 400, message: "Invalid data" };
         }
 
