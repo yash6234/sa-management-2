@@ -25,7 +25,7 @@ const AddGroundPlan = async (req, res) => {
 
         const acad = await Ground.findById(ground_id);
         if (!acad) {
-            logger.error(`Ground Not Found With this ID : ${ground_id}`);
+            logger.error(`Ground Not Found Wzzith this ID : ${ground_id}`);
             return res.status(404).json({ message: "Ground not found" });
         }
 

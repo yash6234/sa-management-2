@@ -100,11 +100,9 @@ exports.getAdmissionsData = async (req, res) => {
 exports.getSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const admissions = await getActiveAdmissions();
@@ -130,11 +128,9 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const admissions = await getActiveAdmissions();
@@ -192,11 +188,9 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const admissions = await getActiveAdmissions();
@@ -257,11 +251,9 @@ exports.submitAdmissionEnquiry = async (req, res) => {
 exports.getAllSubmissions = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const submissions = await AdmissionSubmission.find().sort({ createdAt: -1 });
@@ -292,11 +284,9 @@ exports.updateSubmissionStatus = async (req, res) => {
 exports.deleteSubmission = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const submission = await AdmissionSubmission.findByIdAndDelete(req.params.id);

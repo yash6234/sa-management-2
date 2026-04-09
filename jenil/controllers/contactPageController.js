@@ -110,11 +110,9 @@ exports.submitContactMessage = async (req, res) => {
 exports.getSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const contact = await getActiveContact();
@@ -216,11 +214,9 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const contact = await getActiveContact();
@@ -246,11 +242,9 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 exports.getAllSubmissions = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const submissions = await ContactSubmission.find().sort({ createdAt: -1 });
@@ -263,11 +257,9 @@ exports.getAllSubmissions = async (req, res) => {
 exports.updateSubmissionStatus = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const submission = await ContactSubmission.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -281,11 +273,9 @@ exports.updateSubmissionStatus = async (req, res) => {
 exports.deleteSubmission = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const submission = await ContactSubmission.findByIdAndDelete(req.params.id);

@@ -167,11 +167,9 @@ exports.getProgramsData = async (req, res) => {
 exports.getLevels = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -191,11 +189,9 @@ exports.getLevels = async (req, res) => {
 exports.getSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -221,11 +217,9 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -284,11 +278,9 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -305,11 +297,9 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -418,11 +408,9 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -475,11 +463,9 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 exports.deleteArrayItem = (arrayPath) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -524,11 +510,9 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 exports.getLevelById = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -543,11 +527,9 @@ exports.getLevelById = async (req, res) => {
 exports.addLevel = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -582,11 +564,9 @@ exports.addLevel = async (req, res) => {
 exports.updateLevel = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -611,11 +591,9 @@ exports.updateLevel = async (req, res) => {
 exports.deleteLevel = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -635,11 +613,9 @@ exports.deleteLevel = async (req, res) => {
 exports.addFeature = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -665,11 +641,9 @@ exports.addFeature = async (req, res) => {
 exports.updateFeature = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();
@@ -693,11 +667,9 @@ exports.updateFeature = async (req, res) => {
 exports.deleteFeature = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const programs = await getActivePrograms();

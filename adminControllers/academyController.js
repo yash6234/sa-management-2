@@ -1,4 +1,4 @@
-        const Academy = require("../models/Academy");
+const Academy = require("../models/Academy");
 const { encryptData, decryptData ,logger} = require("../utils/enc_dec_admin");
 const {validateAdminRequest} = require("../middlewares/adminValidation");
 const SportsAcademy = require("../models/SportsAcademy");

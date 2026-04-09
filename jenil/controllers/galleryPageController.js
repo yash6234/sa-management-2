@@ -161,11 +161,9 @@ exports.getGalleryData = async (req, res) => {
 exports.getSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const gallery = await getActiveGallery();
@@ -194,11 +192,9 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const gallery = await getActiveGallery();
@@ -274,11 +270,9 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.addGalleryGridItem = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const gallery = await getActiveGallery();
@@ -467,11 +461,9 @@ exports.addGalleryGridItem = async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const gallery = await getActiveGallery();
@@ -495,11 +487,9 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const gallery = await getActiveGallery();
@@ -608,11 +598,9 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const gallery = await getActiveGallery();
@@ -666,11 +654,9 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 exports.deleteArrayItem = (arrayPath) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data;
+            const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
         const gallery = await getActiveGallery();
