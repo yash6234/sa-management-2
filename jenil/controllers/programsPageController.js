@@ -102,12 +102,12 @@ const normalizePaths = (obj) => {
 
 const processImageFields = (data) => {
     const imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo', 'icon', 'photo', 'avatar', 'src'];
-    
+
     // Recursively process arrays
     if (Array.isArray(data)) {
         return data.map(item => processImageFields(item));
     }
-    
+
     // Recursively process objects
     if (data !== null && typeof data === 'object') {
         for (const key in data) {
@@ -125,14 +125,14 @@ const processImageFields = (data) => {
         }
         return data;
     }
-    
+
     return data;
 };
 
 const getActivePrograms = async () => {
     let programs = await ProgramsPage.findOne({ isActive: true }).sort({ updatedAt: -1, createdAt: -1, _id: -1 });
     if (!programs) {
-        programs = await ProgramsPage.create({ isActive: true, levels: [] });
+        programs = await ProgramsPage.create({ isActive: true });
     }
 
     // Ensure levels is an array
@@ -166,20 +166,20 @@ exports.getProgramsData = async (req, res) => {
 // Convenience endpoint: returns all level cards in one response (ordered)
 exports.getLevels = async (req, res) => {
     try {
-        try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
-            }
-        } catch (e) { }
+        // try {
+        //     const encryptedData = req.params.data || req.body.data || req.query.data;
+        //     if (encryptedData) {
+        //         const decryptedData = decryptData(encryptedData);
+        //     }
+        // } catch (e) { }
         const programs = await getActivePrograms();
-        const levels = programs.levels || [];
+        const levels = programs.levels;
 
         // Order by key: beginner, intermediate, advanced, camp
         const orderMap = { beginner: 0, intermediate: 1, advanced: 2, camp: 3 };
         const sortedLevels = [...levels].sort((a, b) => (orderMap[a.key] || 99) - (orderMap[b.key] || 99));
 
-        res.status(200).json({ success: true, data: { list: sortedLevels, levels: sortedLevels } });
+        res.status(200).json({ success: true, data: { levels: sortedLevels } });
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
@@ -206,7 +206,7 @@ exports.getSection = (sectionName) => async (req, res) => {
         }
 
         if (target === undefined) {
-             return res.status(404).json({ success: false, message: 'Section not found' });
+            return res.status(404).json({ success: false, message: 'Section not found' });
         }
         res.status(200).json({ success: true, data: target });
     } catch (err) {
@@ -323,7 +323,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             if (!obj || typeof obj !== 'object' || typeof dotPath !== 'string') return undefined;
             return dotPath.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
         };
-        
+
         let payload = normalizePaths(req.body);
         payload = processImageFields(payload);
 
@@ -336,7 +336,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
                 setNested(payload, file.fieldname, file.filename);
             });
         }
-        
+
         payload.list = parseJsonIfLikely(payload.list);
         payload.items = parseJsonIfLikely(payload.items);
         payload.item = parseJsonIfLikely(payload.item);
@@ -352,7 +352,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         if (directItems !== undefined) {
             itemsToAdd = directItems;
         } else if (lastPartItems !== undefined) {
-             itemsToAdd = lastPartItems;
+            itemsToAdd = lastPartItems;
         } else if (payload.list !== undefined) {
             itemsToAdd = payload.list;
         } else if (payload.items !== undefined) {
@@ -372,7 +372,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             const candidates = ['value', 'text', 'feature', 'features', 'label', 'name', 'title', 'image', 'url', 'src', 'path', 'item'];
             for (const key of candidates) {
                 if (typeof item[key] === 'string') return item[key];
-                 if (Array.isArray(item[key]) && item[key].length === 1 && typeof item[key][0] === 'string') return item[key][0];
+                if (Array.isArray(item[key]) && item[key].length === 1 && typeof item[key][0] === 'string') return item[key][0];
             }
             const stringValues = Object.values(item).filter((v) => typeof v === 'string');
             if (stringValues.length === 1) return stringValues[0];
@@ -419,10 +419,10 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         for (const part of parts) {
             targetArray = targetArray[part];
         }
-        
+
         const item = targetArray.id(req.params.itemId);
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
-        
+
         const index = targetArray.indexOf(item);
         const itemPath = `${arrayPath}.${index}`;
 
@@ -438,7 +438,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
                 setNested(updateData, file.fieldname, file.filename);
             });
         }
-        
+
         const applyItemUpdate = (prefix, data) => {
             for (const key in data) {
                 const value = data[key];
@@ -485,7 +485,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
                     if (!isNaN(index) && index >= 0 && index < targetArray.length) {
                         targetArray.splice(index, 1);
                     } else {
-                         return res.status(404).json({ success: false, message: 'Item not found' });
+                        return res.status(404).json({ success: false, message: 'Item not found' });
                     }
                 }
             } else {

@@ -6,7 +6,7 @@ const User = require("../../models/Admin");
 
 const validateAdminRequest = async (req, res) => {
     try {
-        logger.info("Admin request validation started (Jenil Module)");
+        // logger.info("Admin request validation started (Jenil Module)");
 
         const hdt = await Hostel.findById(process.env.sport_sacademy_id);
         if (!hdt) {

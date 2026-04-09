@@ -1,7 +1,7 @@
 const Home = require('../models/Home');
 const { saveBase64Image } = require('../utils/fileUtils');
 const { decryptData: decryptCryptoJS } = require('../utils/encryption');
-const { logger, decryptData, encryptData } = require("../../utils/enc_dec_admin");
+const { logger, decryptData, encryptData } = require("../../utils/enc_dec_c");
 
 const parseJsonIfLikely = (value) => {
     if (typeof value !== 'string' || value === '') return value;
@@ -411,7 +411,7 @@ exports.getSection = (sectionName) => async (req, res) => {
             data2: encryptData(Date.now())
         });
     } catch (err) {
-        console.log("ERROR----------------------",err)
+        console.log("ERROR----------------------", err)
         res.status(500).json({ success: false, error: err.message });
     }
 };
