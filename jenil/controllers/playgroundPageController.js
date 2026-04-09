@@ -99,9 +99,14 @@ exports.getPlaygroundData = async (req, res) => {
 // 2. ADMIN SECTION-WISE ENDPOINTS
 exports.getSection = (sectionName) => async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const playground = await getActivePlayground();
         let target = playground;
         if (sectionName.includes('.')) {
@@ -124,9 +129,14 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const playground = await getActivePlayground();
         const updateData = {};
 
@@ -185,9 +195,14 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const playground = await getActivePlayground();
         if (sectionName.includes('.')) {
             const parts = sectionName.split('.');
@@ -220,9 +235,14 @@ exports.submitBooking = async (req, res) => {
 // 4. ADMIN BOOKING MANAGEMENT
 exports.getAllBookings = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const bookings = await PlaygroundBooking.find().sort({ createdAt: -1 });
         res.status(200).json({ success: true, data: bookings });
     } catch (err) {

@@ -201,19 +201,19 @@ const processImageFields = (data) => {
         for (const key in result) {
             if (result.hasOwnProperty(key)) {
                 const value = result[key];
-                
+
                 // 1. Handle base64 images
                 if (imageFields.includes(key) && typeof value === 'string' && value.startsWith('data:image')) {
                     const savedPath = saveBase64Image(value);
                     if (savedPath) result[key] = savedPath;
-                } 
+                }
                 // 2. Handle CryptoJS encrypted paths (starts with 'U2FsdGVkX1')
                 else if (typeof value === 'string' && value.startsWith('U2FsdGVkX1')) {
                     console.log(`[HomeController] Attempting to decrypt field: ${key}`);
                     try {
                         // Try COMMON secret first (Jenil CMS standard)
                         let decrypted = decryptCryptoJS(value);
-                        
+
                         // If it failed, try the ROOT ADMIN secret (fallback)
                         if (!decrypted && process.env.ENCRYPTION_SECRET) {
                             const CryptoJS = require('crypto-js');
@@ -287,7 +287,7 @@ const Footer = require('../models/Footer');
 exports.getFooterData = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -306,7 +306,7 @@ exports.getFooterData = async (req, res) => {
 exports.updateFooter = async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -330,7 +330,7 @@ exports.updateFooter = async (req, res) => {
 exports.getSection = (sectionName) => async (req, res) => {
     try {
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
+            const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
                 const decryptedData = decryptData(encryptedData);
@@ -381,10 +381,10 @@ exports.getSection = (sectionName) => async (req, res) => {
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
         logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        const decryptedData = decryptData(req.params.data);
         logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const home = await getActiveHome();
-        
+
         // 0. Build base payload from req.body, but parse every field in case of stringified JSON
         const rawPayload = {};
         for (const [key, val] of Object.entries(req.body || {})) {
@@ -452,7 +452,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
         for (let [path, value] of Object.entries(flattenedUpdates)) {
             path = normalizeDuplicatedSectionPrefix(sectionName, path);
             path = normalizeHeroBackgroundPath(sectionName, path);
-            
+
             // Clean/Transform values and RECONCILE IDs with current doc
             value = transformSchemaMismatches(path, value, home);
 
@@ -475,7 +475,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
         logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+        const decryptedData = decryptData(req.params.data);
         logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
         const home = await getActiveHome();
         home.set(sectionName, undefined);

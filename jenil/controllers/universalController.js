@@ -16,9 +16,14 @@ const getModel = (modelName) => {
 
 exports.create = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const Model = getModel(req.params.modelName);
         if (!Model) return res.status(404).json({ error: 'Model not found' });
         
@@ -35,9 +40,14 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const Model = getModel(req.params.modelName);
         if (!Model) return res.status(404).json({ error: 'Model not found' });
         
@@ -50,9 +60,14 @@ exports.getAll = async (req, res) => {
 
 exports.getById = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const Model = getModel(req.params.modelName);
         if (!Model) return res.status(404).json({ error: 'Model not found' });
         
@@ -66,9 +81,14 @@ exports.getById = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const Model = getModel(req.params.modelName);
         if (!Model) return res.status(404).json({ error: 'Model not found' });
         
@@ -85,9 +105,14 @@ exports.update = async (req, res) => {
 
 exports.delete = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const Model = getModel(req.params.modelName);
         if (!Model) return res.status(404).json({ error: 'Model not found' });
         

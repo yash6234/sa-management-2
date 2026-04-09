@@ -69,9 +69,14 @@ const formatName = (str) => {
 
 exports.getPageDataSectionWise = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         // Validation handled by middlewareAdmin
 
         // 2. Extract pageName from query params
@@ -131,9 +136,14 @@ exports.getPageDataSectionWise = async (req, res) => {
 
 exports.getAvailablePages = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         // Validation handled by middlewareAdmin
 
         const pages = Object.keys(models).map(key => ({
@@ -167,9 +177,14 @@ const getUploadedFiles = (req) => {
 
 exports.updatePageSection = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.body.data || req.params.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         // Validation handled by middlewareAdminPost
 
         // 2. Extract context from body
@@ -310,9 +325,14 @@ const processImageFields = (data, imageFields = ['image', 'backgroundImage', 'ma
 
 exports.deletePageSection = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.query.data || req.params.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         // Validation handled by middlewareAdminPost
 
         // 2. Extract pageName and sectionId from query params

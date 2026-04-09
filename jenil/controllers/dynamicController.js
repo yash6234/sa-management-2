@@ -51,9 +51,14 @@ exports.dispatchedHandler = async (req, res, next) => {
 
 exports.updateDynamic = async (req, res, next) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         // The path captured manually from req.path (stripped of mount prefix)
         const { page } = req.params;
         const rawPath = req.path || "";
@@ -139,9 +144,14 @@ exports.updateDynamic = async (req, res, next) => {
 
 exports.getDynamic = async (req, res, next) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const { page } = req.params;
         const rawPath = req.path || "";
 

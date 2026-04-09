@@ -213,11 +213,7 @@ const Login = async (req, res) => {
         // sendOtpEmail(user.email,user.name, otp);
 
         logger.info(`User Verified and OTP Sent to Admin User on ${user.email} and OTP : ${user.otp}`);
-<<<<<<< HEAD
-        res.status(200).json({ success: true, message: "OTP Sent Successfully", data: encryptData("User_Authenticated_And_OTP_Sent"), data1: encryptData(user.email), data2: encryptData(user._id) });
-=======
-                res.status(200).json({ success: true, message: "OTP Sent Successfully", data: { status: encryptData("User_Authenticated_And_OTP_Sent"), email: encryptData(user.email), id: encryptData(user._id) } });
->>>>>>> be8e5e7921b98202f394f877504d8c33a5244bc8
+        res.status(200).json({ success: true, message: "OTP Sent Successfully", data: { status: encryptData("User_Authenticated_And_OTP_Sent"), email: encryptData(user.email), id: encryptData(user._id) } });
 
         logger.info("Login Completed Successfully")
     } catch (error) {
@@ -269,11 +265,7 @@ const LoginApp = async (req, res) => {
         // sendOtpEmail(user.email,user.name, otp);
 
         logger.info(`User Verified and OTP Sent to Admin User on ${user.email} and OTP : ${user.otp}`);
-<<<<<<< HEAD
         res.status(200).json({ success: true, message: "OTP Sent Successfully", data: { status: encryptData("User_Authenticated_And_OTP_Sent"), email: encryptData(user.email), id: encryptData(user._id) } });
-=======
-                res.status(200).json({ success: true, message: "OTP Sent Successfully", data: { status: encryptData("User_Authenticated_And_OTP_Sent"), email: encryptData(user.email), id: encryptData(user._id) } });
->>>>>>> be8e5e7921b98202f394f877504d8c33a5244bc8
 
         logger.info("Login Completed Successfully")
     } catch (error) {

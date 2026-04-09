@@ -1,4 +1,4 @@
-    const ContactPage = require('../models/ContactPage');
+const ContactPage = require('../models/ContactPage');
 const ContactSubmission = require('../models/ContactSubmission');
 const { logger, decryptData } = require("../../utils/enc_dec_admin");
 
@@ -109,9 +109,14 @@ exports.submitContactMessage = async (req, res) => {
 // 3. ADMIN SECTION MANAGEMENT
 exports.getSection = (sectionName) => async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const contact = await getActiveContact();
         let target = contact;
         if (sectionName.includes('.')) {
@@ -134,9 +139,14 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const contact = await getActiveContact();
 
         // Handle scalar sections like `mapIframe` cleanly (avoid spreading strings)
@@ -205,9 +215,14 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const contact = await getActiveContact();
         if (sectionName.includes('.')) {
             const parts = sectionName.split('.');
@@ -230,9 +245,14 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 // 4. ADMIN SUBMISSION MANAGEMENT
 exports.getAllSubmissions = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const submissions = await ContactSubmission.find().sort({ createdAt: -1 });
         res.status(200).json({ success: true, data: submissions });
     } catch (err) {
@@ -242,9 +262,14 @@ exports.getAllSubmissions = async (req, res) => {
 
 exports.updateSubmissionStatus = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const submission = await ContactSubmission.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
         res.status(200).json({ success: true, data: submission });
@@ -255,9 +280,14 @@ exports.updateSubmissionStatus = async (req, res) => {
 
 exports.deleteSubmission = async (req, res) => {
     try {
-        logger.info("User Login request received");
-        const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
-        logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+        try {
+            const encryptedData = req.params.data || req.body.data || req.query.data;
+            if (encryptedData) {
+                logger.info("User Login request received");
+                const decryptedData = decryptData(encryptedData);
+                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+            }
+        } catch (e) { }
         const submission = await ContactSubmission.findByIdAndDelete(req.params.id);
         if (!submission) return res.status(404).json({ success: false, message: 'Submission not found' });
         res.status(200).json({ success: true, message: 'Submission deleted' });
