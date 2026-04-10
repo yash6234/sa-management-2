@@ -40,9 +40,9 @@ router.get('/home/programs-facilities/:data', middlewareAdmin, homeController.ge
 router.post('/home/programs-facilities/add', upload.any(), middlewareAdminPost, standardizeFilePath, homeController.updateSection('programsAndFacilities'));
 router.put('/home/programs-facilities/update', upload.any(), middlewareAdminPost, standardizeFilePath, homeController.updateSection('programsAndFacilities'));
 router.delete('/home/programs-facilities/delete', middlewareAdminPost, homeController.deleteSection('programsAndFacilities'));
-router.post('/home/programs-facilities/features/add', upload.any(), middlewareAdminPost, standardizeFilePath, homeController.addArrayItem('programsAndFacilities.facilitiesCard.features'));
-router.put('/home/programs-facilities/features/:itemId', upload.any(), middlewareAdminPost, standardizeFilePath, homeController.updateArrayItem('programsAndFacilities.facilitiesCard.features'));
-router.delete('/home/programs-facilities/features/:itemId', middlewareAdminPost, homeController.deleteArrayItem('programsAndFacilities.facilitiesCard.features'));
+router.post('/home/programs-facilities/facilities/features/add', upload.any(), middlewareAdminPost, standardizeFilePath, homeController.addArrayItem('programsAndFacilities.facilitiesCard.features'));
+router.put('/home/programs-facilities/facilities/features/:itemId', upload.any(), middlewareAdminPost, standardizeFilePath, homeController.updateArrayItem('programsAndFacilities.facilitiesCard.features'));
+router.delete('/home/programs-facilities/facilities/features/:itemId', middlewareAdminPost, homeController.deleteArrayItem('programsAndFacilities.facilitiesCard.features'));
 
 router.get('/home/tournaments/:data', middlewareAdmin, homeController.getSection('tournamentsSection'));
 router.post('/home/tournaments/add', upload.any(), middlewareAdminPost, standardizeFilePath, homeController.updateSection('tournamentsSection'));

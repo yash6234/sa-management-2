@@ -535,28 +535,20 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
         if (arrayPath === 'testimonials.list') {
             for (const item of itemsToAdd) {
-                if (typeof item.quote !== 'string' || !item.quote.trim()) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Each testimonial must include a valid quote'
-                    });
-                }
-                if (typeof item.parentName !== 'string' || !item.parentName.trim()) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Each testimonial must include a valid parentName'
-                    });
-                }
-                if (typeof item.relation !== 'string' || !item.relation.trim()) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Each testimonial must include a valid relation'
-                    });
-                }
+                if (typeof item.quote === 'string') item.quote = item.quote.trim();
+                if (typeof item.parentName === 'string') item.parentName = item.parentName.trim();
+                if (typeof item.relation === 'string') item.relation = item.relation.trim();
 
-                item.quote = item.quote.trim();
-                item.parentName = item.parentName.trim();
-                item.relation = item.relation.trim();
+                const quote = item.quote || '';
+                const parentName = item.parentName || '';
+                const relation = item.relation || '';
+
+                if (!quote || !parentName || !relation) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Each testimonial must include quote, parentName, and relation'
+                    });
+                }
             }
         }
 
@@ -637,6 +629,28 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
             });
         }
         updateData = processImageFields(updateData);
+
+        // Validate updates for testimonials
+        if (arrayPath === 'testimonials.list') {
+            if (updateData.quote !== undefined && (typeof updateData.quote !== 'string' || !updateData.quote.trim())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Quote must be a valid non-empty string'
+                });
+            }
+            if (updateData.parentName !== undefined && (typeof updateData.parentName !== 'string' || !updateData.parentName.trim())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Parent name must be a valid non-empty string'
+                });
+            }
+            if (updateData.relation !== undefined && (typeof updateData.relation !== 'string' || !updateData.relation.trim())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Relation must be a valid non-empty string'
+                });
+            }
+        }
 
         // Deep update the item
         const applyItemUpdate = (prefix, data) => {
