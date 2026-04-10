@@ -91,11 +91,18 @@ const resolveAndServe = (relativePath, res, next) => {
     // Try each candidate
     for (const candidate of candidates) {
         if (fs.existsSync(candidate)) {
-            return streamFile(candidate, res);
+            try {
+                const stats = fs.statSync(candidate);
+                if (stats.isFile()) {
+                    return streamFile(candidate, res);
+                }
+            } catch (err) {
+                // Ignore stat errors and move to next candidate
+            }
         }
     }
 
-    console.warn(`[ImageController] File not found: ${relativePath}. Checked candidates: ${candidates.join(', ')}`);
+    console.warn(`[ImageController] File not found: ${relativePath}`);
     if (next) return next();
     res.status(404).json({ success: false, error: 'File not found' });
 };
@@ -108,7 +115,14 @@ const streamFile = (filePath, res) => {
     res.setHeader('Content-Type', MEDIA_MIME[ext] || 'application/octet-stream');
     const stats = fs.statSync(filePath);
     res.setHeader('Content-Length', stats.size);
-    return fs.createReadStream(filePath).pipe(res);
+    const readStream = fs.createReadStream(filePath);
+    readStream.on('error', (err) => {
+        console.error(`[ImageController] Error streaming file ${filePath}:`, err.message);
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, error: 'Error reading file' });
+        }
+    });
+    return readStream.pipe(res);
 }
 
 module.exports = { serveImage };

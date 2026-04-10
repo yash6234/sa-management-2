@@ -10,6 +10,7 @@ const ContactPage = require('../models/ContactPage');
 const Footer = require('../models/Footer');
 
 const { logger, decryptData } = require("../../utils/enc_dec_c");
+const { decryptImageUrl } = require('../utils/imageToken');
 
 const models = {
     home: Home,
@@ -220,56 +221,6 @@ exports.updatePageSection = async (req, res) => {
             setNested(updateData, file.fieldname, file.filename);
         }
 
-        // 5. Flatten and Apply to Mongoose
-const processImageFields = (data, imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo', 'icon', 'photo', 'avatar', 'src', 'banner']) => {
-    if (data !== null && typeof data === 'object') {
-        const result = { ...data };
-        for (const key in result) {
-            if (result.hasOwnProperty(key)) {
-                const value = result[key];
-                
-                // 1. Handle base64 images
-                if (imageFields.includes(key) && typeof value === 'string' && value.startsWith('data:image')) {
-                    const savedPath = saveBase64Image(value);
-                    if (savedPath) result[key] = savedPath;
-                } 
-                // 2. Handle CryptoJS encrypted paths (starts with 'U2FsdGVkX1')
-                else if (typeof value === 'string' && value.startsWith('U2FsdGVkX1')) {
-                    try {
-                        let decrypted = decryptCryptoJS(value);
-                        
-                        // Fallback to ROOT secret
-                        if (!decrypted && process.env.ENCRYPTION_SECRET) {
-                            const CryptoJS = require('crypto-js');
-                            try {
-                                const bytes = CryptoJS.AES.decrypt(value, process.env.ENCRYPTION_SECRET);
-                                const raw = bytes.toString(CryptoJS.enc.Utf8);
-                                if (raw) {
-                                    try { decrypted = JSON.parse(raw); } catch { decrypted = raw; }
-                                }
-                            } catch (e) { }
-                        }
-
-                        if (decrypted) {
-                            if (typeof decrypted === 'string') {
-                                result[key] = decrypted;
-                            } else if (decrypted && typeof decrypted === 'object') {
-                                result[key] = decrypted.url || decrypted.path || decrypted.filename || value;
-                            }
-                        }
-                    } catch (err) { }
-                }
-                // 3. Recurse
-                else if (typeof value === 'object' && value !== null) {
-                    result[key] = processImageFields(value, imageFields);
-                }
-            }
-        }
-        return result;
-    }
-    return data;
-};
-
         const processedData = processImageFields(updateData);
 
         const flattenObject = (obj, prefix = '') => {
@@ -323,6 +274,51 @@ const processImageFields = (data, imageFields = ['image', 'backgroundImage', 'ma
     }
 };
 
+// --- Utilities ---
+const processImageFields = (data, imageFields = ['image', 'backgroundImage', 'mainImage', 'thumbnail', 'logo', 'icon', 'photo', 'avatar', 'src', 'banner']) => {
+    if (data !== null && typeof data === 'object') {
+        const result = { ...data };
+        for (const key in result) {
+            if (result.hasOwnProperty(key)) {
+                const value = result[key];
+                
+                // 1. Handle base64 images
+                if (imageFields.includes(key) && typeof value === 'string' && value.startsWith('data:image')) {
+                    const savedPath = saveBase64Image(value);
+                    if (savedPath) result[key] = savedPath;
+                } 
+                // 2. Handle Image Tokens
+                else if (typeof value === 'string' && /^[0-9a-f]{32}\.[0-9a-f]+\.[a-z0-9]+$/i.test(value)) {
+                    const decrypted = decryptImageUrl(value);
+                    if (decrypted) result[key] = decrypted;
+                }
+                // 3. Handle CryptoJS encrypted paths
+                else if (typeof value === 'string' && value.startsWith('U2FsdGVkX1')) {
+                    try {
+                        let decrypted = decryptCryptoJS(value);
+                        if (!decrypted && process.env.ENCRYPTION_SECRET) {
+                            const CryptoJS = require('crypto-js');
+                            const bytes = CryptoJS.AES.decrypt(value, process.env.ENCRYPTION_SECRET);
+                            const raw = bytes.toString(CryptoJS.enc.Utf8);
+                            if (raw) try { decrypted = JSON.parse(raw); } catch { decrypted = raw; }
+                        }
+                        if (decrypted) {
+                            if (typeof decrypted === 'string') result[key] = decrypted;
+                            else if (decrypted && typeof decrypted === 'object') result[key] = decrypted.url || decrypted.path || decrypted.filename || value;
+                        }
+                    } catch (err) { }
+                }
+                // 4. Recurse
+                else if (typeof value === 'object' && value !== null) {
+                    result[key] = processImageFields(value, imageFields);
+                }
+            }
+        }
+        return result;
+    }
+    return data;
+};
+
 exports.deletePageSection = async (req, res) => {
     try {
         try {
@@ -361,4 +357,4 @@ exports.deletePageSection = async (req, res) => {
         logger.error(`Error in deletePageSection: ${err.message}`);
         res.status(500).json({ success: false, error: err.message });
     }
-};
+}

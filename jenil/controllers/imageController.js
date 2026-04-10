@@ -56,20 +56,20 @@ const resolveAndServe = (relativePath, res, next) => {
     // 1. Try as-is from ROOT_DIR
     candidates.push(path.join(ROOT_DIR, relativePath));
 
-    // 2. Look for 'uploads/' anywhere in the path
+    // 2. Look for 'uploads/' or 'public/' anywhere in the path
     const uplIdx = relativePath.indexOf('uploads/');
+    const pubIdx = relativePath.indexOf('public/');
+    
     if (uplIdx >= 0) {
         const fromUploads = relativePath.substring(uplIdx);
         candidates.push(path.join(ROOT_DIR, fromUploads));
         candidates.push(path.join(ROOT_DIR, 'jenil', fromUploads));
     }
-
-    // 3. Look for 'public/' anywhere in the path
-    const pubIdx = relativePath.indexOf('public/');
+    
     if (pubIdx >= 0) {
-        const afterPublic = relativePath.substring(pubIdx + 7);
-        candidates.push(path.join(PUBLIC_DIR, afterPublic));
-        candidates.push(path.join(ROOT_DIR, 'public', afterPublic)); // if root public
+        const fromPublic = relativePath.substring(pubIdx);
+        candidates.push(path.join(ROOT_DIR, 'jenil', fromPublic));
+        candidates.push(path.join(ROOT_DIR, fromPublic));
     }
 
     // 4. Try stripping segments from the front one by one
@@ -91,11 +91,18 @@ const resolveAndServe = (relativePath, res, next) => {
     // Try each candidate
     for (const candidate of candidates) {
         if (fs.existsSync(candidate)) {
-            return streamFile(candidate, res);
+            try {
+                const stats = fs.statSync(candidate);
+                if (stats.isFile()) {
+                    return streamFile(candidate, res);
+                }
+            } catch (err) {
+                // Ignore stat errors and move to next candidate
+            }
         }
     }
 
-    console.warn(`[ImageController] File not found: ${relativePath}. Checked candidates: ${candidates.join(', ')}`);
+    console.warn(`[ImageController] File not found: ${relativePath}`);
     if (next) return next();
     res.status(404).json({ success: false, error: 'File not found' });
 };
@@ -108,7 +115,14 @@ const streamFile = (filePath, res) => {
     res.setHeader('Content-Type', MEDIA_MIME[ext] || 'application/octet-stream');
     const stats = fs.statSync(filePath);
     res.setHeader('Content-Length', stats.size);
-    return fs.createReadStream(filePath).pipe(res);
+    const readStream = fs.createReadStream(filePath);
+    readStream.on('error', (err) => {
+        console.error(`[ImageController] Error streaming file ${filePath}:`, err.message);
+        if (!res.headersSent) {
+            res.status(500).json({ success: false, error: 'Error reading file' });
+        }
+    });
+    return readStream.pipe(res);
 }
 
 module.exports = { serveImage };

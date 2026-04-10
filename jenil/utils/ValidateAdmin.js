@@ -15,7 +15,7 @@ const validateAdminRequest = async (req, res) => {
         }
 
         const now = Date.now();
-        const expiryTime = new Date(hdt.expiry_at).getTime();
+        const expiryTime =  new Date(hdt.expiry_at).getTime();
         const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
 
         if (hdt.active !== true || hdt.delete !== false) {
@@ -42,19 +42,26 @@ const validateAdminRequest = async (req, res) => {
             logger.info("Academy plan is valid");
         }
 
-        // Decrypt incoming data from URL param, Query, or Header
-        let encryptedRaw = req.params.data;
+        // Decrypt incoming data from URL param, Query, Header, or already-decrypted body
+        let encryptedRaw = req.params.data || req.query.data || req.headers['x-admin-data'] || req.headers['x-encrypted-payload'];
+
+        // If global middleware already decrypted it, use that
+        if (!encryptedRaw && req.decryptedBody && req.decryptedBody.data) {
+            encryptedRaw = req.decryptedBody.data;
+        }
 
         if (!encryptedRaw) {
             logger.warn("Missing admin validation data");
             return { error: true, status: 401, message: "Authentication data missing" };
         }
 
+        const normalize = (val) => (typeof val === 'string' ? decodeURIComponent(val).replace(/ /g, '+') : val);
+
         let newData, decryptedData;
         try {
-            decryptedData = decryptData(encryptedRaw);
+            decryptedData = decryptData(normalize(encryptedRaw));
             // In this application, the payload is often nested once: { data: "AES_ENCRYPTED_INNER_PAYLOAD" }
-            newData = decryptData(decryptedData.data);
+            newData = decryptData(normalize(decryptedData.data));
         } catch (error) {
             logger.error(`Decryption failed: ${error.message}`);
             return { error: true, status: 400, message: "Invalid data format or decryption secret mismatch" };
@@ -121,35 +128,36 @@ const validateAdminRequestPost = async (req, res) => {
 
         let newData, decryptedData;
 
-        // For POST, we first try to get data from the body
+        // For POST, we try to get data from the body, headers, or params
         try {
-            decryptedData = req.body;
-        } catch (error) {
-            logger.error(`Decryption failed1: ${error.message}`);
-            return { error: true, status: 400, message: "Invalid data" };
-        }
-
-        try {
-            // First level: decrypt `req.body.data`
-            const fixedCipher = decodeURIComponent(decryptedData.data || "");
-            if (!fixedCipher) throw new Error("Missing data in body");
-            newData = decryptData(fixedCipher);
-        } catch (error) {
-            // Fallback: Check if it's already in req.params (for mixed routes like /:id/:data)
-            if (req.params.data) {
-                 return validateAdminRequest(req, res);
+            const normalize = (val) => (typeof val === 'string' ? decodeURIComponent(val).replace(/ /g, '+') : val);
+            
+            // Check body, then headers, then decryptedBody (from global middleware)
+            let rawPayload = req.body;
+            let encryptedRaw = rawPayload.data || req.headers['x-admin-data'] || req.headers['x-encrypted-payload'];
+            
+            if (!encryptedRaw && req.decryptedBody && req.decryptedBody.data) {
+                encryptedRaw = req.decryptedBody.data;
             }
-            logger.error(`Decryption failed2: ${error.message}`);
-            return { error: true, status: 400, message: "Invalid data in request body" };
-        }
 
-        try {
-            // Second level: decrypt nested data field
-            const fixedCipherInner = decodeURIComponent(newData.data || "");
-            newData1 = decryptData(fixedCipherInner);
+            if (!encryptedRaw) {
+                // Fallback to params
+                if (req.params.data) {
+                    return validateAdminRequest(req, res);
+                }
+                throw new Error("Missing data in request body or headers");
+            }
+
+            // Level 1: Decrypt outer payload
+            decryptedData = decryptData(normalize(encryptedRaw));
+            
+            // Level 2: Decrypt inner data field
+            const innerCipher = decryptedData.data || "";
+            if (!innerCipher) throw new Error("Missing inner data in decrypted payload");
+            newData1 = decryptData(normalize(innerCipher));
         } catch (error) {
-             logger.error(`Decryption failed3: ${error.message}`);
-             return { error: true, status: 400, message: "Invalid inner data" };
+            logger.error(`Decryption failed (POST): ${error.message}`);
+            return { error: true, status: 400, message: `Invalid data: ${error.message}` };
         }
 
         const { token, id, mobile_no: mob_no, email } = newData1;

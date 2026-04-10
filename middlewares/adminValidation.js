@@ -41,8 +41,7 @@ const validateAdminRequest = async (req, res) => {
         } else {
             logger.info("Academy plan is valid");
         }
-
-        // Decrypt incoming data
+        
         let encryptedRaw = req.params.data || req.query.data || req.headers['x-admin-data'] || req.headers['x-encrypted-payload'];
 
         if (!encryptedRaw) {

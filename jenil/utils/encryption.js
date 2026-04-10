@@ -8,11 +8,11 @@ const decrypt = (encryptedData, secret) => {
         const bytes = CryptoJS.AES.decrypt(encryptedData, secret);
         const decrypted = bytes.toString(CryptoJS.enc.Utf8);
         if (!decrypted) return null;
-        
+
         try {
             return JSON.parse(decrypted);
         } catch {
-            return decrypted; 
+            return decrypted;
         }
     } catch (error) {
         console.error('Decryption error:', error.message);
@@ -41,9 +41,9 @@ const encryptData = (data) => encrypt(data, process.env.ENCRYPTION_SECRET);
 const decryptDataCommon = (encryptedData) => decrypt(encryptedData, process.env.ENCRYPTION_SECRET_COMMON);
 const encryptDataCommon = (data) => encrypt(data, process.env.ENCRYPTION_SECRET_COMMON);
 
-module.exports = { 
-    decryptData, 
-    encryptData, 
-    decryptDataCommon, 
-    encryptDataCommon 
+module.exports = {
+    decryptData,
+    encryptData,
+    decryptDataCommon,
+    encryptDataCommon
 };

@@ -2,15 +2,39 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure the directory exists in the root project
-const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'cms');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Helper to determine destination based on URL
+const getDynamicDestination = (req) => {
+    const url = req.originalUrl || req.url;
+    // Strip prefix: /acade360/admin or /acade360
+    const cleanUrl = url.replace(/^\/?acade360\/admin\//, '').replace(/^\/?acade360\//, '').replace(/^\//, '');
+    const parts = cleanUrl.split('/').filter(Boolean);
+    
+    let subPath = 'general';
+    if (parts.length >= 1) {
+        // Exclude action verbs at the end
+        const actions = new Set(['add', 'update', 'delete', 'upload', 'edit']);
+        const last = parts[parts.length - 1].toLowerCase();
+        const pathSegments = actions.has(last) ? parts.slice(0, -1) : parts;
+        
+        if (pathSegments.length > 0) {
+            subPath = pathSegments.join('/');
+        }
+    }
+    
+    // Target is jenil/public/<subPath>
+    const fullPath = path.join(__dirname, '..', 'public', subPath);
+    
+    if (!fs.existsSync(fullPath)) {
+        fs.mkdirSync(fullPath, { recursive: true });
+    }
+    
+    return { fullPath, subPath };
+};
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, uploadDir); 
+        const { fullPath } = getDynamicDestination(req);
+        cb(null, fullPath); 
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -23,19 +47,30 @@ const upload = multer({
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
 });
 
-// Middleware to standardize req.file.filename or req.files paths by prepending 'uploads/cms/'
-// This ensures that when the controller saves it to the DB, the encryption middleware 
-// will detect it as an image path and return an encrypted token to the frontend.
 const { decryptImageUrl } = require('../utils/imageToken');
 
+/**
+ * Standardizes paths in req.body and req.files/file.
+ * Now it uses path.join('public', subPath, filename) for internal DB storage.
+ */
 const standardizeFilePath = (req, res, next) => {
-    const dbPrefix = 'uploads/cms/';
+    let { subPath } = getDynamicDestination(req);
+    
+    // Override if req.body has pageName and sectionId (for generic adminPage routes)
+    if (req.body && req.body.pageName && req.body.sectionId) {
+        subPath = `${req.body.pageName}/${req.body.sectionId}`.toLowerCase();
+    }
+    
+    const finalFullPath = path.join(__dirname, '..', 'public', subPath);
+    if (!fs.existsSync(finalFullPath)) {
+        fs.mkdirSync(finalFullPath, { recursive: true });
+    }
 
-    // Helper to strip prefixes and decrypt tokens if necessary
+    const dbPrefix = `public/${subPath}/`.replace(/\\/g, '/');
+
     const cleanupPath = (val) => {
         if (typeof val !== 'string') return val;
 
-        // If it's a full URL, extract the pathname first (e.g. http://host/acade360/<token>)
         let raw = val;
         try {
             if (/^https?:\/\//i.test(raw)) {
@@ -44,32 +79,23 @@ const standardizeFilePath = (req, res, next) => {
             }
         } catch { }
         
-        // 1. Strip common prefixes (/acade360/img/ or /acade360/)
         let clean = raw.replace(/^\/?acade360\/img\//, '').replace(/^\/?acade360\//, '').replace(/^\//, '');
 
-        // 2. If it looks like an encrypted token (32-char hex IV + dot + hex ciphertext), try to decrypt it
         if (/^[0-9a-f]{32}\./i.test(clean)) {
             const decrypted = decryptImageUrl(clean);
-            if (decrypted) {
-                console.log(`[StandardizePath] Decrypted token and cleaned: ${val} -> ${decrypted}`);
-                return decrypted;
-            }
+            if (decrypted) return decrypted;
         }
 
-        if (clean !== val) {
-            console.log(`[StandardizePath] Cleaned path prefix: ${val} -> ${clean}`);
-        }
         return clean;
     };
 
-    // Helper to recursively process an object/array (for req.body)
     const processObject = (obj) => {
         if (!obj || typeof obj !== 'object') return;
         
         if (Array.isArray(obj)) {
             for (let i = 0; i < obj.length; i++) {
                 if (typeof obj[i] === 'string') {
-                    if (obj[i].includes('acade360') || obj[i].startsWith('uploads/')) {
+                    if (obj[i].includes('acade360') || obj[i].startsWith('public/') || obj[i].startsWith('uploads/')) {
                         obj[i] = cleanupPath(obj[i]);
                     }
                 } else {
@@ -80,8 +106,7 @@ const standardizeFilePath = (req, res, next) => {
             for (const key in obj) {
                 const value = obj[key];
                 if (typeof value === 'string') {
-                    // If it looks like a CMS path or a token, clean it
-                    if (value.includes('acade360') || value.startsWith('uploads/')) {
+                    if (value.includes('acade360') || value.startsWith('public/') || value.startsWith('uploads/')) {
                         obj[key] = cleanupPath(value);
                     }
                 } else if (typeof value === 'object' && value !== null) {
@@ -91,25 +116,36 @@ const standardizeFilePath = (req, res, next) => {
         }
     };
 
-    // 1. Process req.body (find any existing image URLs being sent back)
     processObject(req.body);
 
-    // 2. Handle single file (upload.single)
-    if (req.file) {
-        let filename = req.file.filename;
-        if (!filename.startsWith(dbPrefix)) {
-            req.file.filename = dbPrefix + filename;
+    const relocateFile = (fileObj) => {
+        const currentPath = fileObj.path;
+        const newFilename = path.basename(currentPath);
+        const newFullPath = path.join(finalFullPath, newFilename);
+        
+        // Only move if it's currently stored somewhere else
+        if (currentPath !== newFullPath) {
+            try {
+                fs.renameSync(currentPath, newFullPath);
+                fileObj.path = newFullPath;
+                fileObj.destination = finalFullPath;
+            } catch (err) {
+                console.error(`[StandardizePath] Failed to move file to ${newFullPath}`, err);
+            }
         }
+        
+        if (!newFilename.startsWith('public/')) {
+            fileObj.filename = dbPrefix + newFilename;
+        }
+    };
+
+    if (req.file) {
+        relocateFile(req.file);
     }
 
-    // 3. Handle multiple files (upload.array or upload.fields)
     if (req.files) {
         const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-        files.forEach(file => {
-            if (!file.filename.startsWith(dbPrefix)) {
-                file.filename = dbPrefix + file.filename;
-            }
-        });
+        files.forEach(file => relocateFile(file));
     }
 
     next();

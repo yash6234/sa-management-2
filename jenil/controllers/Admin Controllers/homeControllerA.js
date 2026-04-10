@@ -2,6 +2,7 @@ const Home = require('../../models/Home');
 const { saveBase64Image } = require('../../utils/fileUtils');
 const { decryptData: decryptCryptoJS } = require('../../utils/encryption');
 const { logger, decryptData, encryptData } = require("../../../utils/enc_dec_admin");
+const { decryptImageUrl } = require('../../utils/imageToken');
 
 const parseJsonIfLikely = (value) => {
     if (typeof value !== 'string' || value === '') return value;
@@ -206,6 +207,14 @@ const processImageFields = (data) => {
                 if (imageFields.includes(key) && typeof value === 'string' && value.startsWith('data:image')) {
                     const savedPath = saveBase64Image(value);
                     if (savedPath) result[key] = savedPath;
+                }
+                // 1.5 Handle Image Tokens (from our new system)
+                else if (typeof value === 'string' && /^[0-9a-f]{32}\.[0-9a-f]+\.[a-z0-9]+$/i.test(value)) {
+                    const decrypted = decryptImageUrl(value);
+                    if (decrypted) {
+                        result[key] = decrypted;
+                        console.log(`[HomeController] Decrypted Token for ${key}: ${decrypted}`);
+                    }
                 }
                 // 2. Handle CryptoJS encrypted paths (starts with 'U2FsdGVkX1')
                 else if (typeof value === 'string' && value.startsWith('U2FsdGVkX1')) {
@@ -422,8 +431,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             decryptedData = decryptData(encryptedData);
-            console.log("decryptedData", decryptedData)
-            
+            console.log("AAAAAAAAA", decryptedData)
+
             if (decryptedData) {
                 if (typeof decryptedData === 'string') {
                     try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
@@ -858,7 +867,7 @@ exports.deleteSocialPost = async (req, res) => {
         const { postId } = req.params;
 
         if (home.tournamentsSection && home.tournamentsSection.list && home.tournamentsSection.list.posts) {
-            const {posts} = home.tournamentsSection.list;
+            const { posts } = home.tournamentsSection.list;
             const postIndex = posts.findIndex(p => p._id.toString() === postId);
 
             if (postIndex === -1) {

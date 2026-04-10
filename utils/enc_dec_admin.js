@@ -3,15 +3,15 @@ const forge = require('node-forge');
 const CryptoJS = require("crypto-js");
 
 const decryptData = (encryptedData) => {
-  const bytes = CryptoJS.AES.decrypt(encryptedData, process.env.ENCRYPTION_SECRET);
-  return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    const bytes = CryptoJS.AES.decrypt(encryptedData, process.env.ENCRYPTION_SECRET);
+    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 };
 
-const encryptData = (data)=>{
-  return CryptoJS.AES.encrypt(
-    JSON.stringify(data),
-    process.env.ENCRYPTION_SECRET
-  ).toString();
+const encryptData = (data) => {
+    return CryptoJS.AES.encrypt(
+        JSON.stringify(data),
+        process.env.ENCRYPTION_SECRET
+    ).toString();
 }
 const axios = require('axios');
 
@@ -56,23 +56,23 @@ const winston = require("winston");
 require("winston-mongodb");
 
 const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message }) => {
-      return `${timestamp} [${level.toUpperCase()}]: ${message}`;
-    })
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: "logs/auth.log" }),
-    new winston.transports.MongoDB({
-      level: "info",
-      db: process.env.MONGO_URI,
-      collection: "logs",
-      tryReconnect: true,
-      format: winston.format.metadata(), // stores metadata in Mongo
-    })
-  ]
+    level: "info",
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.printf(({ timestamp, level, message }) => {
+            return `${timestamp} [${level.toUpperCase()}]: ${message}`;
+        })
+    ),
+    transports: [
+        new winston.transports.Console(),
+        new winston.transports.File({ filename: "logs/auth.log" }),
+        new winston.transports.MongoDB({
+            level: "info",
+            db: process.env.MONGO_URI,
+            collection: "logs",
+            tryReconnect: true,
+            format: winston.format.metadata(), // stores metadata in Mongo
+        })
+    ]
 });
-module.exports = {decryptData,encryptData,logger,verifyRecaptcha}
+module.exports = { decryptData, encryptData, logger, verifyRecaptcha }

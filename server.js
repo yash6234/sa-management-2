@@ -235,11 +235,11 @@ const { upload, standardizeFilePath } = require('./jenil/middlewares/upload');
 // Apply decryption middleware to all CMS routes (supports body/header encrypted payloads)
 cmsRouter.use(optionalDecryptPayload);
 
-// Apply image encryption (converts file paths to secure tokens)
-cmsRouter.use(imageEncryptMiddleware);
-
-// Always encrypt all CMS responses
+// Always encrypt all CMS responses FIRST (so it becomes the outer wrapper)
 cmsRouter.use(encryptResponse);
+
+// Apply image encryption (converts file paths to secure tokens BEFORE response encryption)
+cmsRouter.use(imageEncryptMiddleware);
 
 // 1. Generic Media Upload (for quill editor or standalone admin use)
 cmsRouter.post('/upload', upload.any(), standardizeFilePath, (req, res) => {
@@ -289,9 +289,9 @@ cmsRouter.use('/:page', require('./jenil/routes/dynamicRoutes'));
 // CMS Error Handler
 cmsRouter.use(require('./jenil/middlewares/errorHandler'));
 
+// --------------------------------------------------------------------------------------
 // Mount CMS under /acade360
 app.use('/acade360', cmsRouter);
-// --------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------
 //LOGO ROUTE
 app.get('/acade360/academy/logo/:file_name', (req, res) => {
