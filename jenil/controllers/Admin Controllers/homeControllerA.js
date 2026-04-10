@@ -88,11 +88,18 @@ const transformSchemaMismatches = (path, value, currentDoc) => {
 
     // 3. Handle 'testimonials.list' (expected [{ quote, parentName, ... }])
     if (path.endsWith('.testimonials.list')) {
-        const existing = currentDoc ? (currentDoc.get(path) || []) : [];
+        let existing = [];
+        try {
+            existing = currentDoc ? (currentDoc.get(path) || []) : [];
+            if (!Array.isArray(existing)) existing = [];
+        } catch (e) {
+            existing = [];
+        }
+
         if (Array.isArray(value)) {
             return value.map(item => {
-                if (!item.quote || item._id) return item;
-                const match = existing.find(e => e.quote === item.quote && e.parentName === item.parentName);
+                if (!item || typeof item !== 'object' || !item.quote || item._id) return item;
+                const match = existing.find(e => e && e.quote === item.quote && e.parentName === item.parentName);
                 return match ? { ...item, _id: match._id } : item;
             });
         }
@@ -387,6 +394,17 @@ exports.getSection = (sectionName) => async (req, res) => {
             });
         }
 
+        if (sectionName === 'testimonials') {
+            const testimonials = JSON.parse(JSON.stringify(target || { sectionTitle: 'What Parents Say', list: [] }));
+            return res.status(200).json({
+                encrypted: true,
+                success: true,
+                data: encryptData(testimonials),
+                data1: encryptData("Fetched Successfully"),
+                data2: encryptData(Date.now())
+            });
+        }
+
         if (sectionName === 'programsAndFacilities') {
             const programs = JSON.parse(JSON.stringify(target));
             if (programs) {
@@ -429,16 +447,38 @@ exports.updateSection = (sectionName) => async (req, res) => {
     try {
         let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            const decodedData = decodeURIComponent(encryptedData);
-            decryptedData = decryptData(decodedData);
+            // Priority: 1. req.adminData (Level 2), 2. req.decryptedBody, 3. Manual Decryption
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
+            }
 
-            if (decryptedData) {
-                if (typeof decryptedData === 'string') {
-                    try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            // Fallback: manual decryption of req.body.data or params.data
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+                    
+                    // Double encryption check
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
                 }
             }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
         } catch (error) {
+            console.error(`[HomeController] Decryption failed in updateSection for ${sectionName}:`, error);
             return res.status(400).json({
                 encrypted: true,
                 success: false,
@@ -580,13 +620,35 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
         let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            const decodedData = decodeURIComponent(encryptedData);
-            decryptedData = decryptData(decodedData);
-            if (typeof decryptedData === 'string') {
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
+            }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
                 try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
             }
         } catch (error) {
+            console.error(`[HomeController] Decryption failed in addArrayItem for ${arrayPath}:`, error);
             return res.status(400).json({
                 encrypted: true,
                 success: false,
@@ -717,15 +779,36 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
-        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            const decodedData = decodeURIComponent(encryptedData);
-            decryptedData = decryptData(decodedData);
-            if (typeof decryptedData === 'string') {
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
+            }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
                 try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
             }
         } catch (error) {
+            console.error(`[HomeController] Decryption failed in updateArrayItem for ${arrayPath}:`, error);
             return res.status(400).json({
                 encrypted: true,
                 success: false,
@@ -741,7 +824,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
         let itemPath;
         if (req.params.itemId) {
-            const item = targetArray.id(req.params.itemId);
+            const item = (targetArray.id ? targetArray.id(req.params.itemId) : targetArray.find(t => t._id && t._id.toString() === req.params.itemId));
             if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
             // Get index of the item
             const index = targetArray.indexOf(item);
@@ -826,15 +909,36 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
 exports.deleteArrayItem = (arrayPath) => async (req, res) => {
     try {
-        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            const decodedData = decodeURIComponent(encryptedData);
-            decryptedData = decryptData(decodedData);
-            if (typeof decryptedData === 'string') {
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
+            }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
                 try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
             }
         } catch (error) {
+            console.error(`[HomeController] Decryption failed in deleteArrayItem for ${arrayPath}:`, error);
             return res.status(400).json({
                 encrypted: true,
                 success: false,
@@ -850,7 +954,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 
         let item;
         if (req.params.itemId) {
-            item = targetArray.id(req.params.itemId);
+            item = (targetArray.id ? targetArray.id(req.params.itemId) : targetArray.find(t => t._id && t._id.toString() === req.params.itemId));
         } else if (targetArray.length > 0) {
             item = targetArray[0];
         }

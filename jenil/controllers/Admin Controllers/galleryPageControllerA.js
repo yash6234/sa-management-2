@@ -160,13 +160,39 @@ exports.getGalleryData = async (req, res) => {
 // 2. CONFIG SECTIONS
 exports.getSection = (sectionName) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[GalleryController] Decryption failed in addArrayItem for ${arrayPath}:`, error);
+        }
+
         const gallery = await getActiveGallery();
         if (sectionName === 'galleryGrid') {
             return res.status(200).json({ success: true, data: getGalleryGrid(gallery) });
@@ -192,16 +218,42 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[GalleryController] Decryption failed in updateSection for ${sectionName}:`, error);
+        }
+
         const gallery = await getActiveGallery();
-        // Normalize all keys from brackets to dots
-        let updateData = normalizePaths(req.body);
+        // Use decryptedData as primary source
+        let updateData = (decryptedData && Object.keys(decryptedData).length > 0) ? normalizePaths(decryptedData) : normalizePaths(req.body);
         updateData = processImageFields(updateData);
 
         // 1. Handle file uploads (both single and multiple)
@@ -271,13 +323,39 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.addGalleryGridItem = async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[GalleryController] Decryption failed in addArrayItem for ${arrayPath}:`, error);
+        }
+
         const gallery = await getActiveGallery();
 
         const parseBoolean = (value) => {
@@ -463,13 +541,39 @@ exports.addGalleryGridItem = async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[GalleryController] Decryption failed in addArrayItem for ${arrayPath}:`, error);
+        }
+
         const gallery = await getActiveGallery();
         if (sectionName === 'galleryGrid') {
             gallery.categories = [];
@@ -490,13 +594,39 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 // 3. ARRAY SECTIONS (Images, Training Moments, Categories)
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[GalleryController] Decryption failed in addArrayItem for ${arrayPath}:`, error);
+        }
+
         const gallery = await getActiveGallery();
         const parts = arrayPath.split('.');
         let targetArray = gallery;
@@ -519,7 +649,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             return dotPath.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
         };
 
-        let payload = normalizePaths(req.body);
+        let payload = (decryptedData && Object.keys(decryptedData).length > 0) ? normalizePaths(decryptedData) : normalizePaths(req.body);
         payload = processImageFields(payload);
 
         if (req.file) {
@@ -602,13 +732,39 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[GalleryController] Decryption failed in addArrayItem for ${arrayPath}:`, error);
+        }
+
         const gallery = await getActiveGallery();
         const parts = arrayPath.split('.');
         let targetArray = gallery;
@@ -622,7 +778,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         const index = targetArray.indexOf(item);
         const itemPath = `${arrayPath}.${index}`;
 
-        let updateData = normalizePaths(req.body);
+        let updateData = (decryptedData && Object.keys(decryptedData).length > 0) ? normalizePaths(decryptedData) : normalizePaths(req.body);
         updateData = processImageFields(updateData);
 
         if (req.file) {
@@ -659,13 +815,39 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
 exports.deleteArrayItem = (arrayPath) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[GalleryController] Decryption failed in addArrayItem for ${arrayPath}:`, error);
+        }
+
         const gallery = await getActiveGallery();
         const parts = arrayPath.split('.');
         let targetArray = gallery;

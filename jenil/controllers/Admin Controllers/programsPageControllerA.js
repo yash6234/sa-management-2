@@ -188,13 +188,39 @@ exports.getLevels = async (req, res) => {
 // 2. CONFIG SECTIONS
 exports.getSection = (sectionName) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         let target = programs;
         if (sectionName.includes('.')) {
@@ -217,15 +243,41 @@ exports.getSection = (sectionName) => async (req, res) => {
 
 exports.updateSection = (sectionName) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
-        let updateData = normalizePaths(req.body);
+        let updateData = (decryptedData && Object.keys(decryptedData).length > 0) ? normalizePaths(decryptedData) : normalizePaths(req.body);
         updateData = processImageFields(updateData);
 
         if (req.file) {
@@ -279,13 +331,39 @@ exports.updateSection = (sectionName) => async (req, res) => {
 
 exports.deleteSection = (sectionName) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         programs.set(sectionName, undefined);
         programs.markModified(sectionName);
@@ -299,13 +377,39 @@ exports.deleteSection = (sectionName) => async (req, res) => {
 // 3. ARRAY SECTIONS
 exports.addArrayItem = (arrayPath) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         const parts = arrayPath.split('.');
         let targetArray = programs;
@@ -328,7 +432,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             return dotPath.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj);
         };
 
-        let payload = normalizePaths(req.body);
+        let payload = (decryptedData && Object.keys(decryptedData).length > 0) ? normalizePaths(decryptedData) : normalizePaths(req.body);
         payload = processImageFields(payload);
 
         if (req.file) {
@@ -411,13 +515,39 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
 exports.updateArrayItem = (arrayPath) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         const parts = arrayPath.split('.');
         let targetArray = programs;
@@ -431,7 +561,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         const index = targetArray.indexOf(item);
         const itemPath = `${arrayPath}.${index}`;
 
-        let updateData = normalizePaths(req.body);
+        let updateData = (decryptedData && Object.keys(decryptedData).length > 0) ? normalizePaths(decryptedData) : normalizePaths(req.body);
         updateData = processImageFields(updateData);
 
         if (req.file) {
@@ -467,13 +597,39 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
 exports.deleteArrayItem = (arrayPath) => async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         const parts = arrayPath.split('.');
         let targetArray = programs;
@@ -515,13 +671,39 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 // LEVELS MANAGEMENT (new array-based structure)
 exports.getLevelById = async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -533,13 +715,39 @@ exports.getLevelById = async (req, res) => {
 
 exports.addLevel = async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         const { key, title, description, duration, image, features } = req.body;
 
@@ -571,13 +779,39 @@ exports.addLevel = async (req, res) => {
 
 exports.updateLevel = async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -599,13 +833,39 @@ exports.updateLevel = async (req, res) => {
 
 exports.deleteLevel = async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -622,13 +882,39 @@ exports.deleteLevel = async (req, res) => {
 // FEATURES MANAGEMENT
 exports.addFeature = async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -651,13 +937,39 @@ exports.addFeature = async (req, res) => {
 
 exports.updateFeature = async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
@@ -678,13 +990,39 @@ exports.updateFeature = async (req, res) => {
 
 exports.deleteFeature = async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[ProgramsController] Decryption failed:`, error);
+        }
+
         const programs = await getActivePrograms();
         const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });

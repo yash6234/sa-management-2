@@ -215,13 +215,38 @@ exports.getIntroMission = async (req, res) => {
 
 exports.updateIntroMission = async (req, res) => {
     try {
+        let decryptedData;
         try {
-            const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+            if (req.adminData && isPlainObject(req.adminData)) {
+                decryptedData = req.adminData;
+            } else if (req.decryptedBody && isPlainObject(req.decryptedBody)) {
+                decryptedData = req.decryptedBody;
             }
-        } catch (e) { }
+
+            if (!decryptedData || Object.keys(decryptedData).length === 0 || (decryptedData.data && typeof decryptedData.data === 'string')) {
+                const encryptedData = req.params.data || req.body.data || req.query.data;
+                if (encryptedData) {
+                    const decodedData = decodeURIComponent(encryptedData);
+                    let firstLevel = decryptData(decodedData);
+
+                    if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
+                        try {
+                            decryptedData = decryptData(firstLevel.data);
+                        } catch (e) {
+                            decryptedData = firstLevel;
+                        }
+                    } else {
+                        decryptedData = firstLevel;
+                    }
+                }
+            }
+
+            if (decryptedData && typeof decryptedData === 'string') {
+                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
+            }
+        } catch (error) {
+            console.error(`[AboutController] Decryption failed in updateSection:`, error);
+        }
         const about = await getActiveAbout();
         const updateData = {};
 
@@ -387,9 +412,11 @@ exports.updateSection = (sectionName) => async (req, res) => {
         } catch (e) { }
         const about = await getActiveAbout();
         
-        // 0. Build base payload from req.body, but parse every field in case of stringified JSON
+        // 0. Build base payload from decryptedData (The Secure Source)
         const rawPayload = {};
-        for (const [key, val] of Object.entries(req.body || {})) {
+        const sourceData = (decryptedData && Object.keys(decryptedData).length > 0) ? decryptedData : (req.body || {});
+        
+        for (const [key, val] of Object.entries(sourceData)) {
             rawPayload[key] = (typeof val === 'string') ? parseJsonIfLikely(val) : val;
         }
 
