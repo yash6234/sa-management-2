@@ -276,7 +276,8 @@ exports.getHomePageData = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
 
@@ -302,7 +303,8 @@ exports.getFooterData = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
 
@@ -325,7 +327,8 @@ exports.updateFooter = async (req, res) => {
         let decryptedData;
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            decryptedData = decryptData(encryptedData);
+            const decodedData = decodeURIComponent(encryptedData);
+            decryptedData = decryptData(decodedData);
         } catch (error) {
             return res.status(400).json({
                 encrypted: true,
@@ -358,7 +361,8 @@ exports.getSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         // Validation and decryption (req.adminData) are already handled by middlewareAdmin
@@ -430,7 +434,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
         let decryptedData;
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            decryptedData = decryptData(encryptedData);
+            const decodedData = decodeURIComponent(encryptedData);
+            decryptedData = decryptData(decodedData);
 
             if (decryptedData) {
                 if (typeof decryptedData === 'string') {
@@ -548,7 +553,8 @@ exports.deleteSection = (sectionName) => async (req, res) => {
         let decryptedData;
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            decryptedData = decryptData(encryptedData);
+            const decodedData = decodeURIComponent(encryptedData);
+            decryptedData = decryptData(decodedData);
         } catch (error) {
             return res.status(400).json({
                 encrypted: true,
@@ -579,7 +585,8 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         let decryptedData;
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            decryptedData = decryptData(encryptedData);
+            const decodedData = decodeURIComponent(encryptedData);
+            decryptedData = decryptData(decodedData);
             if (typeof decryptedData === 'string') {
                 try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
             }
@@ -716,7 +723,8 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         let decryptedData;
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            decryptedData = decryptData(encryptedData);
+            const decodedData = decodeURIComponent(encryptedData);
+            decryptedData = decryptData(decodedData);
             if (typeof decryptedData === 'string') {
                 try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
             }
@@ -802,7 +810,8 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
         let decryptedData;
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            decryptedData = decryptData(encryptedData);
+            const decodedData = decodeURIComponent(encryptedData);
+            decryptedData = decryptData(decodedData);
             if (typeof decryptedData === 'string') {
                 try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
             }
@@ -854,7 +863,8 @@ exports.deleteSocialPost = async (req, res) => {
         let decryptedData;
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            decryptedData = decryptData(encryptedData);
+            const decodedData = decodeURIComponent(encryptedData);
+            decryptedData = decryptData(decodedData);
         } catch (error) {
             return res.status(400).json({
                 encrypted: true,
