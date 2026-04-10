@@ -653,20 +653,28 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
         if (arrayPath === 'testimonials.list') {
             for (const item of itemsToAdd) {
-                if (typeof item.quote === 'string') item.quote = item.quote.trim();
-                if (typeof item.parentName === 'string') item.parentName = item.parentName.trim();
-                if (typeof item.relation === 'string') item.relation = item.relation.trim();
-
-                const quote = item.quote || '';
-                const parentName = item.parentName || '';
-                const relation = item.relation || '';
-
-                if (!quote || !parentName || !relation) {
+                if (typeof item.quote !== 'string' || !item.quote.trim()) {
                     return res.status(400).json({
                         success: false,
-                        message: 'Each testimonial must include quote, parentName, and relation'
+                        message: 'Each testimonial must include a valid quote'
                     });
                 }
+                if (typeof item.parentName !== 'string' || !item.parentName.trim()) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Each testimonial must include a valid parentName'
+                    });
+                }
+                if (typeof item.relation !== 'string' || !item.relation.trim()) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Each testimonial must include a valid relation'
+                    });
+                }
+
+                item.quote = item.quote.trim();
+                item.parentName = item.parentName.trim();
+                item.relation = item.relation.trim();
             }
         }
 
