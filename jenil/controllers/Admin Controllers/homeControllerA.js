@@ -422,8 +422,9 @@ exports.updateSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             decryptedData = decryptData(encryptedData);
+            console.log("decryptedData", decryptedData)
+            
             if (decryptedData) {
-                // Safety: If it's a double-stringified JSON, parse it again
                 if (typeof decryptedData === 'string') {
                     try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
                 }
@@ -857,7 +858,7 @@ exports.deleteSocialPost = async (req, res) => {
         const { postId } = req.params;
 
         if (home.tournamentsSection && home.tournamentsSection.list && home.tournamentsSection.list.posts) {
-            const posts = home.tournamentsSection.list.posts;
+            const {posts} = home.tournamentsSection.list;
             const postIndex = posts.findIndex(p => p._id.toString() === postId);
 
             if (postIndex === -1) {

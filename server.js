@@ -260,6 +260,7 @@ cmsRouter.post('/upload', upload.any(), standardizeFilePath, (req, res) => {
 });
 
 // 2. Section-specific Admin Routes
+console.log("JENIL API CALLED")
 cmsRouter.use('/home', require('./jenil/routes/homeRoutes'));
 cmsRouter.use('/about', require('./jenil/routes/aboutAcademyRoutes'));
 cmsRouter.use('/programs', require('./jenil/routes/programsPageRoutes'));

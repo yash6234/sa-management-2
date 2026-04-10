@@ -23,7 +23,7 @@ router.get('/view/:data', middlewareAdmin, adminPageController.getPageDataSectio
  * @desc    Update a specific section on a page
  * @access  Admin only (requires pageName, sectionId, and payload in body)
  */
-router.post('/update', middlewareAdminPost, upload.any(), standardizeFilePath, adminPageController.updatePageSection);
+router.post('/update', upload.any(), middlewareAdminPost, standardizeFilePath, adminPageController.updatePageSection);
 
 /**
  * @route   DELETE /acade360/admin/sections/delete
