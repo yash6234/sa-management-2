@@ -429,8 +429,10 @@ exports.updateSection = (sectionName) => async (req, res) => {
     try {
         let decryptedData;
         try {
+            console.log("------------", req.files, req.body)
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            decryptedData = decryptData(encryptedData);
+            const decodedData = decodeURIComponent(encryptedData);
+            decryptedData = decryptData(decodedData);
             console.log("AAAAAAAAA", decryptedData)
 
             if (decryptedData) {
