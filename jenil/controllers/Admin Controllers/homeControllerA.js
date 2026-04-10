@@ -276,8 +276,7 @@ exports.getHomePageData = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+                const decryptedData = decryptData(encryptedData);
             }
         } catch (e) { }
 
@@ -303,8 +302,7 @@ exports.getFooterData = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+                const decryptedData = decryptData(encryptedData);
             }
         } catch (e) { }
 
@@ -327,8 +325,7 @@ exports.updateFooter = async (req, res) => {
         let decryptedData;
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            const decodedData = decodeURIComponent(encryptedData);
-            decryptedData = decryptData(decodedData);
+            decryptedData = decryptData(encryptedData);
         } catch (error) {
             return res.status(400).json({
                 encrypted: true,
@@ -361,8 +358,7 @@ exports.getSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decodedData = decodeURIComponent(encryptedData);
-                const decryptedData = decryptData(decodedData);
+                const decryptedData = decryptData(encryptedData);
             }
         } catch (e) { }
         // Validation and decryption (req.adminData) are already handled by middlewareAdmin
@@ -435,23 +431,14 @@ exports.updateSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             const decodedData = decodeURIComponent(encryptedData);
-            let firstLevel = decryptData(decodedData);
+            decryptedData = decryptData(decodedData);
 
-            if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
-                try {
-                    decryptedData = decryptData(firstLevel.data);
-                } catch (e) {
-                    decryptedData = firstLevel;
+            if (decryptedData) {
+                if (typeof decryptedData === 'string') {
+                    try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
                 }
-            } else {
-                decryptedData = firstLevel;
-            }
-
-            if (typeof decryptedData === 'string') {
-                try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
             }
         } catch (error) {
-            console.error("[HomeController] Decryption failed in updateSection:", error);
             return res.status(400).json({
                 encrypted: true,
                 success: false,
@@ -552,7 +539,7 @@ exports.updateSection = (sectionName) => async (req, res) => {
             data2: encryptData(Date.now())
         });
     } catch (err) {
-        console.error(`[HomeController] Update Section Error for ${sectionName}:`, err);
+        console.error("Update Section Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 };
@@ -595,18 +582,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             const decodedData = decodeURIComponent(encryptedData);
-            let firstLevel = decryptData(decodedData);
-
-            if (firstLevel && firstLevel.data && typeof firstLevel.data === 'string') {
-                try {
-                    decryptedData = decryptData(firstLevel.data);
-                } catch (e) {
-                    decryptedData = firstLevel;
-                }
-            } else {
-                decryptedData = firstLevel;
-            }
-
+            decryptedData = decryptData(decodedData);
             if (typeof decryptedData === 'string') {
                 try { decryptedData = JSON.parse(decryptedData); } catch (e) { }
             }
@@ -703,7 +679,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
             if (item._id) {
                 // Check by ID if provided
-                isDuplicate = targetArray.some(t => t._id && t._id.toString() === item._id.toString());
+                isDuplicate = !!(targetArray.id ? targetArray.id(item._id) : targetArray.find(t => t._id && t._id.toString() === item._id.toString()));
             } else if (arrayPath === 'testimonials.list') {
                 // For testimonials without ID, check by content
                 isDuplicate = targetArray.some(t => {
@@ -764,7 +740,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
         let itemPath;
         if (req.params.itemId) {
-            const item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
+            const item = targetArray.id(req.params.itemId);
             if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
             // Get index of the item
             const index = targetArray.indexOf(item);
@@ -851,7 +827,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 
         let item;
         if (req.params.itemId) {
-            item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
+            item = targetArray.id(req.params.itemId);
         } else if (targetArray.length > 0) {
             item = targetArray[0];
         }
