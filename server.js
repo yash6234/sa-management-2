@@ -317,7 +317,7 @@ app.get('/acade360/academy/logo/:file_name', (req, res) => {
 });
 
 app.get('/acade360/file/:data', async (req, res) => {
-    // 1) Validate admin
+    // 1) Validate
     const result = await validateAdminRequest(req, res);
     if (result.error) {
         return res.status(result.status).json({ message: result.message });

@@ -431,7 +431,6 @@ exports.updateSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             decryptedData = decryptData(encryptedData);
-            console.log("AAAAAAAAA", decryptedData)
 
             if (decryptedData) {
                 if (typeof decryptedData === 'string') {
