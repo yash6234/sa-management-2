@@ -102,7 +102,8 @@ exports.getSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const admissions = await getActiveAdmissions();
@@ -130,7 +131,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const admissions = await getActiveAdmissions();
@@ -190,7 +192,8 @@ exports.deleteSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const admissions = await getActiveAdmissions();
@@ -253,7 +256,8 @@ exports.getAllSubmissions = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const submissions = await AdmissionSubmission.find().sort({ createdAt: -1 });
@@ -269,7 +273,8 @@ exports.updateSubmissionStatus = async (req, res) => {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -286,7 +291,8 @@ exports.deleteSubmission = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const submission = await AdmissionSubmission.findByIdAndDelete(req.params.id);

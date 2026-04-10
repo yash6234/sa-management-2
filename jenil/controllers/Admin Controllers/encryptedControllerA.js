@@ -24,9 +24,8 @@ exports.createEncrypted = (modelName, options = {}) => async (req, res) => {
         try {
             const encryptedData = req.params.data;
             if (encryptedData) {
-                logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
-                logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const Model = getModel(modelName);
@@ -79,7 +78,8 @@ exports.updateEncrypted = (modelName) => async (req, res) => {
             const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -133,7 +133,8 @@ exports.fetchEncrypted = (modelName, options = {}) => async (req, res) => {
             const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -196,7 +197,8 @@ exports.deleteEncrypted = (modelName) => async (req, res) => {
             const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -249,7 +251,8 @@ exports.customEncrypted = (handler) => async (req, res) => {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }

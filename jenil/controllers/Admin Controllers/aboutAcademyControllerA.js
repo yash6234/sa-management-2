@@ -166,9 +166,8 @@ exports.getAboutData = async (req, res) => {
     try {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
-            }
+            const decodedData = decodeURIComponent(encryptedData);
+            decryptedData = decryptData(decodedData);
         } catch (e) { }
         const aboutData = await getActiveAbout();
         const data = aboutData?.toObject ? aboutData.toObject() : aboutData;
@@ -188,9 +187,8 @@ exports.getIntroMission = async (req, res) => {
     try {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
-            if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
-            }
+            const decodedData = decodeURIComponent(encryptedData);
+            decryptedData = decryptData(decodedData);
         } catch (e) { }
         const about = await getActiveAbout();
         const intro = about.introSection?.toObject ? about.introSection.toObject() : (about.introSection || {});
@@ -220,7 +218,8 @@ exports.updateIntroMission = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const about = await getActiveAbout();
@@ -316,7 +315,8 @@ exports.deleteIntroMission = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const about = await getActiveAbout();
@@ -337,7 +337,8 @@ exports.getSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const about = await getActiveAbout();
@@ -380,7 +381,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const about = await getActiveAbout();
@@ -466,7 +468,8 @@ exports.deleteSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const about = await getActiveAbout();
@@ -485,7 +488,8 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const about = await getActiveAbout();
@@ -753,7 +757,8 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const about = await getActiveAbout();
@@ -763,7 +768,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
             targetArray = targetArray[part];
         }
 
-        const item = targetArray.id(req.params.itemId);
+        const item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
 
         const index = targetArray.indexOf(item);
@@ -809,7 +814,8 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const about = await getActiveAbout();
@@ -820,7 +826,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
         }
 
         if (req.params.itemId) {
-            const item = targetArray.id(req.params.itemId);
+        const item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
             if (item) {
                 targetArray.pull(req.params.itemId);
             } else {
@@ -851,7 +857,9 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 
 exports.deleteArrayItemByIndex = (arrayPath) => async (req, res) => {
     logger.info("User Login request received");
-    const decryptedData = decryptData(req.params.data || req.body.data || req.query.data);
+    const encryptedData = req.params.data || req.body.data || req.query.data;
+    const decodedData = decodeURIComponent(encryptedData);
+    const decryptedData = decryptData(decodedData);
     logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
     req.params.itemId = req.params.index;
     return exports.deleteArrayItem(arrayPath)(req, res);

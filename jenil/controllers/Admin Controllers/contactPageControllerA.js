@@ -112,7 +112,8 @@ exports.getSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const contact = await getActiveContact();
@@ -141,7 +142,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -216,7 +218,8 @@ exports.deleteSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const contact = await getActiveContact();
@@ -244,7 +247,8 @@ exports.getAllSubmissions = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const submissions = await ContactSubmission.find().sort({ createdAt: -1 });
@@ -259,7 +263,8 @@ exports.updateSubmissionStatus = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const submission = await ContactSubmission.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -275,7 +280,8 @@ exports.deleteSubmission = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const submission = await ContactSubmission.findByIdAndDelete(req.params.id);

@@ -20,7 +20,8 @@ exports.create = async (req, res) => {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -44,7 +45,8 @@ exports.getAll = async (req, res) => {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -64,7 +66,8 @@ exports.getById = async (req, res) => {
             const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -85,7 +88,8 @@ exports.update = async (req, res) => {
             const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -109,7 +113,8 @@ exports.delete = async (req, res) => {
             const encryptedData = req.params.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }

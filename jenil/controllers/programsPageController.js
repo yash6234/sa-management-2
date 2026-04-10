@@ -384,7 +384,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
             targetArray = targetArray[part];
         }
 
-        const item = targetArray.id(req.params.itemId);
+        const item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
 
         const index = targetArray.indexOf(item);
@@ -435,7 +435,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 
         if (req.params.itemId) {
             if (typeof targetArray.id === 'function') {
-                const item = targetArray.id(req.params.itemId);
+        const item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
                 if (item) {
                     targetArray.pull(req.params.itemId);
                 } else {
@@ -468,7 +468,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 exports.getLevelById = async (req, res) => {
     try {
         const programs = await getActivePrograms();
-        const level = programs.levels.id(req.params.levelId);
+        const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
         res.status(200).json({ success: true, data: level });
     } catch (err) {
@@ -510,7 +510,7 @@ exports.addLevel = async (req, res) => {
 exports.updateLevel = async (req, res) => {
     try {
         const programs = await getActivePrograms();
-        const level = programs.levels.id(req.params.levelId);
+        const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
 
         const { key, title, description, duration, image } = req.body;
@@ -531,7 +531,7 @@ exports.updateLevel = async (req, res) => {
 exports.deleteLevel = async (req, res) => {
     try {
         const programs = await getActivePrograms();
-        const level = programs.levels.id(req.params.levelId);
+        const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
 
         programs.levels.pull(req.params.levelId);
@@ -547,7 +547,7 @@ exports.deleteLevel = async (req, res) => {
 exports.addFeature = async (req, res) => {
     try {
         const programs = await getActivePrograms();
-        const level = programs.levels.id(req.params.levelId);
+        const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
 
         const { text } = req.body;
@@ -569,10 +569,10 @@ exports.addFeature = async (req, res) => {
 exports.updateFeature = async (req, res) => {
     try {
         const programs = await getActivePrograms();
-        const level = programs.levels.id(req.params.levelId);
+        const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
 
-        const feature = level.features.id(req.params.featureId);
+        const feature = level.features.find(feature => feature._id && feature._id.toString() === req.params.featureId);
         if (!feature) return res.status(404).json({ success: false, message: 'Feature not found' });
 
         const { text } = req.body;
@@ -589,10 +589,10 @@ exports.updateFeature = async (req, res) => {
 exports.deleteFeature = async (req, res) => {
     try {
         const programs = await getActivePrograms();
-        const level = programs.levels.id(req.params.levelId);
+        const level = programs.levels.find(level => level._id && level._id.toString() === req.params.levelId);
         if (!level) return res.status(404).json({ success: false, message: 'Level not found' });
 
-        const feature = level.features.id(req.params.featureId);
+        const feature = level.features.find(feature => feature._id && feature._id.toString() === req.params.featureId);
         if (!feature) return res.status(404).json({ success: false, message: 'Feature not found' });
 
         level.features.pull(req.params.featureId);

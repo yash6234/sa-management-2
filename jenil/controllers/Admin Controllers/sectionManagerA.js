@@ -34,7 +34,8 @@ exports.updateSection = (Model, sectionName) => async (req, res) => {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -69,7 +70,8 @@ exports.addToArray = (Model, arrayPath) => async (req, res) => {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -106,7 +108,8 @@ exports.updateArrayItem = (Model, arrayPath) => async (req, res) => {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }
@@ -118,7 +121,7 @@ exports.updateArrayItem = (Model, arrayPath) => async (req, res) => {
             targetArray = targetArray[part];
         }
 
-        const item = targetArray.id(req.params.itemId);
+        const item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
 
         let updateData = { ...req.body };
@@ -146,7 +149,8 @@ exports.removeFromArray = (Model, arrayPath) => async (req, res) => {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
                 logger.info("User Login request received");
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
                 logger.info(`Decrypted login data - ${decryptedData.email} - ${decryptedData.password}`);
             }
         } catch (e) { }

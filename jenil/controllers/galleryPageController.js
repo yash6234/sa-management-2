@@ -574,7 +574,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
             targetArray = targetArray[part];
         }
 
-        const item = targetArray.id(req.params.itemId);
+        const item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
         if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
 
         const index = targetArray.indexOf(item);
@@ -626,7 +626,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 
         if (req.params.itemId) {
             if (typeof targetArray.id === 'function') {
-                const item = targetArray.id(req.params.itemId);
+        const item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
                 if (item) {
                     targetArray.pull(req.params.itemId);
                 } else {

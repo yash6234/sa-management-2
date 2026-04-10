@@ -561,7 +561,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
             if (item._id) {
                 // Check by ID if provided
-                isDuplicate = !!(targetArray.id ? targetArray.id(item._id) : targetArray.find(t => t._id && t._id.toString() === item._id.toString()));
+                isDuplicate = targetArray.some(t => t._id && t._id.toString() === item._id.toString());
             } else if (arrayPath === 'testimonials.list') {
                 // For testimonials without ID, check by content
                 isDuplicate = targetArray.some(t => {
@@ -604,7 +604,7 @@ exports.updateArrayItem = (arrayPath) => async (req, res) => {
 
         let itemPath;
         if (req.params.itemId) {
-            const item = targetArray.id(req.params.itemId);
+            const item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
             if (!item) return res.status(404).json({ success: false, message: 'Item not found' });
             // Get index of the item
             const index = targetArray.indexOf(item);
@@ -684,7 +684,7 @@ exports.deleteArrayItem = (arrayPath) => async (req, res) => {
 
         let item;
         if (req.params.itemId) {
-            item = targetArray.id(req.params.itemId);
+            item = targetArray.find(item => item._id && item._id.toString() === req.params.itemId);
         } else if (targetArray.length > 0) {
             item = targetArray[0];
         }

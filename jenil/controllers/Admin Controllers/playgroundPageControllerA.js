@@ -102,7 +102,8 @@ exports.getSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const playground = await getActivePlayground();
@@ -130,7 +131,8 @@ exports.updateSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const playground = await getActivePlayground();
@@ -194,7 +196,8 @@ exports.deleteSection = (sectionName) => async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const playground = await getActivePlayground();
@@ -232,7 +235,8 @@ exports.getAllBookings = async (req, res) => {
         try {
             const encryptedData = req.params.data || req.body.data || req.query.data;
             if (encryptedData) {
-                const decryptedData = decryptData(encryptedData);
+                const decodedData = decodeURIComponent(encryptedData);
+                const decryptedData = decryptData(decodedData);
             }
         } catch (e) { }
         const bookings = await PlaygroundBooking.find().sort({ createdAt: -1 });
