@@ -696,6 +696,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
 
             // Only create new data at a time!
             if (!isDuplicate) {
+                delete item._id;
                 targetArray.push(item);
             }
         }

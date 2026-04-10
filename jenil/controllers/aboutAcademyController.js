@@ -691,7 +691,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             }
         }
 
-        for (const item of itemsToAdd) targetArray.push(item);
+        for (const item of itemsToAdd) { delete item._id; targetArray.push(item); }
         about.markModified(arrayPath);
         await about.save();
         res.status(201).json({ success: true, data: targetArray });

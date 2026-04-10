@@ -591,7 +591,7 @@ exports.addArrayItem = (arrayPath) => async (req, res) => {
             return res.status(400).json({ success: false, message: 'No valid item found to add' });
         }
 
-        for (const item of itemsToAdd) targetArray.push(item);
+        for (const item of itemsToAdd) { delete item._id; targetArray.push(item); }
         gallery.markModified(arrayPath);
         await gallery.save();
         res.status(201).json({ success: true, data: targetArray });
