@@ -1,7 +1,7 @@
 const fs = require("fs");
 const { validateAdminRequest, validateAdminRequestPost } = require("../../middlewares/adminValidation");
-const { encryptData, logger }                            = require("../../utils/enc_dec_admin");
-const About      = require("../models/About");
+const { encryptData, logger } = require("../../utils/enc_dec_admin");
+const About = require("../models/About");
 const AboutImage = require("../models/AboutImage");
 
 /* ─────────────────────────────────────────
@@ -22,7 +22,7 @@ const getOrCreateAbout = async () => {
 
 const attachImages = async (aboutObj) => {
     const images = await AboutImage.find({ isActive: true });
-    const map    = {};
+    const map = {};
     images.forEach((img) => { map[img.fieldName] = img.filePath; });
 
     if (aboutObj.founders)
@@ -44,7 +44,7 @@ const GetAbout = async (req, res) => {
         const auth = await validateAdminRequest(req, res);
         if (auth.error) return res.status(auth.status).json({ success: false, message: auth.message });
 
-        const doc       = await getOrCreateAbout();
+        const doc = await getOrCreateAbout();
         const aboutData = doc.toObject();
         aboutData.about = await attachImages(aboutData.about);
 
@@ -52,7 +52,7 @@ const GetAbout = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "About fetched successfully",
-            data:    encryptData(aboutData),
+            data: encryptData(aboutData),
         });
     } catch (err) {
         logger.error(`GetAbout error: ${err}`);
@@ -67,9 +67,12 @@ const UpdateAbout = async (req, res) => {
     logger.info("UpdateAbout — request received");
     try {
         const auth = await validateAdminRequest(req, res);
+
         if (auth.error) return res.status(auth.status).json({ success: false, message: auth.message });
 
         const { section, fields } = auth.adminData;
+        console.log("🔥 SECTION:", section);
+        console.log("🔥 FIELDS:", fields);
 
         if (!section || !fields || typeof fields !== "object") {
             return res.status(400).json({
@@ -107,7 +110,7 @@ const UpdateAbout = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "About updated successfully",
-            data:    encryptData(aboutData),
+            data: encryptData(aboutData),
         });
     } catch (err) {
         logger.error(`UpdateAbout error: ${err}`);
@@ -128,7 +131,7 @@ const UploadAboutImage = async (req, res) => {
         }
 
         const { fieldName } = auth.adminData;
-        const VALID_FIELDS  = ["founderImage"];
+        const VALID_FIELDS = ["founderImage"];
 
         if (!fieldName || !VALID_FIELDS.includes(fieldName)) {
             Object.values(req.files || {}).forEach((arr) => arr.forEach((f) => safeDeleteFile(f.path)));
@@ -156,10 +159,10 @@ const UploadAboutImage = async (req, res) => {
         // Save new image record
         const newImg = await AboutImage.create({
             fieldName,
-            section:      FIELD_TO_SECTION[fieldName],
-            filePath:     uploaded.path,
+            section: FIELD_TO_SECTION[fieldName],
+            filePath: uploaded.path,
             originalName: uploaded.originalname,
-            mimeType:     uploaded.mimetype,
+            mimeType: uploaded.mimetype,
         });
 
         // Sync path into About content doc
@@ -172,10 +175,10 @@ const UploadAboutImage = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Image uploaded successfully",
-            data:    encryptData({
+            data: encryptData({
                 fieldName,
                 filePath: newImg.filePath,
-                imageId:  newImg._id,
+                imageId: newImg._id,
             }),
         });
     } catch (err) {
@@ -199,7 +202,7 @@ const GetAboutImages = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Images fetched successfully",
-            data:    encryptData(images),
+            data: encryptData(images),
         });
     } catch (err) {
         logger.error(`GetAboutImages error: ${err}`);

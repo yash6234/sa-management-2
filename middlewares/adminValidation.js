@@ -158,7 +158,7 @@ const validateAdminRequestPost = async (req, res) => {
         }
 
         // Decrypt incoming data
-        let newData1, decryptedData;
+        let newData1, decryptedData, newData;
 
         try {
             decryptedData = req.body;
@@ -173,7 +173,7 @@ const validateAdminRequestPost = async (req, res) => {
         try {
             // Fix URL encoding issues: Express converts '+' to ' ' in body if urlencoded
             const fixedCipher = decodeURIComponent(decryptedData.data.trim()).replace(/ /g, "+");
-            const newData = decryptData(fixedCipher);
+            newData = decryptData(fixedCipher);
 
             if (!newData) throw new Error("First layer decryption failed");
 
