@@ -42,7 +42,6 @@ const FIELD_TO_SECTION = {
 
 /* ═══════════════════════════════════════════════════════════
    GET  /acade360/website/home/get/:data
-   — fetch full home content
 ═══════════════════════════════════════════════════════════ */
 const GetHome = async (req, res) => {
     logger.info("GetHome — request received");
@@ -68,31 +67,6 @@ const GetHome = async (req, res) => {
 
 /* ═══════════════════════════════════════════════════════════
    GET  /acade360/website/home/update/:data
-   — update any section's JSON fields (no file upload)
-   ─────────────────────────────────────────────────────────
-   Decrypted payload must include:
-   {
-     token, id, mobile_no, email,         ← admin auth
-     "section": "hero_section"
-               | "welcome_section"
-               | "programPanel"
-               | "instagramPosts"
-               | "testimonials"
-               | "all",
-     "fields": { ...only the keys to update }
-   }
-
-   Examples:
-     Update hero title only:
-       { ...creds, section: "hero_section", fields: { title: "New Title" } }
-
-     Replace all testimonials:
-       { ...creds, section: "testimonials", fields: [{ quote: "...", parentName: "...", relation: "..." }] }
-
-     Replace instagram posts:
-       { ...creds, section: "instagramPosts", fields: [{ url: "https://..." }] }
-
-   Response: full updated home document (encrypted)
 ═══════════════════════════════════════════════════════════ */
 const UpdateHome = async (req, res) => {
     logger.info("UpdateHome — request received");
@@ -145,14 +119,6 @@ const UpdateHome = async (req, res) => {
 
 /* ═══════════════════════════════════════════════════════════
    POST  /acade360/website/home/upload-image
-   — upload / replace a single image (multipart/form-data)
-   ─────────────────────────────────────────────────────────
-   Form fields:
-     data        (text) — encrypted payload including fieldName
-     <fieldName> (file) — file field name must match fieldName value
-
-   Decrypted payload must include:
-   { token, id, mobile_no, email, fieldName: "heroImage"|"welcomeImage"|"programImage" }
 ═══════════════════════════════════════════════════════════ */
 const UploadHomeImage = async (req, res) => {
     logger.info("UploadHomeImage — request received");
@@ -224,7 +190,6 @@ const UploadHomeImage = async (req, res) => {
 
 /* ═══════════════════════════════════════════════════════════
    GET  /acade360/website/home/images/:data
-   — fetch image records only
 ═══════════════════════════════════════════════════════════ */
 const GetHomeImages = async (req, res) => {
     logger.info("GetHomeImages — request received");
@@ -248,10 +213,6 @@ const GetHomeImages = async (req, res) => {
 
 /* ═══════════════════════════════════════════════════════════
    POST  /acade360/website/home/delete-image
-   — delete one image by imageId
-   ─────────────────────────────────────────────────────────
-   Decrypted payload must include:
-   { token, id, mobile_no, email, imageId: "<HomeImage _id>" }
 ═══════════════════════════════════════════════════════════ */
 const DeleteHomeImage = async (req, res) => {
     logger.info("DeleteHomeImage — request received");
