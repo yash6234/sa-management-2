@@ -87,7 +87,8 @@ const { markAttendance } = require('./adminControllers/harsh/pi/MarkAttendance')
 app.use('/api/manager/mark-attendance', markAttendance);
 
 // --------------------------------- FENILS ROUTES ----------------------------
-app.use('/acade360/website/home', require('./fenil/routes/homeRoutes'))
+app.use('/acade360/website/home', require('./fenil/routes/homeRoutes'));
+app.use('/acade360/website/about', require('./fenil/routes/aboutRoutes'));
 
 // ----------------------------- Device Attendance Sync -----------------------------
 app.get('/health', (req, res) => res.json({ status: 'OK', lastUserSync: AttendanceSync.lastUserSync, lastPunchSync: AttendanceSync.lastPunchSync }));

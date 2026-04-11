@@ -41,7 +41,8 @@ const FIELD_TO_SECTION = {
 };
 
 /* ═══════════════════════════════════════════════════════════
-   GET  /api/home/get/:data
+   GET  /acade360/website/home/get/:data
+   — fetch full home content
 ═══════════════════════════════════════════════════════════ */
 const GetHome = async (req, res) => {
     logger.info("GetHome — request received");
@@ -66,12 +67,38 @@ const GetHome = async (req, res) => {
 };
 
 /* ═══════════════════════════════════════════════════════════
-   POST  /api/home/update
+   GET  /acade360/website/home/update/:data
+   — update any section's JSON fields (no file upload)
+   ─────────────────────────────────────────────────────────
+   Decrypted payload must include:
+   {
+     token, id, mobile_no, email,         ← admin auth
+     "section": "hero_section"
+               | "welcome_section"
+               | "programPanel"
+               | "instagramPosts"
+               | "testimonials"
+               | "all",
+     "fields": { ...only the keys to update }
+   }
+
+   Examples:
+     Update hero title only:
+       { ...creds, section: "hero_section", fields: { title: "New Title" } }
+
+     Replace all testimonials:
+       { ...creds, section: "testimonials", fields: [{ quote: "...", parentName: "...", relation: "..." }] }
+
+     Replace instagram posts:
+       { ...creds, section: "instagramPosts", fields: [{ url: "https://..." }] }
+
+   Response: full updated home document (encrypted)
 ═══════════════════════════════════════════════════════════ */
 const UpdateHome = async (req, res) => {
     logger.info("UpdateHome — request received");
     try {
-        const auth = await validateAdminRequestPost(req, res);
+        // GET validation — token comes via :data param (double decrypted)
+        const auth = await validateAdminRequest(req, res);
         if (auth.error) return res.status(auth.status).json({ success: false, message: auth.message });
 
         const { section, fields } = auth.adminData;
@@ -88,13 +115,10 @@ const UpdateHome = async (req, res) => {
         const doc = await getOrCreateHome();
 
         if (section === "all") {
-            // Replace entire home content
             doc.home = { ...doc.toObject().home, ...fields };
         } else if (section === "instagramPosts" || section === "testimonials") {
-            // Full array replacement
             doc.home[section] = Array.isArray(fields) ? fields : fields[section];
         } else {
-            // Partial field merge for object sections
             const existing = doc.home[section]?.toObject
                 ? doc.home[section].toObject()
                 : (doc.home[section] || {});
@@ -104,7 +128,6 @@ const UpdateHome = async (req, res) => {
         doc.markModified("home");
         await doc.save();
 
-        // Return full doc with images merged
         const homeData = doc.toObject();
         homeData.home  = await attachImages(homeData.home);
 
@@ -121,14 +144,21 @@ const UpdateHome = async (req, res) => {
 };
 
 /* ═══════════════════════════════════════════════════════════
-   POST  /api/home/upload-image
+   POST  /acade360/website/home/upload-image
+   — upload / replace a single image (multipart/form-data)
+   ─────────────────────────────────────────────────────────
+   Form fields:
+     data        (text) — encrypted payload including fieldName
+     <fieldName> (file) — file field name must match fieldName value
+
+   Decrypted payload must include:
+   { token, id, mobile_no, email, fieldName: "heroImage"|"welcomeImage"|"programImage" }
 ═══════════════════════════════════════════════════════════ */
 const UploadHomeImage = async (req, res) => {
     logger.info("UploadHomeImage — request received");
     try {
         const auth = await validateAdminRequestPost(req, res);
         if (auth.error) {
-            // clean up any uploaded file on auth failure
             Object.values(req.files || {}).forEach((arr) => arr.forEach((f) => safeDeleteFile(f.path)));
             return res.status(auth.status).json({ success: false, message: auth.message });
         }
@@ -159,7 +189,7 @@ const UploadHomeImage = async (req, res) => {
             await HomeImage.deleteOne({ _id: old._id });
         }
 
-        // Save new record (upsert-style: delete then insert keeps schema clean)
+        // Save new record
         const newImg = await HomeImage.create({
             fieldName,
             section:      FIELD_TO_SECTION[fieldName],
@@ -193,7 +223,8 @@ const UploadHomeImage = async (req, res) => {
 };
 
 /* ═══════════════════════════════════════════════════════════
-   GET  /api/home/images/:data
+   GET  /acade360/website/home/images/:data
+   — fetch image records only
 ═══════════════════════════════════════════════════════════ */
 const GetHomeImages = async (req, res) => {
     logger.info("GetHomeImages — request received");
@@ -216,7 +247,11 @@ const GetHomeImages = async (req, res) => {
 };
 
 /* ═══════════════════════════════════════════════════════════
-   POST  /api/home/delete-image
+   POST  /acade360/website/home/delete-image
+   — delete one image by imageId
+   ─────────────────────────────────────────────────────────
+   Decrypted payload must include:
+   { token, id, mobile_no, email, imageId: "<HomeImage _id>" }
 ═══════════════════════════════════════════════════════════ */
 const DeleteHomeImage = async (req, res) => {
     logger.info("DeleteHomeImage — request received");
