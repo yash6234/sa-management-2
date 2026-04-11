@@ -1,6 +1,6 @@
-const express    = require("express");
-const router     = express.Router();
-const upload     = require("../../middlewares/homeUploads");
+const express = require("express");
+const router = express.Router();
+const upload = require("../../middlewares/homeUploads");
 const {
     GetHome,
     UpdateHome,
@@ -21,16 +21,16 @@ const {
 
 */
 
-router.get("/get/:data",    GetHome);
+router.get("/get/:data", GetHome);
 router.get("/images/:data", GetHomeImages);
 
-router.post("/update",       UpdateHome);
+router.post("/update", UpdateHome);
 router.post("/delete-image", DeleteHomeImage);
 
 router.post(
     "/upload-image",
     upload.fields([
-        { name: "heroImage",    maxCount: 1 },
+        { name: "heroImage", maxCount: 1 },
         { name: "welcomeImage", maxCount: 1 },
         { name: "programImage", maxCount: 1 },
     ]),

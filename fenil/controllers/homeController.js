@@ -1,7 +1,7 @@
-const fs   = require("fs");
+const fs = require("fs");
 const { validateAdminRequest, validateAdminRequestPost } = require("../../middlewares/adminValidation");
-const { encryptData, logger }                            = require("../../utils/enc_dec_admin");
-const Home      = require("../models/Home");
+const { encryptData, logger } = require("../../utils/enc_dec_admin");
+const Home = require("../models/Home");
 const HomeImage = require("../models/HomeImage");
 
 /* ─────────────────────────────────────────
@@ -24,18 +24,18 @@ const getOrCreateHome = async () => {
 /** Merge live image paths from HomeImage into a plain home object. */
 const attachImages = async (homeObj) => {
     const images = await HomeImage.find({ isActive: true });
-    const map    = {};
+    const map = {};
     images.forEach((img) => { map[img.fieldName] = img.filePath; });
 
-    if (homeObj.hero_section)    homeObj.hero_section.heroImage       = map.heroImage     || homeObj.hero_section.heroImage    || "";
-    if (homeObj.welcome_section) homeObj.welcome_section.welcomeImage = map.welcomeImage  || homeObj.welcome_section.welcomeImage || "";
-    if (homeObj.programPanel)    homeObj.programPanel.programImage    = map.programImage  || homeObj.programPanel.programImage   || "";
+    if (homeObj.hero_section) homeObj.hero_section.heroImage = map.heroImage || homeObj.hero_section.heroImage || "";
+    if (homeObj.welcome_section) homeObj.welcome_section.welcomeImage = map.welcomeImage || homeObj.welcome_section.welcomeImage || "";
+    if (homeObj.programPanel) homeObj.programPanel.programImage = map.programImage || homeObj.programPanel.programImage || "";
 
     return homeObj;
 };
 
 const FIELD_TO_SECTION = {
-    heroImage:    "hero_section",
+    heroImage: "hero_section",
     welcomeImage: "welcome_section",
     programImage: "programPanel",
 };
@@ -49,15 +49,15 @@ const GetHome = async (req, res) => {
         const auth = await validateAdminRequest(req, res);
         if (auth.error) return res.status(auth.status).json({ success: false, message: auth.message });
 
-        const doc      = await getOrCreateHome();
+        const doc = await getOrCreateHome();
         const homeData = doc.toObject();
-        homeData.home  = await attachImages(homeData.home);
+        homeData.home = await attachImages(homeData.home);
 
         logger.info("GetHome — success");
         return res.status(200).json({
             success: true,
             message: "Home fetched successfully",
-            data:    encryptData(homeData),
+            data: encryptData(homeData),
         });
     } catch (err) {
         logger.error(`GetHome error: ${err}`);
@@ -72,6 +72,8 @@ const UpdateHome = async (req, res) => {
     logger.info("UpdateHome — request received");
     try {
         const auth = await validateAdminRequestPost(req, res);
+        console.log("🔥 AUTH:", auth);
+        console.log("🔥 ADMIN DATA:", auth?.adminData);
         if (auth.error) return res.status(auth.status).json({ success: false, message: auth.message });
 
         const { section, fields } = auth.adminData;
@@ -106,13 +108,13 @@ const UpdateHome = async (req, res) => {
 
         // Return full doc with images merged
         const homeData = doc.toObject();
-        homeData.home  = await attachImages(homeData.home);
+        homeData.home = await attachImages(homeData.home);
 
         logger.info(`UpdateHome — section '${section}' updated`);
         return res.status(200).json({
             success: true,
             message: "Home updated successfully",
-            data:    encryptData(homeData),
+            data: encryptData(homeData),
         });
     } catch (err) {
         logger.error(`UpdateHome error: ${err}`);
@@ -134,7 +136,7 @@ const UploadHomeImage = async (req, res) => {
         }
 
         const { fieldName } = auth.adminData;
-        const VALID_FIELDS  = ["heroImage", "welcomeImage", "programImage"];
+        const VALID_FIELDS = ["heroImage", "welcomeImage", "programImage"];
 
         if (!fieldName || !VALID_FIELDS.includes(fieldName)) {
             Object.values(req.files || {}).forEach((arr) => arr.forEach((f) => safeDeleteFile(f.path)));
@@ -162,17 +164,17 @@ const UploadHomeImage = async (req, res) => {
         // Save new record (upsert-style: delete then insert keeps schema clean)
         const newImg = await HomeImage.create({
             fieldName,
-            section:      FIELD_TO_SECTION[fieldName],
-            filePath:     uploaded.path,
+            section: FIELD_TO_SECTION[fieldName],
+            filePath: uploaded.path,
             originalName: uploaded.originalname,
-            mimeType:     uploaded.mimetype,
+            mimeType: uploaded.mimetype,
         });
 
         // Sync path into Home content doc
         const doc = await getOrCreateHome();
-        if (fieldName === "heroImage")    doc.home.hero_section.heroImage       = uploaded.path;
+        if (fieldName === "heroImage") doc.home.hero_section.heroImage = uploaded.path;
         if (fieldName === "welcomeImage") doc.home.welcome_section.welcomeImage = uploaded.path;
-        if (fieldName === "programImage") doc.home.programPanel.programImage    = uploaded.path;
+        if (fieldName === "programImage") doc.home.programPanel.programImage = uploaded.path;
         doc.markModified("home");
         await doc.save();
 
@@ -180,10 +182,10 @@ const UploadHomeImage = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Image uploaded successfully",
-            data:    encryptData({
+            data: encryptData({
                 fieldName,
                 filePath: newImg.filePath,
-                imageId:  newImg._id,
+                imageId: newImg._id,
             }),
         });
     } catch (err) {
@@ -207,7 +209,7 @@ const GetHomeImages = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Images fetched successfully",
-            data:    encryptData(images),
+            data: encryptData(images),
         });
     } catch (err) {
         logger.error(`GetHomeImages error: ${err}`);
@@ -235,9 +237,9 @@ const DeleteHomeImage = async (req, res) => {
 
         // Clear path in Home content doc
         const doc = await getOrCreateHome();
-        if (image.fieldName === "heroImage")    doc.home.hero_section.heroImage       = "";
+        if (image.fieldName === "heroImage") doc.home.hero_section.heroImage = "";
         if (image.fieldName === "welcomeImage") doc.home.welcome_section.welcomeImage = "";
-        if (image.fieldName === "programImage") doc.home.programPanel.programImage    = "";
+        if (image.fieldName === "programImage") doc.home.programPanel.programImage = "";
         doc.markModified("home");
         await doc.save();
 
