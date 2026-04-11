@@ -14,12 +14,52 @@ const safeDeleteFile = (filePath) => {
     catch (e) { logger.warn(`Could not delete file ${filePath}: ${e.message}`); }
 };
 
+/** Full default structure — ensures all nested sections always exist */
+const DEFAULT_ABOUT = {
+    about_section: {
+        description: "",
+        vision:      "",
+        mission:     "",
+        goals:       "",
+    },
+    directorsMessage: {
+        intro:      "",
+        smallIntro: "",
+    },
+    founders: {
+        foundername: "",
+        role:        "",
+        description: "",
+        image:       "",
+    },
+    whyChooseUs: {
+        points: [],
+    },
+};
+
+/** Returns the single About document, creating it with full structure if absent. */
 const getOrCreateAbout = async () => {
     let doc = await About.findOne();
-    if (!doc) doc = await About.create({ about: {} });
+    if (!doc) {
+        doc = await About.create({ about: DEFAULT_ABOUT });
+    } else {
+        // Patch any missing sections on existing doc (handles old empty docs)
+        let patched = false;
+        for (const key of Object.keys(DEFAULT_ABOUT)) {
+            if (!doc.about[key]) {
+                doc.about[key] = DEFAULT_ABOUT[key];
+                patched = true;
+            }
+        }
+        if (patched) {
+            doc.markModified("about");
+            await doc.save();
+        }
+    }
     return doc;
 };
 
+/** Merge live image paths from AboutImage into a plain about object. */
 const attachImages = async (aboutObj) => {
     const images = await AboutImage.find({ isActive: true });
     const map = {};
@@ -61,11 +101,12 @@ const GetAbout = async (req, res) => {
 };
 
 /* ═══════════════════════════════════════════════════════════
-   GET  /acade360/website/about/update
+   GET  /acade360/website/about/update/:data
 ═══════════════════════════════════════════════════════════ */
 const UpdateAbout = async (req, res) => {
     logger.info("UpdateAbout — request received");
     try {
+        // GET validation — token comes via :data param (double decrypted)
         const auth = await validateAdminRequest(req, res);
 
         if (auth.error) return res.status(auth.status).json({ success: false, message: auth.message });
@@ -94,9 +135,11 @@ const UpdateAbout = async (req, res) => {
         if (section === "all") {
             doc.about = { ...doc.toObject().about, ...fields };
         } else {
+            // Safely get existing section — falls back to default if somehow missing
             const existing = doc.about[section]?.toObject
                 ? doc.about[section].toObject()
-                : (doc.about[section] || {});
+                : (doc.about[section] || DEFAULT_ABOUT[section] || {});
+
             doc.about[section] = { ...existing, ...fields };
         }
 
